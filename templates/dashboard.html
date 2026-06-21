@@ -41,7 +41,7 @@
 </div>
 
 <!-- ══ Chart + Recent logs ══ -->
-<div style="display:grid;grid-template-columns:1fr 340px;gap:18px;margin-bottom:24px;align-items:start;">
+<div class="dash-chart-row" style="display:grid;grid-template-columns:1fr 340px;gap:18px;margin-bottom:24px;align-items:start;">
 
   <!-- Chart card -->
   <div class="card">
@@ -93,7 +93,7 @@
 </div>
 
 <!-- ══ Quick actions ══ -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;">
+<div class="dash-actions-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;">
   <a href="{{ url_for('new_dm_rule') }}" class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer;">
     <div style="width:46px;height:46px;border-radius:13px;background:rgba(108,79,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">💬</div>
     <div>
@@ -113,7 +113,7 @@
 </div>
 
 <!-- ══ Recent rules ══ -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+<div class="dash-rules-row" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
   <div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border-soft);">
       <div style="font-size:14px;font-weight:800;">آخرین قانون‌های دایرکت</div>
@@ -149,7 +149,7 @@
       <a href="{{ url_for('comment_rules') }}" style="font-size:12px;color:var(--accent-2);">همه ←</a>
     </div>
     {% if recent_cm %}
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+      <div class="dash-cm-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
         {% for rule in recent_cm %}
         <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;
                                   transition:border-color .18s,box-shadow .18s,transform .18s;">
