@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}قانون‌های دایرکت — اتومیشن اینستاگرام{% endblock %}
+{% block topbar_title %}قانون‌های دایرکت{% endblock %}
+{% block topbar_right %}
+  <a href="{{ url_for('new_dm_rule') }}" class="btn small">+ قانون جدید</a>
+{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <div class="page-title">💬 قانون‌های دایرکت</div>
+    <div class="page-sub">پاسخ خودکار به دایرکت‌ها و ریپلای استوری بر اساس کلمه کلیدی</div>
+  </div>
+</div>
+
+<!-- ── Toolbar ── -->
+<form method="get" class="toolbar">
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" name="q" value="{{ q }}" placeholder="جستجو در کلمه کلیدی یا پاسخ...">
+  </div>
+  <button type="submit" class="btn secondary small">جستجو</button>
+  {% if q %}
+    <a href="{{ url_for('dm_rules') }}" class="btn secondary small">✕ پاک کردن</a>
+  {% endif %}
+  <a href="{{ url_for('new_dm_rule') }}" class="btn small" style="margin-right:auto;">+ قانون جدید</a>
+</form>
+
+<!-- ── Results info ── -->
+{% if q %}
+  <div style="font-size:12.5px;color:var(--text-faint);margin-bottom:14px;">
+    {{ pagination.total }} نتیجه برای «{{ q }}»
+  </div>
+{% endif %}
+
+<!-- ── List ── -->
+{% if pagination.items %}
+  <div class="grid">
+    {% for rule in pagination.items %}
+    <div class="card rule-card">
+      <div class="rule-main">
+        <span class="rule-trigger">🔑 {{ rule.trigger }}</span>
+        <div class="rule-text">{{ rule.response }}</div>
+        <div class="rule-meta">
+          <span>{{ 'دقیقاً برابر' if rule.match_type == 'exact' else 'شامل کلمه' }}</span>
+          {% if rule.created_at %}
+            <span>·</span>
+            <span>{{ rule.created_at.strftime('%Y/%m/%d') }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="rule-actions">
+        <a href="{{ url_for('edit_dm_rule', rule_id=rule.id) }}" class="btn secondary small">ویرایش</a>
+        <form method="post" action="{{ url_for('delete_dm_rule', rule_id=rule.id) }}"
+              onsubmit="return confirm('این قانون حذف شود؟');">
+          <button type="submit" class="btn danger small">حذف</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Pagination ── -->
+  {% if pagination.pages > 1 %}
+  <div class="pagination">
+    <a href="{{ url_for('dm_rules', q=q, page=1) }}"
+       class="pg-btn {{ 'disabled' if not pagination.has_prev }}">«</a>
+    <a href="{{ url_for('dm_rules', q=q, page=pagination.prev_num) }}"
+       class="pg-btn {{ 'disabled' if not pagination.has_prev }}">‹</a>
+
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+        <a href="{{ url_for('dm_rules', q=q, page=p) }}"
+           class="pg-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+      {% else %}
+        <span class="pg-info">…</span>
+      {% endif %}
+    {% endfor %}
+
+    <a href="{{ url_for('dm_rules', q=q, page=pagination.next_num) }}"
+       class="pg-btn {{ 'disabled' if not pagination.has_next }}">›</a>
+    <a href="{{ url_for('dm_rules', q=q, page=pagination.pages) }}"
+       class="pg-btn {{ 'disabled' if not pagination.has_next }}">»</a>
+
+    <span class="pg-info">صفحه {{ pagination.page }} از {{ pagination.pages }}</span>
+  </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty">
+    <span class="empty-icon">💬</span>
+    {% if q %}
+      نتیجه‌ای برای «{{ q }}» پیدا نشد.
+    {% else %}
+      هنوز قانونی برای دایرکت نساخته‌ای.<br>با دکمه «قانون جدید» شروع کن.
+    {% endif %}
+  </div>
+{% endif %}
+
+{% endblock %}
