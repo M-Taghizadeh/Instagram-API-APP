@@ -100,6 +100,8 @@ class CommentRule(db.Model):
     user_id       = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     post_link     = db.Column(db.Text,        default="")
     post_id       = db.Column(db.String(100), default="")
+    post_caption  = db.Column(db.Text,        default="")   # خلاصه کپشن برای نمایش
+    post_thumb    = db.Column(db.Text,        default="")   # URL تصویر بندانگشتی
     trigger       = db.Column(db.String(500), nullable=False)  # کلمات با ویرگول جدا می‌شن
     match_type    = db.Column(db.String(20),  default="contains")
     comment_reply = db.Column(db.Text,        default="")
@@ -217,19 +219,60 @@ def log_activity(user_id: int, rule_type: str, rule_id: str, rule_name: str,
 
 
 def resolve_post_id(post_link: str, access_token: str) -> str:
+    """شناسه عددی پست رو از لینک پیدا می‌کنه — از /me/media برای مطابقت shortcode استفاده می‌کنه"""
     try:
         m = re.search(r"instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)", post_link or "")
         if not m or not access_token:
             return ""
-        resp = http_requests.get(
-            f"{GRAPH_API}/ig_shortcode/{m.group(1)}",
-            params={"fields": "id", "access_token": access_token},
-            timeout=10,
-        )
-        return resp.json().get("id", "")
+        shortcode = m.group(1)
+        # صفحه اول
+        url = f"{GRAPH_API}/me/media"
+        params = {"fields": "id,shortcode", "access_token": access_token, "limit": 100}
+        while url:
+            resp = http_requests.get(url, params=params, timeout=10)
+            data = resp.json()
+            for item in data.get("data", []):
+                if item.get("shortcode") == shortcode:
+                    print(f"[RESOLVE] found post_id={item['id']} for shortcode={shortcode}", flush=True)
+                    return item["id"]
+            # صفحه بعدی
+            url = (data.get("paging") or {}).get("next")
+            params = {}  # next URL کامله، param جداگانه نمی‌خواد
+        print(f"[RESOLVE] shortcode={shortcode} not found in media list", flush=True)
+        return ""
     except Exception as e:
         print("RESOLVE POST ID ERROR:", e)
         return ""
+
+
+def get_post_preview(post_link: str, access_token: str) -> dict:
+    """اطلاعات نمایشی پست (thumbnail, caption, permalink) رو برمی‌گردونه"""
+    try:
+        m = re.search(r"instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)", post_link or "")
+        if not m or not access_token:
+            return {}
+        shortcode = m.group(1)
+        url = f"{GRAPH_API}/me/media"
+        params = {"fields": "id,shortcode,caption,thumbnail_url,media_url,media_type,permalink,timestamp", "access_token": access_token, "limit": 100}
+        while url:
+            resp = http_requests.get(url, params=params, timeout=10)
+            data = resp.json()
+            for item in data.get("data", []):
+                if item.get("shortcode") == shortcode:
+                    return {
+                        "id":        item.get("id", ""),
+                        "caption":   (item.get("caption") or "")[:120],
+                        "image":     item.get("thumbnail_url") or item.get("media_url", ""),
+                        "type":      item.get("media_type", ""),
+                        "permalink": item.get("permalink", ""),
+                        "timestamp": item.get("timestamp", ""),
+                    }
+            url = (data.get("paging") or {}).get("next")
+            params = {}
+        return {}
+    except Exception as e:
+        print("GET POST PREVIEW ERROR:", e)
+        return {}
 
 
 # ========================= INIT DB =========================
@@ -253,8 +296,10 @@ def _run_migrations():
             # ── comment_rules ──
             existing = {c["name"] for c in inspector.get_columns("comment_rules")}
             for col, ddl in [
-                ("is_active",  "ALTER TABLE comment_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
-                ("fire_count", "ALTER TABLE comment_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
+                ("is_active",    "ALTER TABLE comment_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
+                ("fire_count",   "ALTER TABLE comment_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
+                ("post_caption", "ALTER TABLE comment_rules ADD COLUMN post_caption TEXT DEFAULT ''"),
+                ("post_thumb",   "ALTER TABLE comment_rules ADD COLUMN post_thumb TEXT DEFAULT ''"),
             ]:
                 if col not in existing:
                     conn.execute(text(ddl))
@@ -555,6 +600,23 @@ def delete_dm_rule(rule_id):
     return redirect(url_for("dm_rules"))
 
 
+# ========================= POST PREVIEW API =========================
+@app.route("/api/post-preview")
+@login_required
+def api_post_preview():
+    """پیش‌نمایش پست اینستاگرام از لینک — برای فرم قانون کامنت"""
+    link = request.args.get("link", "").strip()
+    if not link:
+        return jsonify(error="لینک وارد نشده"), 400
+    s = get_settings()
+    if not s.access_token:
+        return jsonify(error="توکن دسترسی تنظیم نشده"), 400
+    preview = get_post_preview(link, s.access_token)
+    if not preview:
+        return jsonify(error="پست پیدا نشد — لینک یا توکن را بررسی کن"), 404
+    return jsonify(preview)
+
+
 # ========================= COMMENT RULES =========================
 @app.route("/comment-rules")
 @login_required
@@ -578,11 +640,13 @@ def new_comment_rule():
     if request.method == "POST":
         post_link = request.form.get("post_link", "").strip()
         s         = get_settings()
-        post_id   = resolve_post_id(post_link, s.access_token)
+        preview   = get_post_preview(post_link, s.access_token) if post_link else {}
         rule = CommentRule(
             user_id       = current_user.id,
             post_link     = post_link,
-            post_id       = post_id,
+            post_id       = preview.get("id", ""),
+            post_caption  = preview.get("caption", ""),
+            post_thumb    = preview.get("image", ""),
             trigger       = request.form.get("trigger", "").strip(),
             match_type    = request.form.get("match_type", "contains"),
             comment_reply = request.form.get("comment_reply", "").strip(),
@@ -604,7 +668,10 @@ def edit_comment_rule(rule_id):
         post_link = request.form.get("post_link", "").strip()
         if post_link != rule.post_link:
             s = get_settings()
-            rule.post_id = resolve_post_id(post_link, s.access_token)
+            preview = get_post_preview(post_link, s.access_token) if post_link else {}
+            rule.post_id      = preview.get("id", "")
+            rule.post_caption = preview.get("caption", "")
+            rule.post_thumb   = preview.get("image", "")
         rule.post_link     = post_link
         rule.trigger       = request.form.get("trigger", "").strip()
         rule.match_type    = request.form.get("match_type", "contains")
@@ -729,8 +796,10 @@ def run_migration():
             # ── comment_rules ──
             existing_cr = [c["name"] for c in inspector.get_columns("comment_rules")]
             for col, ddl in [
-                ("is_active",  "ALTER TABLE comment_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
-                ("fire_count", "ALTER TABLE comment_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
+                ("is_active",    "ALTER TABLE comment_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
+                ("fire_count",   "ALTER TABLE comment_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
+                ("post_caption", "ALTER TABLE comment_rules ADD COLUMN post_caption TEXT DEFAULT ''"),
+                ("post_thumb",   "ALTER TABLE comment_rules ADD COLUMN post_thumb TEXT DEFAULT ''"),
             ]:
                 if col not in existing_cr:
                     conn.execute(text(ddl))
