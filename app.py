@@ -22,10 +22,22 @@ load_dotenv()
 app = Flask(__name__)
 
 _BASE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(_BASE, "app.db")
+# اگه DATABASE_URL باشه (Render PostgreSQL) از اون استفاده می‌کنیم
+# در غیر این صورت SQLite محلی
+_DATABASE_URL = os.getenv("DATABASE_URL", "")
+if _DATABASE_URL.startswith("postgres://"):
+    # SQLAlchemy نیاز به postgresql:// داره نه postgres://
+    _DATABASE_URL = _DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+if _DATABASE_URL:
+    DB_URI = _DATABASE_URL
+else:
+    _DATA_DIR = os.getenv("DATA_DIR", _BASE)
+    DB_PATH = os.path.join(_DATA_DIR, "app.db")
+    DB_URI = f"sqlite:///{DB_PATH}"
 
 app.config["SECRET_KEY"]                     = os.getenv("SECRET_KEY", secrets.token_hex(32))
-app.config["SQLALCHEMY_DATABASE_URI"]        = f"sqlite:///{DB_PATH}"
+app.config["SQLALCHEMY_DATABASE_URI"]        = DB_URI
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db            = SQLAlchemy(app)
