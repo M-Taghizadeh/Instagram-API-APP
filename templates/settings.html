@@ -140,6 +140,68 @@
         را در Environment Variables پلتفرم Render تنظیم کن.
       </div>
     </div>
+
+    <!-- Cooldown settings -->
+    <div class="card">
+      <div class="card-shine"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-soft);">
+        <div class="stat-card-icon cyan" style="width:38px;height:38px;font-size:17px;margin-bottom:0;">⏱</div>
+        <div>
+          <div style="font-size:14px;font-weight:800;">تنظیمات Cooldown</div>
+          <div style="font-size:12px;color:var(--text-faint);">جلوگیری از ارسال مکرر به یک کاربر</div>
+        </div>
+      </div>
+
+      <form method="post">
+        <input type="hidden" name="access_token" value="{{ s.access_token }}">
+        <input type="hidden" name="verify_token" value="{{ s.verify_token }}">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    padding:12px 14px;background:var(--panel-2);border:1px solid var(--border);
+                    border-radius:var(--radius-sm);margin-bottom:14px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;">فعال‌سازی Cooldown</div>
+            <div style="font-size:11.5px;color:var(--text-faint);margin-top:2px;">
+              هر کاربر در بازه زمانی مشخص فقط یک‌بار پاسخ می‌گیرد
+            </div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" name="cooldown_enabled" value="1" id="cooldownToggle"
+                   {{ 'checked' if s.cooldown_enabled != False else '' }}
+                   onchange="document.getElementById('cooldownBody').style.display=this.checked?'block':'none'">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+
+        <div id="cooldownBody" style="display:{{ 'block' if s.cooldown_enabled != False else 'none' }};">
+          <div class="field" style="margin-bottom:12px;">
+            <label>مدت زمان Cooldown</label>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
+              <input type="number" name="cooldown_seconds" min="0" step="60"
+                     value="{{ s.cooldown_seconds or 3600 }}"
+                     id="cooldownSecs" oninput="updateCooldownLabel()">
+              <span id="cooldownLabel" style="font-size:12px;color:var(--text-faint);white-space:nowrap;min-width:80px;text-align:left;"></span>
+            </div>
+            <div class="hint">بر حسب ثانیه — مثلاً ۳۶۰۰ = ۱ ساعت · ۳۰۰ = ۵ دقیقه · ۰ = بدون محدودیت</div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" style="width:100%;">💾 ذخیره تنظیمات Cooldown</button>
+      </form>
+
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft);">
+        <div style="font-size:11.5px;color:var(--text-faint);margin-bottom:10px;">
+          پاک کردن باعث می‌شه همه قانون‌ها فوری دوباره اجرا بشن.
+        </div>
+        <form method="post" action="{{ url_for('clear_cooldowns') }}"
+              onsubmit="return confirm('کولداون همه کاربران پاک شود؟')">
+          <button type="submit" class="btn secondary small" style="width:100%;">
+            🗑 پاک کردن همه Cooldown‌ها
+          </button>
+        </form>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -152,7 +214,6 @@ function toggleToken() {
   if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'پنهان'; }
   else { inp.type = 'password'; btn.textContent = 'نمایش'; }
 }
-// start as password if token exists
 const ti = document.getElementById('tokenInput');
 if (ti && ti.value) ti.type = 'password';
 
@@ -164,5 +225,16 @@ function copyWebhook() {
     setTimeout(() => btn.textContent = '📋 کپی', 2000);
   });
 }
+
+function updateCooldownLabel() {
+  const secs = parseInt(document.getElementById('cooldownSecs').value) || 0;
+  const lbl  = document.getElementById('cooldownLabel');
+  if (!lbl) return;
+  if (secs === 0)        lbl.textContent = 'بدون محدودیت';
+  else if (secs < 60)    lbl.textContent = secs + ' ثانیه';
+  else if (secs < 3600)  lbl.textContent = Math.round(secs/60) + ' دقیقه';
+  else                   lbl.textContent = (secs/3600).toFixed(1) + ' ساعت';
+}
+updateCooldownLabel();
 </script>
 {% endblock %}

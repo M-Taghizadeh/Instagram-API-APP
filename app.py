@@ -76,10 +76,12 @@ class User(UserMixin, db.Model):
 
 class Settings(db.Model):
     __tablename__ = "settings"
-    id           = db.Column(db.Integer, primary_key=True)
-    user_id      = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    access_token = db.Column(db.Text,        default="")
-    verify_token = db.Column(db.String(120), default="mysecret123")
+    id              = db.Column(db.Integer, primary_key=True)
+    user_id         = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    access_token    = db.Column(db.Text,        default="")
+    verify_token    = db.Column(db.String(120), default="mysecret123")
+    cooldown_enabled = db.Column(db.Boolean,   default=True)
+    cooldown_seconds = db.Column(db.Integer,   default=3600)
 
 
 class DmRule(db.Model):
@@ -186,13 +188,17 @@ def match_text(trigger_str: str, text: str, match_type: str = "contains") -> boo
 
 def is_on_cooldown(user_id: int, rule_id: str, ig_user_id: str) -> bool:
     """بررسی می‌کنه آیا به این کاربر در بازه cooldown قبلاً پاسخ داده شده"""
+    s = Settings.query.filter_by(user_id=user_id).first()
+    if s and not s.cooldown_enabled:
+        return False
+    cooldown_secs = (s.cooldown_seconds if s and s.cooldown_seconds else None) or COOLDOWN_SECONDS
     entry = CooldownEntry.query.filter_by(
         user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id
     ).first()
     if not entry:
         return False
     elapsed = (datetime.datetime.utcnow() - entry.last_fired).total_seconds()
-    return elapsed < COOLDOWN_SECONDS
+    return elapsed < cooldown_secs
 
 
 def update_cooldown(user_id: int, rule_id: str, ig_user_id: str):
@@ -282,6 +288,16 @@ def _run_migrations():
     try:
         with db.engine.connect() as conn:
             inspector = inspect(db.engine)
+
+            # ── settings ──
+            existing = {c["name"] for c in inspector.get_columns("settings")}
+            for col, ddl in [
+                ("cooldown_enabled", "ALTER TABLE settings ADD COLUMN cooldown_enabled BOOLEAN DEFAULT TRUE"),
+                ("cooldown_seconds", "ALTER TABLE settings ADD COLUMN cooldown_seconds INTEGER DEFAULT 3600"),
+            ]:
+                if col not in existing:
+                    conn.execute(text(ddl))
+                    print(f"[MIGRATE] settings.{col} added", flush=True)
 
             # ── dm_rules ──
             existing = {c["name"] for c in inspector.get_columns("dm_rules")}
@@ -796,8 +812,13 @@ def clear_cooldowns():
 def settings():
     s = get_settings()
     if request.method == "POST":
-        s.access_token = request.form.get("access_token", "").strip()
-        s.verify_token = request.form.get("verify_token", "").strip()
+        s.access_token     = request.form.get("access_token", "").strip()
+        s.verify_token     = request.form.get("verify_token", "").strip()
+        s.cooldown_enabled = request.form.get("cooldown_enabled") == "1"
+        try:
+            s.cooldown_seconds = max(0, int(request.form.get("cooldown_seconds", 3600)))
+        except ValueError:
+            s.cooldown_seconds = 3600
         db.session.commit()
         flash("تنظیمات ذخیره شد.", "success")
         return redirect(url_for("settings"))
