@@ -373,6 +373,16 @@ def verify_webhook():
     return "fail", 403
 
 
+# آخرین webhook payload رو در حافظه نگه می‌داره برای debug
+_last_webhook_payload = []
+
+@app.route("/debug/webhook")
+@login_required
+def debug_webhook():
+    """نمایش آخرین ۵ webhook payload دریافت‌شده"""
+    return jsonify(payloads=_last_webhook_payload)
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     try:
@@ -382,22 +392,62 @@ def webhook():
         if not data:
             return jsonify(ok=True), 200
 
+        # ذخیره برای debug
+        _last_webhook_payload.append(data)
+        if len(_last_webhook_payload) > 5:
+            _last_webhook_payload.pop(0)
+
         for user in User.query.all():
             s         = get_settings_for(user.id)
             dm_rules  = DmRule.query.filter_by(user_id=user.id, is_active=True).all()
             com_rules = CommentRule.query.filter_by(user_id=user.id, is_active=True).all()
 
             for entry in data.get("entry", []):
+                # ── DM: Instagram Graph API format ──
+                # format 1: entry.messaging[]  (Messenger / IG Messaging)
                 for event in entry.get("messaging", []):
                     _handle_messaging(event, dm_rules, s.access_token, user.id)
+
+                # ── Comments & other changes ──
                 for change in entry.get("changes", []):
-                    if change.get("field") == "comments":
-                        _handle_comment(change.get("value", {}), com_rules, s.access_token, user.id)
+                    field = change.get("field", "")
+                    value = change.get("value", {})
+                    print(f"[WEBHOOK] change field={field!r}", flush=True)
+                    if field == "comments":
+                        _handle_comment(value, com_rules, s.access_token, user.id)
+                    elif field == "messages":
+                        # Instagram Messaging via changes (newer format)
+                        _handle_messaging_change(value, dm_rules, s.access_token, user.id)
 
         return jsonify(ok=True), 200
     except Exception as e:
+        import traceback
         print("WEBHOOK ERROR:", e, flush=True)
+        print(traceback.format_exc(), flush=True)
         return jsonify(ok=False), 200
+
+
+def _handle_messaging_change(value, dm_rules, token, owner_id):
+    """مدیریت DM در فرمت changes (فرمت جدیدتر Instagram)"""
+    sender_id = (value.get("sender") or {}).get("id")
+    text = ""
+    msg = value.get("message") or {}
+    text = msg.get("text", "")
+    print(f"[DM-CHANGE] sender={sender_id} text={text!r}", flush=True)
+    if not sender_id or not text:
+        return
+    for rule in dm_rules:
+        if match_text(rule.trigger, text, rule.match_type):
+            if is_on_cooldown(owner_id, rule.id, sender_id):
+                print(f"[DM-CHANGE] COOLDOWN", flush=True)
+                break
+            ok = _send_dm(sender_id, rule.response, token)
+            rule.fire_count = (rule.fire_count or 0) + 1
+            db.session.commit()
+            update_cooldown(owner_id, rule.id, sender_id)
+            log_activity(owner_id, "dm", rule.id, rule.trigger, sender_id,
+                         "sent_dm", "ok" if ok else "error")
+            break
 
 
 def _handle_messaging(event, dm_rules, token, owner_id):
