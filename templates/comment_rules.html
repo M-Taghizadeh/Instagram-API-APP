@@ -77,10 +77,8 @@
         {% endif %}
         <!-- post status bottom-left -->
         <div style="position:absolute;bottom:8px;right:10px;">
-          {% if rule.post_id %}
+          {% if rule.post_id or rule.post_thumb %}
           <span class="badge ok" style="font-size:9.5px;backdrop-filter:blur(6px);background:rgba(7,6,14,.55);">✓ پست شناسایی شده</span>
-          {% else %}
-          <span class="badge danger" style="font-size:9.5px;backdrop-filter:blur(6px);background:rgba(7,6,14,.55);">✕ پست شناسایی نشده</span>
           {% endif %}
         </div>
       </div>
