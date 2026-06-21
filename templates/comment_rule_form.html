@@ -89,7 +89,7 @@
                style="display:inline-block;margin-top:6px;font-size:11.5px;color:var(--accent);">↗ مشاهده پست</a>
           </div>
         </div>
-        {% elif rule and not rule.post_id %}
+        {% elif rule and not rule.post_id and not rule.post_thumb %}
         <div style="margin-top:8px;">
           <span class="badge danger">✕ پست شناسایی نشده — لینک را دوباره وارد کن</span>
         </div>
@@ -249,7 +249,8 @@ function showState(state) {
   previewSuccess.style.display = state === 'success' ? 'flex'  : 'none';
   previewError.style.display   = state === 'error'   ? 'block' : 'none';
   postPreviewBox.style.display = state ? 'block' : 'none';
-  if (previewStatic) previewStatic.style.display = state ? 'none' : '';
+  // وقتی preview جدید گرفته شد، static block قدیمی رو مخفی کن
+  if (previewStatic) previewStatic.style.display = (state === 'success') ? 'none' : '';
 }
 
 function typeLabel(t) {
@@ -293,6 +294,8 @@ if (postLinkInput) {
   });
   // اگه لینک از قبل پر بود و پست شناسایی نشده بود، یه بار اتوماتیک بگیره
   {% if rule and not rule.post_id and rule.post_link %}
+  fetchPostPreview("{{ rule.post_link | e }}");
+  {% elif rule and rule.post_id and not rule.post_thumb and rule.post_link %}
   fetchPostPreview("{{ rule.post_link | e }}");
   {% endif %}
 }
