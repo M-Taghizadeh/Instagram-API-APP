@@ -222,6 +222,9 @@ def verify_webhook():
 def webhook():
     try:
         data = request.get_json(force=True, silent=True)
+        import sys
+        print("\n===== WEBHOOK =====", flush=True)
+        print(json.dumps(data, indent=2, ensure_ascii=False), flush=True)
         if not data:
             return jsonify(ok=True), 200
 
@@ -239,7 +242,7 @@ def webhook():
 
         return jsonify(ok=True), 200
     except Exception as e:
-        print("WEBHOOK ERROR:", e)
+        print("WEBHOOK ERROR:", e, flush=True)
         return jsonify(ok=False), 200
 
 
