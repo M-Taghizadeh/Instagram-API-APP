@@ -34,109 +34,124 @@
 
 <!-- ══ List ══ -->
 {% if pagination.items %}
-  <div class="grid">
+  <div class="grid-3col" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
     {% for rule in pagination.items %}
-    <div class="card rule-card {% if not rule.is_active %}rule-inactive{% endif %}"
+    <div class="card rule-card-post {% if not rule.is_active %}rule-inactive{% endif %}"
          id="rule-{{ rule.id }}"
-         style="{% if not rule.is_active %}opacity:.55;{% endif %}">
-      <div class="card-shine"></div>
+         style="padding:0;overflow:hidden;display:flex;flex-direction:column;
+                {% if not rule.is_active %}opacity:.55;{% endif %}
+                transition:border-color .18s,box-shadow .18s,transform .18s;">
 
-      <div class="rule-main">
-        <!-- Post preview thumbnail -->
-        {% if rule.post_id %}
-        <div style="display:flex;align-items:center;gap:0;margin-bottom:12px;
-                    background:var(--panel-2);border:1px solid var(--border);
-                    border-radius:8px;overflow:hidden;">
-          {% if rule.post_thumb %}
-          <img src="{{ rule.post_thumb }}" alt="پست"
-               style="width:64px;height:64px;object-fit:cover;flex-shrink:0;"
-               onerror="this.style.display='none'">
-          {% else %}
-          <div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;
-                      background:var(--panel-3);flex-shrink:0;font-size:24px;">🖼</div>
-          {% endif %}
-          <div style="padding:8px 12px;flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-              <span class="badge ok" style="font-size:10px;">✓ پست شناسایی شده</span>
-              {% if rule.post_link %}
-              <a href="{{ rule.post_link }}" target="_blank"
-                 class="badge purple" style="font-size:10px;">↗ مشاهده</a>
-              {% endif %}
-            </div>
-            {% if rule.post_caption %}
-            <div style="font-size:12px;color:var(--text-dim);
-                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-              {{ rule.post_caption[:70] }}{% if rule.post_caption|length > 70 %}…{% endif %}
-            </div>
-            {% else %}
-            <div style="font-size:11.5px;color:var(--text-faint);">(بدون کپشن)</div>
-            {% endif %}
-          </div>
+      <!-- ══ Post image header ══ -->
+      <div style="position:relative;height:160px;background:var(--panel-3);flex-shrink:0;overflow:hidden;">
+        {% if rule.post_thumb %}
+        <img src="{{ rule.post_thumb }}" alt="پست"
+             style="width:100%;height:100%;object-fit:cover;display:block;"
+             onerror="this.style.display='none'">
+        {% endif %}
+        <!-- gradient overlay -->
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,14,.85) 0%,transparent 55%);pointer-events:none;"></div>
+        <!-- top-right status badge -->
+        <div style="position:absolute;top:10px;left:10px;">
+          <span class="badge {{ 'ok' if rule.is_active else '' }}"
+                style="font-size:10px;backdrop-filter:blur(6px);background:rgba(7,6,14,.55);">
+            {{ '● فعال' if rule.is_active else '○ غیرفعال' }}
+          </span>
         </div>
-        {% elif rule.post_link %}
-        <div style="margin-bottom:10px;">
-          <span class="badge danger" style="font-size:10.5px;">✕ پست شناسایی نشده</span>
-          <a href="{{ rule.post_link }}" target="_blank" class="badge purple" style="font-size:10.5px;margin-right:5px;">↗ مشاهده</a>
+        <!-- top-left open link -->
+        {% if rule.post_link %}
+        <a href="{{ rule.post_link }}" target="_blank"
+           style="position:absolute;top:10px;right:10px;width:28px;height:28px;
+                  border-radius:8px;background:rgba(7,6,14,.55);backdrop-filter:blur(6px);
+                  display:flex;align-items:center;justify-content:center;
+                  border:1px solid rgba(255,255,255,.1);color:var(--text-dim);font-size:13px;"
+           title="مشاهده پست">↗</a>
+        {% endif %}
+        <!-- no-image placeholder -->
+        {% if not rule.post_thumb %}
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;
+                    align-items:center;justify-content:center;gap:6px;color:var(--text-faint);">
+          <span style="font-size:36px;opacity:.3;">🖼</span>
+          <span style="font-size:11px;">بدون تصویر</span>
+        </div>
+        {% endif %}
+        <!-- post status bottom-left -->
+        <div style="position:absolute;bottom:8px;right:10px;">
+          {% if rule.post_id %}
+          <span class="badge ok" style="font-size:9.5px;backdrop-filter:blur(6px);background:rgba(7,6,14,.55);">✓ پست شناسایی شده</span>
+          {% else %}
+          <span class="badge danger" style="font-size:9.5px;backdrop-filter:blur(6px);background:rgba(7,6,14,.55);">✕ پست شناسایی نشده</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ══ Card body ══ -->
+      <div style="padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:10px;">
+
+        <!-- caption -->
+        {% if rule.post_caption %}
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.7;
+                    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+          {{ rule.post_caption }}
         </div>
         {% endif %}
 
-        <!-- Keywords -->
-        <div class="rule-trigger-wrap">
+        <!-- keywords -->
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
           {% for kw in rule.trigger.split(',') %}
             {% set kw = kw.strip() %}
             {% if kw %}
-              <span class="rule-trigger {% if loop.index > 1 %}multi{% endif %}">🔑 {{ kw }}</span>
+              <span class="rule-trigger {% if loop.index > 1 %}multi{% endif %}" style="font-size:11px;">🔑 {{ kw }}</span>
             {% endif %}
           {% endfor %}
-          <span class="badge {{ 'purple' if rule.match_type == 'contains' else 'pink' }}">
+          <span class="badge {{ 'purple' if rule.match_type == 'contains' else 'pink' }}" style="font-size:10px;">
             {{ 'شامل کلمه' if rule.match_type == 'contains' else 'دقیقاً برابر' }}
           </span>
         </div>
 
-        <!-- Responses -->
-        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;">
+        <!-- responses -->
+        <div style="display:flex;flex-direction:column;gap:5px;">
           {% if rule.comment_reply %}
-          <div class="rule-text">
-            <span style="font-size:10.5px;color:var(--text-faint);font-weight:700;background:var(--panel-3);padding:1px 7px;border-radius:4px;margin-left:5px;">کامنت</span>
-            {{ rule.comment_reply[:80] }}{% if rule.comment_reply|length > 80 %}…{% endif %}
+          <div style="font-size:11.5px;color:var(--text-dim);background:var(--panel-2);
+                      border-radius:6px;padding:6px 10px;border:1px solid var(--border-soft);">
+            <span style="font-size:10px;color:var(--text-faint);font-weight:700;margin-left:5px;">💬 کامنت</span>
+            {{ rule.comment_reply[:60] }}{% if rule.comment_reply|length > 60 %}…{% endif %}
           </div>
           {% endif %}
           {% if rule.dm_response %}
-          <div class="rule-text">
-            <span style="font-size:10.5px;color:var(--text-faint);font-weight:700;background:var(--panel-3);padding:1px 7px;border-radius:4px;margin-left:5px;">دایرکت</span>
-            {{ rule.dm_response[:80] }}{% if rule.dm_response|length > 80 %}…{% endif %}
+          <div style="font-size:11.5px;color:var(--text-dim);background:var(--panel-2);
+                      border-radius:6px;padding:6px 10px;border:1px solid var(--border-soft);">
+            <span style="font-size:10px;color:var(--text-faint);font-weight:700;margin-left:5px;">📩 دایرکت</span>
+            {{ rule.dm_response[:60] }}{% if rule.dm_response|length > 60 %}…{% endif %}
           </div>
           {% endif %}
         </div>
 
-        <!-- Meta -->
-        <div class="rule-meta">
-          {% if rule.fire_count %}
-            <span class="badge purple">⚡ {{ rule.fire_count }} بار اجرا</span>
-          {% endif %}
-          {% if rule.created_at %}
-            <span>{{ rule.created_at.strftime('%Y/%m/%d') }}</span>
-          {% endif %}
-          <span class="badge {{ 'ok' if rule.is_active else '' }} rule-status-badge">
-            {{ '● فعال' if rule.is_active else '○ غیرفعال' }}
-          </span>
+        <!-- footer meta + actions -->
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    margin-top:auto;padding-top:10px;border-top:1px solid var(--border-soft);">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+            {% if rule.fire_count %}
+            <span class="badge purple" style="font-size:9.5px;">⚡ {{ rule.fire_count }} بار</span>
+            {% endif %}
+            {% if rule.created_at %}
+            <span style="font-size:10.5px;color:var(--text-faint);">{{ rule.created_at.strftime('%Y/%m/%d') }}</span>
+            {% endif %}
+          </div>
+          <div style="display:flex;align-items:center;gap:7px;">
+            <label class="toggle" title="{{ 'غیرفعال کن' if rule.is_active else 'فعال کن' }}">
+              <input type="checkbox" {{ 'checked' if rule.is_active else '' }}
+                     onchange="toggleRule('{{ rule.id }}','comment')">
+              <span class="toggle-track"></span>
+            </label>
+            <a href="{{ url_for('edit_comment_rule', rule_id=rule.id) }}" class="btn secondary small">✏</a>
+            <form method="post" action="{{ url_for('delete_comment_rule', rule_id=rule.id) }}"
+                  onsubmit="return confirm('این قانون حذف شود؟')" style="display:inline;">
+              <button type="submit" class="btn danger small">🗑</button>
+            </form>
+          </div>
         </div>
-      </div>
 
-      <!-- Actions -->
-      <div class="rule-actions" style="flex-direction:column;gap:8px;align-items:flex-end;">
-        <label class="toggle" title="{{ 'غیرفعال کن' if rule.is_active else 'فعال کن' }}">
-          <input type="checkbox" {{ 'checked' if rule.is_active else '' }}
-                 onchange="toggleRule('{{ rule.id }}','comment')">
-          <span class="toggle-track"></span>
-        </label>
-        <div style="display:flex;gap:6px;">
-          <a href="{{ url_for('edit_comment_rule', rule_id=rule.id) }}" class="btn secondary small">✏ ویرایش</a>
-          <form method="post" action="{{ url_for('delete_comment_rule', rule_id=rule.id) }}"
-                onsubmit="return confirm('این قانون حذف شود؟')">
-            <button type="submit" class="btn danger small">🗑</button>
-          </form>
-        </div>
       </div>
     </div>
     {% endfor %}
@@ -167,4 +182,15 @@
   </div>
 {% endif %}
 
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@media (max-width: 1100px) {
+  .grid-3col { grid-template-columns: repeat(2,1fr) !important; }
+}
+@media (max-width: 640px) {
+  .grid-3col { grid-template-columns: 1fr !important; }
+}
+</style>
 {% endblock %}
