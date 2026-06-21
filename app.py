@@ -16,8 +16,15 @@ import hashlib
 import secrets
 import datetime
 from dotenv import load_dotenv
+from zoneinfo import ZoneInfo
 
 load_dotenv()
+
+TEHRAN = ZoneInfo("Asia/Tehran")
+
+def now_tehran():
+    """زمان فعلی با تایم‌زون تهران"""
+    return datetime.datetime.now(TEHRAN).replace(tzinfo=None)
 
 # ========================= APP SETUP =========================
 app = Flask(__name__)
@@ -93,7 +100,7 @@ class DmRule(db.Model):
     match_type = db.Column(db.String(20),  default="contains")
     is_active  = db.Column(db.Boolean,     default=True)
     fire_count = db.Column(db.Integer,     default=0)        # تعداد دفعات اجرا
-    created_at = db.Column(db.DateTime,    default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime,    default=now_tehran)
 
 
 class CommentRule(db.Model):
@@ -110,7 +117,7 @@ class CommentRule(db.Model):
     dm_response   = db.Column(db.Text,        default="")
     is_active     = db.Column(db.Boolean,     default=True)
     fire_count    = db.Column(db.Integer,     default=0)
-    created_at    = db.Column(db.DateTime,    default=datetime.datetime.utcnow)
+    created_at    = db.Column(db.DateTime,    default=now_tehran)
 
 
 class ActivityLog(db.Model):
@@ -125,7 +132,7 @@ class ActivityLog(db.Model):
     action     = db.Column(db.String(50),  default="sent_dm") # sent_dm | replied_comment | sent_dm+replied
     status     = db.Column(db.String(20),  default="ok")      # ok | error
     note       = db.Column(db.Text,        default="")
-    created_at = db.Column(db.DateTime,    default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime,    default=now_tehran)
 
 
 class CooldownEntry(db.Model):
@@ -135,7 +142,7 @@ class CooldownEntry(db.Model):
     user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     rule_id    = db.Column(db.String(36), nullable=False)
     ig_user_id = db.Column(db.String(100), nullable=False)
-    last_fired = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    last_fired = db.Column(db.DateTime, default=now_tehran)
 
 
 @login_manager.user_loader
@@ -197,7 +204,7 @@ def is_on_cooldown(user_id: int, rule_id: str, ig_user_id: str) -> bool:
     ).first()
     if not entry:
         return False
-    elapsed = (datetime.datetime.utcnow() - entry.last_fired).total_seconds()
+    elapsed = (now_tehran() - entry.last_fired).total_seconds()
     return elapsed < cooldown_secs
 
 
@@ -206,7 +213,7 @@ def update_cooldown(user_id: int, rule_id: str, ig_user_id: str):
         user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id
     ).first()
     if entry:
-        entry.last_fired = datetime.datetime.utcnow()
+        entry.last_fired = now_tehran()
     else:
         entry = CooldownEntry(user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id)
         db.session.add(entry)
@@ -549,7 +556,7 @@ def dashboard():
     recent_cm     = CommentRule.query.filter_by(user_id=current_user.id).order_by(CommentRule.created_at.desc()).limit(3).all()
 
     # آمار فعالیت ۷ روز اخیر
-    seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+    seven_days_ago = now_tehran() - datetime.timedelta(days=7)
     total_fires    = ActivityLog.query.filter(
         ActivityLog.user_id == current_user.id,
         ActivityLog.created_at >= seven_days_ago
@@ -561,7 +568,7 @@ def dashboard():
     chart_labels = []
     chart_data   = []
     for i in range(6, -1, -1):
-        day = datetime.datetime.utcnow() - datetime.timedelta(days=i)
+        day = now_tehran() - datetime.timedelta(days=i)
         label = f"{day.month}/{day.day}"
         count = ActivityLog.query.filter(
             ActivityLog.user_id == current_user.id,
