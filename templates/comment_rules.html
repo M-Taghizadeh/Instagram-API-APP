@@ -38,6 +38,7 @@
     {% for rule in pagination.items %}
     <div class="card rule-card-post {% if not rule.is_active %}rule-inactive{% endif %}"
          id="rule-{{ rule.id }}"
+         {% if not rule.post_thumb and rule.post_link %}data-needs-thumb="1"{% endif %}
          style="padding:0;overflow:hidden;display:flex;flex-direction:column;
                 {% if not rule.is_active %}opacity:.55;{% endif %}
                 transition:border-color .18s,box-shadow .18s,transform .18s;">
@@ -191,4 +192,21 @@
   .grid-3col { grid-template-columns: 1fr !important; }
 }
 </style>
+<script>
+// هنگام بارگذاری صفحه، thumbnail پست‌هایی که ناقص هستن رو از سرور بگیر
+document.addEventListener('DOMContentLoaded', function() {
+  const missingThumbs = document.querySelectorAll('[data-needs-thumb="1"]');
+  if (!missingThumbs.length) return;
+
+  fetch('/api/refresh-post-thumbs', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.updated > 0) {
+        // صفحه رو reload کن تا تصاویر جدید نشون داده بشن
+        window.location.reload();
+      }
+    })
+    .catch(() => {});
+});
+</script>
 {% endblock %}

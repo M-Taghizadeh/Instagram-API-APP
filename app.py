@@ -617,6 +617,32 @@ def api_post_preview():
     return jsonify(preview)
 
 
+@app.route("/api/refresh-post-thumbs", methods=["POST"])
+@login_required
+def api_refresh_post_thumbs():
+    """برای قانون‌هایی که post_thumb خالی دارن، اطلاعات پست رو دوباره می‌گیره و ذخیره می‌کنه"""
+    s = get_settings()
+    if not s.access_token:
+        return jsonify(updated=0)
+    rules = CommentRule.query.filter_by(user_id=current_user.id).filter(
+        (CommentRule.post_thumb == "") | (CommentRule.post_thumb == None),
+        CommentRule.post_link != "",
+        CommentRule.post_link != None,
+    ).all()
+    updated = 0
+    for rule in rules:
+        preview = get_post_preview(rule.post_link, s.access_token)
+        if preview:
+            rule.post_id      = preview.get("id", rule.post_id or "")
+            rule.post_caption = preview.get("caption", "")
+            rule.post_thumb   = preview.get("image", "")
+            updated += 1
+    if updated:
+        db.session.commit()
+    print(f"[REFRESH THUMBS] updated {updated} rules", flush=True)
+    return jsonify(updated=updated)
+
+
 # ========================= COMMENT RULES =========================
 @app.route("/comment-rules")
 @login_required
