@@ -389,8 +389,10 @@ def init_db():
 
 
 # ========================= AUTH =========================
-@app.route("/home")
+@app.route("/")
 def home():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
     return render_template("index.html")
 
 
@@ -585,7 +587,7 @@ def _reply_comment(comment_id, text, token) -> bool:
 
 
 # ========================= DASHBOARD =========================
-@app.route("/")
+@app.route("/dashboard")
 @login_required
 def dashboard():
     dm_count      = DmRule.query.filter_by(user_id=current_user.id).count()
