@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ig-automation
+    name: insta-agent
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
