@@ -184,13 +184,17 @@ def logout():
 # ========================= WEBHOOK =========================
 @app.route("/webhook", methods=["GET"])
 def verify_webhook():
-    first_user = User.query.first()
-    verify_tok = ""
-    if first_user:
-        s = Settings.query.filter_by(user_id=first_user.id).first()
-        if s:
-            verify_tok = s.verify_token
-    if request.args.get("hub.verify_token") == verify_tok:
+    # اول env var رو چک می‌کنیم، اگه نبود از دیتابیس می‌خونیم
+    verify_tok = os.getenv("VERIFY_TOKEN", "")
+
+    if not verify_tok:
+        first_user = User.query.first()
+        if first_user:
+            s = Settings.query.filter_by(user_id=first_user.id).first()
+            if s:
+                verify_tok = s.verify_token
+
+    if verify_tok and request.args.get("hub.verify_token") == verify_tok:
         return request.args.get("hub.challenge", "")
     return "fail", 403
 
