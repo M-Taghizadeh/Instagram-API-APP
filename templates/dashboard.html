@@ -151,17 +151,49 @@
     {% if recent_cm %}
       <div class="grid">
         {% for rule in recent_cm %}
-        <div class="card" style="padding:14px 16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;">
-            <span class="rule-trigger">🔑 {{ rule.trigger[:40] }}{% if rule.trigger|length > 40 %}…{% endif %}</span>
-            <span class="badge {{ 'ok' if rule.is_active else '' }}" style="font-size:10px;">
-              {{ '● فعال' if rule.is_active else '○ غیرفعال' }}
-            </span>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <!-- Post thumbnail strip -->
+          {% if rule.post_id %}
+          <div style="display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border-soft);">
+            {% if rule.post_thumb %}
+            <img src="{{ rule.post_thumb }}" alt="پست"
+                 style="width:58px;height:58px;object-fit:cover;flex-shrink:0;"
+                 onerror="this.style.display='none'">
+            {% else %}
+            <div style="width:58px;height:58px;background:var(--panel-3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🖼</div>
+            {% endif %}
+            <div style="padding:7px 12px;flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">
+                <span class="badge ok" style="font-size:9.5px;">✓ پست</span>
+                {% if rule.post_link %}
+                <a href="{{ rule.post_link }}" target="_blank" class="badge purple" style="font-size:9.5px;">↗</a>
+                {% endif %}
+              </div>
+              {% if rule.post_caption %}
+              <div style="font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ rule.post_caption[:55] }}{% if rule.post_caption|length > 55 %}…{% endif %}
+              </div>
+              {% else %}
+              <div style="font-size:11px;color:var(--text-faint);">(بدون کپشن)</div>
+              {% endif %}
+            </div>
           </div>
-          <div class="rule-text" style="-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;">{{ rule.comment_reply or rule.dm_response or '—' }}</div>
-          {% if rule.fire_count %}
-          <div style="font-size:11px;color:var(--text-faint);margin-top:6px;">⚡ {{ rule.fire_count }} بار اجرا شده</div>
           {% endif %}
+          <!-- Rule info -->
+          <div style="padding:12px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+              <span class="rule-trigger">🔑 {{ rule.trigger[:35] }}{% if rule.trigger|length > 35 %}…{% endif %}</span>
+              <span class="badge {{ 'ok' if rule.is_active else '' }}" style="font-size:10px;">
+                {{ '● فعال' if rule.is_active else '○ غیرفعال' }}
+              </span>
+            </div>
+            <div class="rule-text" style="-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;">
+              {{ rule.comment_reply or rule.dm_response or '—' }}
+            </div>
+            {% if rule.fire_count %}
+            <div style="font-size:11px;color:var(--text-faint);margin-top:6px;">⚡ {{ rule.fire_count }} بار اجرا شده</div>
+            {% endif %}
+          </div>
         </div>
         {% endfor %}
       </div>
