@@ -184,9 +184,8 @@ def logout():
 # ========================= WEBHOOK =========================
 @app.route("/webhook", methods=["GET"])
 def verify_webhook():
-    incoming_token   = request.args.get("hub.verify_token", "")
+    incoming_token    = request.args.get("hub.verify_token", "")
     incoming_challenge = request.args.get("hub.challenge", "")
-    incoming_mode    = request.args.get("hub.mode", "")
 
     # اول env var، بعد دیتابیس
     verify_tok = os.getenv("VERIFY_TOKEN", "")
@@ -197,9 +196,9 @@ def verify_webhook():
             if s:
                 verify_tok = s.verify_token
 
-    print(f"[WEBHOOK VERIFY] mode={incoming_mode} token={incoming_token!r} expected={verify_tok!r}")
+    print(f"[WEBHOOK VERIFY] token={incoming_token!r} expected={verify_tok!r}")
 
-    if incoming_mode == "subscribe" and incoming_token == verify_tok:
+    if incoming_token == verify_tok:
         print("[WEBHOOK VERIFY] OK →", incoming_challenge)
         return incoming_challenge, 200
 
