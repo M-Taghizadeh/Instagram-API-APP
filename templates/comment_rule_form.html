@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}{{ 'ویرایش قانون کامنت' if rule else 'قانون جدید کامنت' }} — اتومیشن اینستاگرام{% endblock %}
+{% block topbar_title %}{{ 'ویرایش قانون کامنت' if rule else 'قانون جدید کامنت' }}{% endblock %}
+{% block content %}
+
+<div class="page-title">{{ 'ویرایش قانون کامنت' if rule else 'قانون جدید کامنت' }}</div>
+<div class="page-sub">وقتی کسی زیر پست کلمه‌ی موردنظر را کامنت کند، هم زیر کامنت پاسخ داده می‌شود و هم دایرکت ارسال می‌شود.</div>
+
+<form method="post" class="card">
+
+  <div class="field">
+    <label>لینک پست اینستاگرام</label>
+    <input type="url" name="post_link" value="{{ rule.post_link if rule else '' }}"
+           placeholder="https://www.instagram.com/p/xxxxxxx/" required>
+    <div class="hint">
+      لینک پست را اینجا بچسبان — سیستم خودش ID واقعی پست را پیدا می‌کند.
+      {% if rule %}
+        {% if rule.post_id %}
+          — <span class="status-ok">✓ این پست شناسایی شده</span>
+        {% else %}
+          — <span class="status-err">✕ پست شناسایی نشده (توکن را در تنظیمات چک کن)</span>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="field">
+      <label>کلمه‌ی کلیدی در کامنت</label>
+      <input type="text" name="trigger" value="{{ rule.trigger if rule else '' }}" placeholder="مثلاً: قیمت" required>
+    </div>
+    <div class="field">
+      <label>نوع تطبیق</label>
+      <select name="match_type">
+        <option value="contains" {{ 'selected' if rule and rule.match_type=='contains' else '' }}>شامل این کلمه باشد</option>
+        <option value="exact"    {{ 'selected' if rule and rule.match_type=='exact'    else '' }}>دقیقاً برابر این کلمه باشد</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ── پاسخ کامنت ── -->
+  <div class="field">
+    <label>پاسخ زیر همان کامنت (عمومی)</label>
+    <div class="editor-toolbar">
+      <button type="button" class="emoji-toggle-btn" onclick="togglePicker('comment_reply')">😊 ایموجی</button>
+      <button type="button" onclick="ins('comment_reply','\n')">↵ خط جدید</button>
+      <button type="button" onclick="ins('comment_reply','چک کن دایرکتتو 📩')">+ متن آماده</button>
+    </div>
+    <div class="emoji-picker" id="picker-comment_reply" style="display:none">
+      <div class="emoji-tabs">
+        <button type="button" class="etab active" onclick="showTab(this,'cr_smileys')">😊 احساسات</button>
+        <button type="button" class="etab" onclick="showTab(this,'cr_gestures')">👋 ژست</button>
+        <button type="button" class="etab" onclick="showTab(this,'cr_hearts')">❤️ قلب</button>
+        <button type="button" class="etab" onclick="showTab(this,'cr_nature')">🌸 طبیعت</button>
+        <button type="button" class="etab" onclick="showTab(this,'cr_objects')">🎁 اشیاء</button>
+        <button type="button" class="etab" onclick="showTab(this,'cr_symbols')">✅ نمادها</button>
+        <button type="button" class="etab" onclick="showTab(this,'cr_fire')">🔥 ترند</button>
+      </div>
+      <div class="emoji-grid" id="grid-cr_smileys">
+        😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😚 😙
+        🥲 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬
+        😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱
+        😤 😠 😡 🤬 😈 👿 💀 ☠️ 💩 🤡 👹 👺 👻 👽 👾 🤖
+      </div>
+      <div class="emoji-grid" id="grid-cr_gestures" style="display:none">
+        👋 🤚 🖐️ ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 👍
+        👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪 🦾 🦿 🦵 🦶 👂
+      </div>
+      <div class="emoji-grid" id="grid-cr_hearts" style="display:none">
+        ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❤️‍🔥 ❤️‍🩹 ❣️ 💕 💞 💓 💗 💖 💘 💝
+      </div>
+      <div class="emoji-grid" id="grid-cr_nature" style="display:none">
+        🌸 🌺 🌻 🌹 🥀 🌷 🌼 💐 🍀 🍁 🍂 🍃 🌿 ☘️ 🌱 🌲 🌳 🌴 🌵 🌾
+        💧 🌊 🌀 🌈 ⭐ 🌟 💫 ✨ ⚡ 🔥 🌙 ☀️ ❄️ 🌈
+      </div>
+      <div class="emoji-grid" id="grid-cr_objects" style="display:none">
+        🎁 🎀 🎊 🎉 🎈 🏆 🥇 👑 💎 💰 🚀 📱 💻 📷 🎵 🎶 🎮 🕹️ 📚 📝
+        ✉️ 📩 📨 📧 💌 📮 📬 📭 📪 📫
+      </div>
+      <div class="emoji-grid" id="grid-cr_symbols" style="display:none">
+        ✅ ❌ ⭕ 🔴 🟠 🟡 🟢 🔵 🟣 ⚫ ⚪ 💯 ❓ ❔ ❕ ❗ ⁉️ 🔔 🔕 🔥
+        ♻️ ✔️ 🔝 🆗 🆙 🆒 🆕 🆓 ℹ️ 🚫 ☑️ 🔱 ⚜️ 🔰
+      </div>
+      <div class="emoji-grid" id="grid-cr_fire" style="display:none">
+        🔥 💥 ⚡ 💫 ✨ 🌟 ⭐ 🏆 👑 💎 💰 💸 🤑 🚀 🌈 🦋 🐉 🦁 💪 🙌
+        👏 🎯 🥳 🎉 🎊 🎈 🥂 🍾 🎂 🍰
+      </div>
+    </div>
+    <textarea id="comment_reply" name="comment_reply" rows="3"
+              placeholder="مثلاً: ممنون! دایرکتتو چک کن 📩">{{ rule.comment_reply if rule else '' }}</textarea>
+    <div class="editor-footer">
+      <span>این پیام زیر کامنت کاربر و برای همه قابل مشاهده است.</span>
+      <span id="count_comment_reply">0 کاراکتر</span>
+    </div>
+  </div>
+
+  <!-- ── پاسخ دایرکت ── -->
+  <div class="field">
+    <label>پاسخ دایرکت (خصوصی)</label>
+    <div class="editor-toolbar">
+      <button type="button" class="emoji-toggle-btn" onclick="togglePicker('dm_response')">😊 ایموجی</button>
+      <button type="button" onclick="ins('dm_response','\n')">↵ خط جدید</button>
+      <button type="button" onclick="ins('dm_response','{name}')">👤 نام کاربر</button>
+      <button type="button" onclick="ins('dm_response','https://')">🔗 لینک</button>
+    </div>
+    <div class="emoji-picker" id="picker-dm_response" style="display:none">
+      <div class="emoji-tabs">
+        <button type="button" class="etab active" onclick="showTab(this,'dm_smileys')">😊 احساسات</button>
+        <button type="button" class="etab" onclick="showTab(this,'dm_gestures')">👋 ژست</button>
+        <button type="button" class="etab" onclick="showTab(this,'dm_hearts')">❤️ قلب</button>
+        <button type="button" class="etab" onclick="showTab(this,'dm_nature')">🌸 طبیعت</button>
+        <button type="button" class="etab" onclick="showTab(this,'dm_objects')">🎁 اشیاء</button>
+        <button type="button" class="etab" onclick="showTab(this,'dm_symbols')">✅ نمادها</button>
+        <button type="button" class="etab" onclick="showTab(this,'dm_fire')">🔥 ترند</button>
+      </div>
+      <div class="emoji-grid" id="grid-dm_smileys">
+        😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😚 😙
+        🥲 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬
+        😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱
+        😤 😠 😡 🤬 😈 👿 💀 ☠️ 💩 🤡 👹 👺 👻 👽 👾 🤖
+      </div>
+      <div class="emoji-grid" id="grid-dm_gestures" style="display:none">
+        👋 🤚 🖐️ ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 👍
+        👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪 🦾 🦿 🦵 🦶 👂
+      </div>
+      <div class="emoji-grid" id="grid-dm_hearts" style="display:none">
+        ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❤️‍🔥 ❤️‍🩹 ❣️ 💕 💞 💓 💗 💖 💘 💝
+      </div>
+      <div class="emoji-grid" id="grid-dm_nature" style="display:none">
+        🌸 🌺 🌻 🌹 🥀 🌷 🌼 💐 🍀 🍁 🍂 🍃 🌿 ☘️ 🌱 🌲 🌳 🌴 🌵 🌾
+        💧 🌊 🌀 🌈 ⭐ 🌟 💫 ✨ ⚡ 🔥 🌙 ☀️ ❄️ 🌈
+      </div>
+      <div class="emoji-grid" id="grid-dm_objects" style="display:none">
+        🎁 🎀 🎊 🎉 🎈 🏆 🥇 👑 💎 💰 🚀 📱 💻 📷 🎵 🎶 🎮 🕹️ 📚 📝
+        ✉️ 📩 📨 📧 💌 📮 📬 📭 📪 📫
+      </div>
+      <div class="emoji-grid" id="grid-dm_symbols" style="display:none">
+        ✅ ❌ ⭕ 🔴 🟠 🟡 🟢 🔵 🟣 ⚫ ⚪ 💯 ❓ ❔ ❕ ❗ ⁉️ 🔔 🔕 🔥
+        ♻️ ✔️ 🔝 🆗 🆙 🆒 🆕 🆓 ℹ️ 🚫 ☑️ 🔱 ⚜️ 🔰
+      </div>
+      <div class="emoji-grid" id="grid-dm_fire" style="display:none">
+        🔥 💥 ⚡ 💫 ✨ 🌟 ⭐ 🏆 👑 💎 💰 💸 🤑 🚀 🌈 🦋 🐉 🦁 💪 🙌
+        👏 🎯 🥳 🎉 🎊 🎈 🥂 🍾 🎂 🍰
+      </div>
+    </div>
+    <textarea id="dm_response" name="dm_response" rows="7"
+              placeholder="متنی که به‌صورت دایرکت ارسال می‌شود...">{{ rule.dm_response if rule else '' }}</textarea>
+    <div class="editor-footer">
+      <span>این پیام فقط برای همان کاربر ارسال می‌شود.</span>
+      <span id="count_dm_response">0 کاراکتر</span>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn">{{ 'ذخیره تغییرات' if rule else '✚ ساخت قانون' }}</button>
+    <a href="{{ url_for('comment_rules') }}" class="btn secondary">انصراف</a>
+  </div>
+
+</form>
+
+<style>
+  .emoji-toggle-btn { background: var(--panel-3); border-color: var(--accent-2); color: var(--text); }
+  .emoji-picker {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .emoji-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .etab {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-dim);
+    border-radius: 7px;
+    padding: 4px 10px;
+    font-size: 12.5px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .12s ease;
+  }
+  .etab:hover { background: var(--panel-3); color: var(--text); }
+  .etab.active { background: var(--panel-3); border-color: var(--accent-2); color: var(--text); }
+  .emoji-grid { display: flex; flex-wrap: wrap; gap: 2px; }
+  .emoji-btn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 5px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: background .1s ease, transform .1s ease;
+  }
+  .emoji-btn:hover { background: var(--panel-3); transform: scale(1.2); }
+</style>
+
+<script>
+  function togglePicker(fieldId) {
+    const picker = document.getElementById('picker-' + fieldId);
+    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function showTab(btn, tabName) {
+    const picker = btn.closest('.emoji-picker');
+    picker.querySelectorAll('.emoji-grid').forEach(g => g.style.display = 'none');
+    picker.querySelectorAll('.etab').forEach(t => t.classList.remove('active'));
+    picker.querySelector('#grid-' + tabName).style.display = 'flex';
+    btn.classList.add('active');
+  }
+
+  function ins(fieldId, snippet) {
+    const el = document.getElementById(fieldId);
+    const s = el.selectionStart, e = el.selectionEnd;
+    el.value = el.value.slice(0, s) + snippet + el.value.slice(e);
+    el.selectionStart = el.selectionEnd = s + snippet.length;
+    el.focus();
+    el.dispatchEvent(new Event('input'));
+  }
+
+  // شمارش کاراکتر
+  function setupCounter(id) {
+    const el = document.getElementById(id);
+    const counter = document.getElementById('count_' + id);
+    function update() { counter.textContent = el.value.length + ' کاراکتر'; }
+    el.addEventListener('input', update);
+    update();
+  }
+  setupCounter('comment_reply');
+  setupCounter('dm_response');
+
+  // تبدیل متن grid به دکمه
+  document.querySelectorAll('.emoji-grid').forEach(grid => {
+    const emojis = grid.textContent.trim().split(/\s+/).filter(e => e);
+    grid.innerHTML = '';
+    emojis.forEach(em => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'emoji-btn';
+      btn.textContent = em;
+      btn.title = em;
+      btn.onclick = () => {
+        const pickerId = btn.closest('.emoji-picker').id;
+        const fieldId = pickerId.replace('picker-', '');
+        ins(fieldId, em);
+      };
+      grid.appendChild(btn);
+    });
+  });
+</script>
+
+{% endblock %}
