@@ -251,10 +251,13 @@ def _handle_messaging(event, dm_rules, token):
         return
     sender_id = (event.get("sender") or {}).get("id")
     text      = (event.get("message") or {}).get("text", "")
+    print(f"[DM] sender={sender_id} text={text!r} rules={len(dm_rules)} token_set={bool(token)}", flush=True)
     if not sender_id:
         return
     for rule in dm_rules:
+        print(f"[DM] checking trigger={rule.trigger!r} match_type={rule.match_type}", flush=True)
         if match_text(rule.trigger, text, rule.match_type):
+            print(f"[DM] MATCH! sending to {sender_id}", flush=True)
             _send_dm(sender_id, rule.response, token)
             break
 
@@ -277,16 +280,18 @@ def _handle_comment(comment, rules, token):
 
 def _send_dm(user_id, text, token):
     if not user_id or not token:
+        print(f"[SEND_DM] SKIP user_id={user_id} token_set={bool(token)}", flush=True)
         return
     try:
-        http_requests.post(
+        r = http_requests.post(
             f"{GRAPH_API}/me/messages",
             params={"access_token": token},
             json={"recipient": {"id": user_id}, "message": {"text": text}},
             timeout=10,
         )
+        print(f"[SEND_DM] status={r.status_code} response={r.text[:300]}", flush=True)
     except Exception as e:
-        print("DM ERROR:", e)
+        print("DM ERROR:", e, flush=True)
 
 
 def _reply_comment(comment_id, text, token):
