@@ -233,9 +233,48 @@ def resolve_post_id(post_link: str, access_token: str) -> str:
 
 
 # ========================= INIT DB =========================
+def _run_migrations():
+    """اضافه کردن ستون‌های جدید به جداول موجود (idempotent — چندبار اجرا بی‌خطره)"""
+    from sqlalchemy import text, inspect
+    try:
+        with db.engine.connect() as conn:
+            inspector = inspect(db.engine)
+
+            # ── dm_rules ──
+            existing = {c["name"] for c in inspector.get_columns("dm_rules")}
+            for col, ddl in [
+                ("is_active",  "ALTER TABLE dm_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
+                ("fire_count", "ALTER TABLE dm_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
+            ]:
+                if col not in existing:
+                    conn.execute(text(ddl))
+                    print(f"[MIGRATE] dm_rules.{col} added", flush=True)
+
+            # ── comment_rules ──
+            existing = {c["name"] for c in inspector.get_columns("comment_rules")}
+            for col, ddl in [
+                ("is_active",  "ALTER TABLE comment_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
+                ("fire_count", "ALTER TABLE comment_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
+            ]:
+                if col not in existing:
+                    conn.execute(text(ddl))
+                    print(f"[MIGRATE] comment_rules.{col} added", flush=True)
+
+            # backfill مقادیر null برای ردیف‌های قدیمی
+            conn.execute(text("UPDATE dm_rules SET is_active=TRUE WHERE is_active IS NULL"))
+            conn.execute(text("UPDATE dm_rules SET fire_count=0  WHERE fire_count IS NULL"))
+            conn.execute(text("UPDATE comment_rules SET is_active=TRUE WHERE is_active IS NULL"))
+            conn.execute(text("UPDATE comment_rules SET fire_count=0  WHERE fire_count IS NULL"))
+            conn.commit()
+        print("[MIGRATE] done", flush=True)
+    except Exception as e:
+        print(f"[MIGRATE] ERROR: {e}", flush=True)
+
+
 def init_db():
     with app.app_context():
-        db.create_all()
+        db.create_all()        # جداول جدید (activity_logs, cooldown_entries)
+        _run_migrations()      # ستون‌های جدید روی جداول قدیمی
         if not User.query.first():
             admin_user = os.getenv("ADMIN_USERNAME", "admin")
             admin_pass = os.getenv("ADMIN_PASSWORD", "admin123")
