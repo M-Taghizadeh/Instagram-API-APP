@@ -14,6 +14,7 @@ import uuid
 import re
 import hashlib
 import secrets
+import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,11 +23,8 @@ load_dotenv()
 app = Flask(__name__)
 
 _BASE = os.path.dirname(os.path.abspath(__file__))
-# اگه DATABASE_URL باشه (Render PostgreSQL) از اون استفاده می‌کنیم
-# در غیر این صورت SQLite محلی
 _DATABASE_URL = os.getenv("DATABASE_URL", "")
 if _DATABASE_URL.startswith("postgres://"):
-    # SQLAlchemy نیاز به postgresql:// داره نه postgres://
     _DATABASE_URL = _DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 if _DATABASE_URL:
@@ -45,8 +43,10 @@ login_manager = LoginManager(app)
 login_manager.login_view    = "login"
 login_manager.login_message = "برای دسترسی ابتدا وارد شو."
 
-GRAPH_API    = "https://graph.instagram.com/v25.0"
-PER_PAGE     = 10
+GRAPH_API = "https://graph.instagram.com/v25.0"
+PER_PAGE  = 10
+# مدت زمان cooldown بین دو پاسخ به یک کاربر (ثانیه)
+COOLDOWN_SECONDS = 3600
 
 
 # ========================= MODELS =========================
@@ -59,6 +59,7 @@ class User(UserMixin, db.Model):
     dm_rules      = db.relationship("DmRule",      backref="owner", lazy=True, cascade="all, delete-orphan")
     comment_rules = db.relationship("CommentRule", backref="owner", lazy=True, cascade="all, delete-orphan")
     settings      = db.relationship("Settings",    backref="owner", lazy=True, uselist=False, cascade="all, delete-orphan")
+    activity_logs = db.relationship("ActivityLog", backref="owner", lazy=True, cascade="all, delete-orphan")
 
     def set_password(self, raw: str):
         salt = secrets.token_hex(16)
@@ -85,10 +86,12 @@ class DmRule(db.Model):
     __tablename__ = "dm_rules"
     id         = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    trigger    = db.Column(db.String(200), nullable=False)
+    trigger    = db.Column(db.String(500), nullable=False)   # کلمات با ویرگول جدا می‌شن
     response   = db.Column(db.Text,        nullable=False, default="")
     match_type = db.Column(db.String(20),  default="contains")
-    created_at = db.Column(db.DateTime,    default=__import__("datetime").datetime.utcnow)
+    is_active  = db.Column(db.Boolean,     default=True)
+    fire_count = db.Column(db.Integer,     default=0)        # تعداد دفعات اجرا
+    created_at = db.Column(db.DateTime,    default=datetime.datetime.utcnow)
 
 
 class CommentRule(db.Model):
@@ -97,11 +100,38 @@ class CommentRule(db.Model):
     user_id       = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     post_link     = db.Column(db.Text,        default="")
     post_id       = db.Column(db.String(100), default="")
-    trigger       = db.Column(db.String(200), nullable=False)
+    trigger       = db.Column(db.String(500), nullable=False)  # کلمات با ویرگول جدا می‌شن
     match_type    = db.Column(db.String(20),  default="contains")
     comment_reply = db.Column(db.Text,        default="")
     dm_response   = db.Column(db.Text,        default="")
-    created_at    = db.Column(db.DateTime,    default=__import__("datetime").datetime.utcnow)
+    is_active     = db.Column(db.Boolean,     default=True)
+    fire_count    = db.Column(db.Integer,     default=0)
+    created_at    = db.Column(db.DateTime,    default=datetime.datetime.utcnow)
+
+
+class ActivityLog(db.Model):
+    """لاگ هر بار که یه قانون اجرا می‌شه"""
+    __tablename__ = "activity_logs"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    rule_type  = db.Column(db.String(20),  default="dm")      # dm | comment
+    rule_id    = db.Column(db.String(36),  default="")
+    rule_name  = db.Column(db.String(200), default="")        # trigger snapshot
+    ig_user_id = db.Column(db.String(100), default="")        # شناسه کاربر اینستاگرام
+    action     = db.Column(db.String(50),  default="sent_dm") # sent_dm | replied_comment | sent_dm+replied
+    status     = db.Column(db.String(20),  default="ok")      # ok | error
+    note       = db.Column(db.Text,        default="")
+    created_at = db.Column(db.DateTime,    default=datetime.datetime.utcnow)
+
+
+class CooldownEntry(db.Model):
+    """ردیابی آخرین پاسخ به هر کاربر برای هر قانون — جلوگیری از اسپم"""
+    __tablename__ = "cooldown_entries"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    rule_id    = db.Column(db.String(36), nullable=False)
+    ig_user_id = db.Column(db.String(100), nullable=False)
+    last_fired = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
 
 @login_manager.user_loader
@@ -130,12 +160,60 @@ def get_settings_for(user_id: int):
     return s
 
 
-def match_text(trigger: str, text: str, match_type: str = "contains") -> bool:
+def get_triggers(trigger_str: str) -> list:
+    """کلمات کلیدی رو از یه رشته (با ویرگول/خط جدید جدا شده) جدا می‌کنه"""
+    parts = re.split(r"[،,\n]+", trigger_str or "")
+    return [p.strip() for p in parts if p.strip()]
+
+
+def match_text(trigger_str: str, text: str, match_type: str = "contains") -> bool:
+    """بررسی می‌کنه آیا متن با هر یک از کلمات کلیدی مطابقت داره"""
     if not text:
         return False
-    trigger = trigger.lower().strip()
-    text    = text.lower().strip()
-    return trigger == text if match_type == "exact" else trigger in text
+    text = text.lower().strip()
+    for trigger in get_triggers(trigger_str):
+        t = trigger.lower()
+        if match_type == "exact":
+            if t == text:
+                return True
+        else:
+            if t in text:
+                return True
+    return False
+
+
+def is_on_cooldown(user_id: int, rule_id: str, ig_user_id: str) -> bool:
+    """بررسی می‌کنه آیا به این کاربر در بازه cooldown قبلاً پاسخ داده شده"""
+    entry = CooldownEntry.query.filter_by(
+        user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id
+    ).first()
+    if not entry:
+        return False
+    elapsed = (datetime.datetime.utcnow() - entry.last_fired).total_seconds()
+    return elapsed < COOLDOWN_SECONDS
+
+
+def update_cooldown(user_id: int, rule_id: str, ig_user_id: str):
+    entry = CooldownEntry.query.filter_by(
+        user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id
+    ).first()
+    if entry:
+        entry.last_fired = datetime.datetime.utcnow()
+    else:
+        entry = CooldownEntry(user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id)
+        db.session.add(entry)
+    db.session.commit()
+
+
+def log_activity(user_id: int, rule_type: str, rule_id: str, rule_name: str,
+                 ig_user_id: str, action: str, status: str = "ok", note: str = ""):
+    log = ActivityLog(
+        user_id=user_id, rule_type=rule_type, rule_id=rule_id,
+        rule_name=rule_name, ig_user_id=ig_user_id,
+        action=action, status=status, note=note
+    )
+    db.session.add(log)
+    db.session.commit()
 
 
 def resolve_post_id(post_link: str, access_token: str) -> str:
@@ -173,7 +251,6 @@ def init_db():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard"))
-
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
@@ -182,7 +259,6 @@ def login():
             login_user(user, remember=bool(request.form.get("remember")))
             return redirect(request.args.get("next") or url_for("dashboard"))
         flash("نام کاربری یا رمز عبور اشتباه است.", "error")
-
     return render_template("login.html")
 
 
@@ -196,10 +272,8 @@ def logout():
 # ========================= WEBHOOK =========================
 @app.route("/webhook", methods=["GET"])
 def verify_webhook():
-    incoming_token    = request.args.get("hub.verify_token", "")
+    incoming_token     = request.args.get("hub.verify_token", "")
     incoming_challenge = request.args.get("hub.challenge", "")
-
-    # اول env var، بعد دیتابیس
     verify_tok = os.getenv("VERIFY_TOKEN", "")
     if not verify_tok:
         first_user = User.query.first()
@@ -207,13 +281,10 @@ def verify_webhook():
             s = Settings.query.filter_by(user_id=first_user.id).first()
             if s:
                 verify_tok = s.verify_token
-
     print(f"[WEBHOOK VERIFY] token={incoming_token!r} expected={verify_tok!r}")
-
     if incoming_token == verify_tok:
         print("[WEBHOOK VERIFY] OK →", incoming_challenge)
         return incoming_challenge, 200
-
     print("[WEBHOOK VERIFY] FAIL")
     return "fail", 403
 
@@ -222,7 +293,6 @@ def verify_webhook():
 def webhook():
     try:
         data = request.get_json(force=True, silent=True)
-        import sys
         print("\n===== WEBHOOK =====", flush=True)
         print(json.dumps(data, indent=2, ensure_ascii=False), flush=True)
         if not data:
@@ -230,15 +300,15 @@ def webhook():
 
         for user in User.query.all():
             s         = get_settings_for(user.id)
-            dm_rules  = DmRule.query.filter_by(user_id=user.id).all()
-            com_rules = CommentRule.query.filter_by(user_id=user.id).all()
+            dm_rules  = DmRule.query.filter_by(user_id=user.id, is_active=True).all()
+            com_rules = CommentRule.query.filter_by(user_id=user.id, is_active=True).all()
 
             for entry in data.get("entry", []):
                 for event in entry.get("messaging", []):
-                    _handle_messaging(event, dm_rules, s.access_token)
+                    _handle_messaging(event, dm_rules, s.access_token, user.id)
                 for change in entry.get("changes", []):
                     if change.get("field") == "comments":
-                        _handle_comment(change.get("value", {}), com_rules, s.access_token)
+                        _handle_comment(change.get("value", {}), com_rules, s.access_token, user.id)
 
         return jsonify(ok=True), 200
     except Exception as e:
@@ -246,42 +316,64 @@ def webhook():
         return jsonify(ok=False), 200
 
 
-def _handle_messaging(event, dm_rules, token):
+def _handle_messaging(event, dm_rules, token, owner_id):
     if "message" not in event:
         return
     sender_id = (event.get("sender") or {}).get("id")
     text      = (event.get("message") or {}).get("text", "")
-    print(f"[DM] sender={sender_id} text={text!r} rules={len(dm_rules)} token_set={bool(token)}", flush=True)
+    print(f"[DM] sender={sender_id} text={text!r} rules={len(dm_rules)}", flush=True)
     if not sender_id:
         return
     for rule in dm_rules:
-        print(f"[DM] checking trigger={rule.trigger!r} match_type={rule.match_type}", flush=True)
         if match_text(rule.trigger, text, rule.match_type):
+            if is_on_cooldown(owner_id, rule.id, sender_id):
+                print(f"[DM] COOLDOWN — skipping rule {rule.id} for user {sender_id}", flush=True)
+                break
             print(f"[DM] MATCH! sending to {sender_id}", flush=True)
-            _send_dm(sender_id, rule.response, token)
+            ok = _send_dm(sender_id, rule.response, token)
+            rule.fire_count = (rule.fire_count or 0) + 1
+            db.session.commit()
+            update_cooldown(owner_id, rule.id, sender_id)
+            log_activity(owner_id, "dm", rule.id, rule.trigger, sender_id,
+                         "sent_dm", "ok" if ok else "error")
             break
 
 
-def _handle_comment(comment, rules, token):
+def _handle_comment(comment, rules, token, owner_id):
     text       = comment.get("text", "")
     media_id   = (comment.get("media") or {}).get("id")
     comment_id = comment.get("id")
-    user_id    = (comment.get("from") or {}).get("id")
+    ig_user_id = (comment.get("from") or {}).get("id")
     for rule in rules:
         if rule.post_id and rule.post_id != media_id:
             continue
         if match_text(rule.trigger, text, rule.match_type):
+            if is_on_cooldown(owner_id, rule.id, ig_user_id or ""):
+                print(f"[COMMENT] COOLDOWN — skipping rule {rule.id}", flush=True)
+                break
+            actions = []
             if rule.comment_reply:
-                _reply_comment(comment_id, rule.comment_reply, token)
+                ok = _reply_comment(comment_id, rule.comment_reply, token)
+                if ok:
+                    actions.append("replied_comment")
             if rule.dm_response:
-                _send_dm(user_id, rule.dm_response, token)
+                ok2 = _send_dm(ig_user_id, rule.dm_response, token)
+                if ok2:
+                    actions.append("sent_dm")
+            rule.fire_count = (rule.fire_count or 0) + 1
+            db.session.commit()
+            if ig_user_id:
+                update_cooldown(owner_id, rule.id, ig_user_id)
+            action_str = "+".join(actions) if actions else "no_action"
+            log_activity(owner_id, "comment", rule.id, rule.trigger,
+                         ig_user_id or "", action_str)
             break
 
 
-def _send_dm(user_id, text, token):
+def _send_dm(user_id, text, token) -> bool:
     if not user_id or not token:
         print(f"[SEND_DM] SKIP user_id={user_id} token_set={bool(token)}", flush=True)
-        return
+        return False
     try:
         r = http_requests.post(
             f"{GRAPH_API}/me/messages",
@@ -290,13 +382,15 @@ def _send_dm(user_id, text, token):
             timeout=10,
         )
         print(f"[SEND_DM] status={r.status_code} response={r.text[:300]}", flush=True)
+        return r.status_code == 200
     except Exception as e:
         print("DM ERROR:", e, flush=True)
+        return False
 
 
-def _reply_comment(comment_id, text, token):
+def _reply_comment(comment_id, text, token) -> bool:
     if not comment_id or not token:
-        return
+        return False
     try:
         r = http_requests.post(
             f"{GRAPH_API}/{comment_id}/replies",
@@ -305,8 +399,10 @@ def _reply_comment(comment_id, text, token):
             timeout=10,
         )
         print(f"[REPLY_COMMENT] status={r.status_code} response={r.text[:300]}", flush=True)
+        return r.status_code == 200
     except Exception as e:
         print("COMMENT REPLY ERROR:", e, flush=True)
+        return False
 
 
 # ========================= DASHBOARD =========================
@@ -315,14 +411,44 @@ def _reply_comment(comment_id, text, token):
 def dashboard():
     dm_count      = DmRule.query.filter_by(user_id=current_user.id).count()
     comment_count = CommentRule.query.filter_by(user_id=current_user.id).count()
+    dm_active     = DmRule.query.filter_by(user_id=current_user.id, is_active=True).count()
+    cm_active     = CommentRule.query.filter_by(user_id=current_user.id, is_active=True).count()
     s             = get_settings()
     token_set     = bool(s.access_token)
     recent_dm     = DmRule.query.filter_by(user_id=current_user.id).order_by(DmRule.created_at.desc()).limit(3).all()
     recent_cm     = CommentRule.query.filter_by(user_id=current_user.id).order_by(CommentRule.created_at.desc()).limit(3).all()
+
+    # آمار فعالیت ۷ روز اخیر
+    seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+    total_fires    = ActivityLog.query.filter(
+        ActivityLog.user_id == current_user.id,
+        ActivityLog.created_at >= seven_days_ago
+    ).count()
+    recent_logs = ActivityLog.query.filter_by(user_id=current_user.id)\
+        .order_by(ActivityLog.created_at.desc()).limit(5).all()
+
+    # داده‌های نمودار ۷ روز اخیر
+    chart_labels = []
+    chart_data   = []
+    for i in range(6, -1, -1):
+        day = datetime.datetime.utcnow() - datetime.timedelta(days=i)
+        label = f"{day.month}/{day.day}"
+        count = ActivityLog.query.filter(
+            ActivityLog.user_id == current_user.id,
+            ActivityLog.created_at >= day.replace(hour=0, minute=0, second=0),
+            ActivityLog.created_at < day.replace(hour=23, minute=59, second=59),
+        ).count()
+        chart_labels.append(label)
+        chart_data.append(count)
+
     return render_template("dashboard.html",
         dm_count=dm_count, comment_count=comment_count,
+        dm_active=dm_active, cm_active=cm_active,
         token_set=token_set, recent_dm=recent_dm, recent_cm=recent_cm,
-        webhook_url=request.url_root + "webhook"
+        webhook_url=request.url_root + "webhook",
+        total_fires=total_fires, recent_logs=recent_logs,
+        chart_labels=json.dumps(chart_labels),
+        chart_data=json.dumps(chart_data),
     )
 
 
@@ -348,6 +474,7 @@ def new_dm_rule():
             trigger    = request.form.get("trigger", "").strip(),
             response   = request.form.get("response", "").strip(),
             match_type = request.form.get("match_type", "contains"),
+            is_active  = True,
         )
         db.session.add(rule)
         db.session.commit()
@@ -368,6 +495,15 @@ def edit_dm_rule(rule_id):
         flash("قانون ویرایش شد.", "success")
         return redirect(url_for("dm_rules"))
     return render_template("dm_rule_form.html", rule=rule)
+
+
+@app.route("/dm-rule/<rule_id>/toggle", methods=["POST"])
+@login_required
+def toggle_dm_rule(rule_id):
+    rule = DmRule.query.filter_by(id=rule_id, user_id=current_user.id).first_or_404()
+    rule.is_active = not rule.is_active
+    db.session.commit()
+    return jsonify(active=rule.is_active)
 
 
 @app.route("/dm-rule/<rule_id>/delete", methods=["POST"])
@@ -412,6 +548,7 @@ def new_comment_rule():
             match_type    = request.form.get("match_type", "contains"),
             comment_reply = request.form.get("comment_reply", "").strip(),
             dm_response   = request.form.get("dm_response", "").strip(),
+            is_active     = True,
         )
         db.session.add(rule)
         db.session.commit()
@@ -440,6 +577,15 @@ def edit_comment_rule(rule_id):
     return render_template("comment_rule_form.html", rule=rule)
 
 
+@app.route("/comment-rule/<rule_id>/toggle", methods=["POST"])
+@login_required
+def toggle_comment_rule(rule_id):
+    rule = CommentRule.query.filter_by(id=rule_id, user_id=current_user.id).first_or_404()
+    rule.is_active = not rule.is_active
+    db.session.commit()
+    return jsonify(active=rule.is_active)
+
+
 @app.route("/comment-rule/<rule_id>/delete", methods=["POST"])
 @login_required
 def delete_comment_rule(rule_id):
@@ -448,6 +594,29 @@ def delete_comment_rule(rule_id):
     db.session.commit()
     flash("قانون حذف شد.", "success")
     return redirect(url_for("comment_rules"))
+
+
+# ========================= ACTIVITY LOG =========================
+@app.route("/activity")
+@login_required
+def activity_log():
+    page = request.args.get("page", 1, type=int)
+    ftype = request.args.get("type", "")
+    query = ActivityLog.query.filter_by(user_id=current_user.id)
+    if ftype in ("dm", "comment"):
+        query = query.filter_by(rule_type=ftype)
+    pagination = query.order_by(ActivityLog.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
+    total = ActivityLog.query.filter_by(user_id=current_user.id).count()
+    return render_template("activity_log.html", pagination=pagination, ftype=ftype, total=total)
+
+
+@app.route("/activity/clear", methods=["POST"])
+@login_required
+def clear_activity():
+    ActivityLog.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    flash("لاگ‌ها پاک شدند.", "success")
+    return redirect(url_for("activity_log"))
 
 
 # ========================= SETTINGS =========================
@@ -483,6 +652,70 @@ def change_password():
             flash("رمز عبور تغییر کرد.", "success")
             return redirect(url_for("settings"))
     return render_template("change_password.html")
+
+
+# ========================= MIGRATION =========================
+_MIGRATION_TOKEN = os.getenv("MIGRATION_TOKEN", "")
+
+@app.route("/run-migration")
+def run_migration():
+    """
+    Migration یک‌بار مصرف برای اضافه کردن ستون‌های جدید به PostgreSQL روی Render.
+    برای امنیت نیاز به query param ?token=<MIGRATION_TOKEN> داره.
+    بعد از اجرای موفق این route رو از کد حذف کن.
+    """
+    token = request.args.get("token", "")
+    if not _MIGRATION_TOKEN or token != _MIGRATION_TOKEN:
+        return jsonify(error="Unauthorized"), 403
+
+    from sqlalchemy import text, inspect
+    results = []
+
+    try:
+        with db.engine.connect() as conn:
+            inspector = inspect(db.engine)
+
+            # ── dm_rules ──
+            existing_dm = [c["name"] for c in inspector.get_columns("dm_rules")]
+            for col, ddl in [
+                ("is_active",  "ALTER TABLE dm_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
+                ("fire_count", "ALTER TABLE dm_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
+            ]:
+                if col not in existing_dm:
+                    conn.execute(text(ddl))
+                    results.append(f"✓ dm_rules.{col} added")
+                else:
+                    results.append(f"— dm_rules.{col} already exists")
+
+            # ── comment_rules ──
+            existing_cr = [c["name"] for c in inspector.get_columns("comment_rules")]
+            for col, ddl in [
+                ("is_active",  "ALTER TABLE comment_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
+                ("fire_count", "ALTER TABLE comment_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
+            ]:
+                if col not in existing_cr:
+                    conn.execute(text(ddl))
+                    results.append(f"✓ comment_rules.{col} added")
+                else:
+                    results.append(f"— comment_rules.{col} already exists")
+
+            # مقداردهی به ردیف‌های قدیمی
+            conn.execute(text("UPDATE dm_rules SET is_active=TRUE WHERE is_active IS NULL"))
+            conn.execute(text("UPDATE dm_rules SET fire_count=0 WHERE fire_count IS NULL"))
+            conn.execute(text("UPDATE comment_rules SET is_active=TRUE WHERE is_active IS NULL"))
+            conn.execute(text("UPDATE comment_rules SET fire_count=0 WHERE fire_count IS NULL"))
+            conn.commit()
+            results.append("✓ Existing rows backfilled")
+
+        # ساخت جداول جدید (activity_logs, cooldown_entries)
+        db.create_all()
+        results.append("✓ New tables created (activity_logs, cooldown_entries)")
+
+    except Exception as e:
+        results.append(f"✕ ERROR: {e}")
+        return jsonify(status="error", results=results), 500
+
+    return jsonify(status="ok", results=results), 200
 
 
 # ========================= MISC =========================

@@ -1,70 +1,168 @@
 {% extends "base.html" %}
-{% block title %}تنظیمات — اتومیشن اینستاگرام{% endblock %}
+{% block title %}تنظیمات — دایرکت‌بات{% endblock %}
 {% block topbar_title %}تنظیمات{% endblock %}
 {% block content %}
 
-<div class="page-title">⚙️ تنظیمات اتصال</div>
-<div class="page-sub" style="margin-bottom:24px;">توکن دسترسی اینستاگرام و Verify Token وب‌هوک را اینجا تنظیم کن.</div>
+<div class="page-header">
+  <div>
+    <div class="page-title">⚙️ تنظیمات</div>
+    <div class="page-sub">توکن اینستاگرام، Webhook و امنیت حساب</div>
+  </div>
+</div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
 
-  <!-- ── Token settings ── -->
-  <div>
-    <form method="post" class="card">
-      <div style="font-size:14px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border-soft);">
-        🔑 توکن‌های اتصال
-      </div>
+  <!-- ══ Token form ══ -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <form method="post">
+      <div class="card">
+        <div class="card-shine"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-soft);">
+          <div class="stat-card-icon purple" style="width:38px;height:38px;font-size:17px;margin-bottom:0;">🔑</div>
+          <div>
+            <div style="font-size:14px;font-weight:800;">توکن‌های اتصال</div>
+            <div style="font-size:12px;color:var(--text-faint);">برای اتصال به Instagram Graph API</div>
+          </div>
+        </div>
 
-      <div class="field">
-        <label>Access Token (از پنل متا)</label>
-        <input type="text" name="access_token" value="{{ s.access_token }}"
-               placeholder="EAAxxxxxxxxxxxxxxxxx" autocomplete="off">
-        <div class="hint">از <a href="https://developers.facebook.com/" target="_blank">Meta Developers</a> → اپت → Instagram → Generate Token</div>
-      </div>
+        <div class="field">
+          <label>Access Token</label>
+          <div style="position:relative;">
+            <input type="text" name="access_token" value="{{ s.access_token }}"
+                   placeholder="EAAxxxxxxxxxxxxxxxxx" autocomplete="off"
+                   id="tokenInput" style="padding-left:80px;">
+            <button type="button" onclick="toggleToken()"
+              style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:var(--panel-3);border:1px solid var(--border);color:var(--text-dim);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;"
+              id="tokenToggle">نمایش</button>
+          </div>
+          <div class="hint">
+            از <a href="https://developers.facebook.com/" target="_blank">Meta Developers</a> →
+            اپت → Instagram → Generate Token
+          </div>
+        </div>
 
-      <div class="field">
-        <label>Verify Token</label>
-        <input type="text" name="verify_token" value="{{ s.verify_token }}"
-               placeholder="mysecret123" autocomplete="off">
-        <div class="hint">همین مقدار را در پنل متا → Configure Webhooks وارد کن.</div>
-      </div>
+        <div class="field">
+          <label>Verify Token</label>
+          <input type="text" name="verify_token" value="{{ s.verify_token }}"
+                 placeholder="mysecret123" autocomplete="off">
+          <div class="hint">همین مقدار را در پنل متا → Configure Webhooks وارد کن.</div>
+        </div>
 
-      <div class="field">
-        <label>آدرس Webhook</label>
-        <input type="text" value="{{ request.url_root }}webhook" readonly onclick="this.select()">
-        <div class="hint">کلیک کن تا انتخاب بشه، سپس کپی کن.</div>
-      </div>
+        <div class="field">
+          <label>آدرس Webhook</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" value="{{ request.url_root }}webhook" readonly
+                   id="webhookUrl" onclick="this.select()"
+                   style="font-size:12px;font-family:monospace;flex:1;">
+            <button type="button" onclick="copyWebhook()" class="btn secondary small" id="copyBtn">📋 کپی</button>
+          </div>
+          <div class="hint">این آدرس را در پنل متا → Webhooks وارد کن.</div>
+        </div>
 
-      <div class="form-actions">
-        <button type="submit" class="btn">💾 ذخیره تنظیمات</button>
+        <div class="form-actions">
+          <button type="submit" class="btn">💾 ذخیره تنظیمات</button>
+        </div>
       </div>
     </form>
+
+    <!-- Connection status -->
+    <div class="card" style="padding:18px 20px;">
+      <div style="font-size:13.5px;font-weight:800;margin-bottom:12px;">🔌 وضعیت اتصال</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        {% if s.access_token %}
+          <span class="badge ok" style="font-size:13px;padding:6px 14px;">● توکن تنظیم شده</span>
+          <span style="font-size:12px;color:var(--text-faint);">اتصال به API برقرار است</span>
+        {% else %}
+          <span class="badge danger" style="font-size:13px;padding:6px 14px;">○ توکن تنظیم نشده</span>
+          <span style="font-size:12px;color:var(--text-faint);">Webhook پاسخ نمی‌دهد</span>
+        {% endif %}
+      </div>
+    </div>
   </div>
 
-  <!-- ── Security + info ── -->
+  <!-- ══ Security + Info ══ -->
   <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Security -->
     <div class="card">
-      <div style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border-soft);">
-        🔐 امنیت حساب
+      <div class="card-shine"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border-soft);">
+        <div class="stat-card-icon pink" style="width:38px;height:38px;font-size:17px;margin-bottom:0;">🔐</div>
+        <div>
+          <div style="font-size:14px;font-weight:800;">امنیت حساب</div>
+          <div style="font-size:12px;color:var(--text-faint);">رمز عبور و اطلاعات کاربری</div>
+        </div>
       </div>
-      <div style="font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.8;">
-        کاربر فعلی: <strong style="color:var(--text)">{{ current_user.username }}</strong>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:14px;">
+        <div class="user-avatar" style="width:38px;height:38px;font-size:16px;">
+          {{ current_user.username[0].upper() }}
+        </div>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;">{{ current_user.username }}</div>
+          <div style="font-size:11.5px;color:var(--text-faint);">ادمین</div>
+        </div>
+        <span class="badge ok" style="margin-right:auto;">● فعال</span>
       </div>
-      <a href="{{ url_for('change_password') }}" class="btn secondary" style="width:100%;justify-content:center;">تغییر رمز عبور</a>
+      <a href="{{ url_for('change_password') }}" class="btn secondary" style="width:100%;justify-content:center;">
+        🔑 تغییر رمز عبور
+      </a>
     </div>
 
-    <div class="card">
-      <div style="font-size:14px;font-weight:700;margin-bottom:12px;">⚠️ نکته Render</div>
-      <div style="font-size:12.5px;color:var(--text-dim);line-height:2;">
-        تنظیمات توکن در دیتابیس SQLite ذخیره می‌شن.<br>
-        برای admin اولیه، متغیرهای
-        <code style="background:var(--panel-2);padding:1px 6px;border-radius:4px;font-family:monospace">ADMIN_USERNAME</code> و
-        <code style="background:var(--panel-2);padding:1px 6px;border-radius:4px;font-family:monospace">ADMIN_PASSWORD</code>
-        را در Render → Environment Variables تنظیم کن.
+    <!-- Setup guide -->
+    <div class="card" style="padding:20px 22px;">
+      <div style="font-size:13.5px;font-weight:800;margin-bottom:14px;">📖 راهنمای راه‌اندازی</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for step in [
+          ('1', 'اپ Meta Business ایجاد کن', 'developers.facebook.com'),
+          ('2', 'Instagram را به اپ اضافه کن', 'بخش Products'),
+          ('3', 'توکن را Generate کن', 'Instagram → Generate Token'),
+          ('4', 'Webhook را تنظیم کن', 'آدرس بالا + Verify Token'),
+          ('5', 'Subscribe به messages و comments', 'Webhook Fields'),
+        ] %}
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;flex-shrink:0;color:#fff;">{{ step[0] }}</span>
+          <div>
+            <div style="font-size:12.5px;font-weight:700;">{{ step[1] }}</div>
+            <div style="font-size:11px;color:var(--text-faint);">{{ step[2] }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Render note -->
+    <div class="card" style="padding:16px 20px;border-color:rgba(245,158,11,.2);">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--warn);">⚠️ نکته Render / Deploy</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:2;">
+        متغیرهای
+        <code style="background:var(--panel-2);padding:1px 6px;border-radius:4px;">ADMIN_USERNAME</code> و
+        <code style="background:var(--panel-2);padding:1px 6px;border-radius:4px;">ADMIN_PASSWORD</code>
+        را در Environment Variables پلتفرم Render تنظیم کن.
       </div>
     </div>
   </div>
-
 </div>
 
+{% endblock %}
+{% block extra_js %}
+<script>
+function toggleToken() {
+  const inp = document.getElementById('tokenInput');
+  const btn = document.getElementById('tokenToggle');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'پنهان'; }
+  else { inp.type = 'password'; btn.textContent = 'نمایش'; }
+}
+// start as password if token exists
+const ti = document.getElementById('tokenInput');
+if (ti && ti.value) ti.type = 'password';
+
+function copyWebhook() {
+  const url = document.getElementById('webhookUrl').value;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ کپی شد!';
+    setTimeout(() => btn.textContent = '📋 کپی', 2000);
+  });
+}
+</script>
 {% endblock %}

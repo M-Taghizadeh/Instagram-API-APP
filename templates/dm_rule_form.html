@@ -1,210 +1,132 @@
 {% extends "base.html" %}
-{% block title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }} — اتومیشن اینستاگرام{% endblock %}
+{% block title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }} — دایرکت‌بات{% endblock %}
 {% block topbar_title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }}{% endblock %}
 {% block content %}
 
-<div class="page-title">{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }}</div>
-<div class="page-sub">وقتی کسی در دایرکت یا ریپلای استوری، کلمه‌ی موردنظر را بفرستد، این پاسخ ارسال می‌شود.</div>
-
-<form method="post" class="card">
-
-  <div class="field">
-    <label>کلمه‌ی کلیدی</label>
-    <input type="text" name="trigger" value="{{ rule.trigger if rule else '' }}" placeholder="مثلاً: قیمت" required>
-    <div class="hint">اگر کاربر این کلمه را در پیام بفرستد، قانون فعال می‌شود.</div>
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ '✏️ ویرایش قانون دایرکت' if rule else '💬 قانون جدید دایرکت' }}</div>
+    <div class="page-sub">وقتی کسی در دایرکت یا ریپلای استوری کلمه موردنظر را بفرستد، این پاسخ ارسال می‌شود.</div>
   </div>
+</div>
 
-  <div class="field">
-    <label>نوع تطبیق</label>
-    <select name="match_type">
-      <option value="contains" {{ 'selected' if rule and rule.match_type=='contains' else '' }}>شامل این کلمه باشد</option>
-      <option value="exact"    {{ 'selected' if rule and rule.match_type=='exact'    else '' }}>دقیقاً برابر این کلمه باشد</option>
-    </select>
-  </div>
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
 
-  <div class="field">
-    <label>پاسخ ارسالی (دایرکت)</label>
+  <!-- ══ Main form ══ -->
+  <form method="post" id="ruleForm">
+    <div class="card">
+      <div class="card-shine"></div>
 
-    <!-- Toolbar -->
-    <div class="editor-toolbar">
-      <button type="button" class="emoji-toggle-btn" onclick="togglePicker('response')">😊 ایموجی</button>
-      <button type="button" onclick="insertText('response','\n')">↵ خط جدید</button>
-      <button type="button" onclick="insertText('response','{name}')">👤 نام کاربر</button>
-      <button type="button" onclick="insertText('response','https://')">🔗 لینک</button>
+      <!-- Keywords -->
+      <div class="field">
+        <label>🔑 کلمات کلیدی</label>
+        <input type="text" name="trigger" id="triggerInput"
+               value="{{ rule.trigger if rule else '' }}"
+               placeholder="مثلاً: قیمت، price، پرایس" required>
+        <div class="hint">
+          چند کلمه را با <strong>ویرگول (،)</strong> جدا کن — اگر کاربر هر کدام را بفرستد، قانون اجرا می‌شود.<br>
+          مثال: <code style="background:var(--panel-3);padding:1px 6px;border-radius:4px;">قیمت، price، چنده</code>
+        </div>
+        <!-- Keyword preview tags -->
+        <div id="kwPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;"></div>
+      </div>
+
+      <!-- Match type -->
+      <div class="field">
+        <label>نوع تطبیق</label>
+        <select name="match_type">
+          <option value="contains" {{ 'selected' if rule and rule.match_type=='contains' else '' }}>
+            شامل این کلمه باشد (پیشنهادی)
+          </option>
+          <option value="exact" {{ 'selected' if rule and rule.match_type=='exact' else '' }}>
+            دقیقاً برابر این کلمه باشد
+          </option>
+        </select>
+      </div>
+
+      <!-- Response -->
+      <div class="field">
+        <label>📨 پاسخ دایرکت</label>
+        <div class="editor-toolbar">
+          <button type="button" class="emoji-toggle-btn" onclick="togglePicker('response')">😊 ایموجی</button>
+          <button type="button" onclick="insertText('response','\n')">↵ خط جدید</button>
+          <button type="button" onclick="insertText('response','{name}')">👤 نام کاربر</button>
+          <button type="button" onclick="insertText('response','https://')">🔗 لینک</button>
+        </div>
+        <div class="emoji-picker" id="picker-response" style="display:none">
+          <div class="emoji-tabs">
+            <button type="button" class="etab active" onclick="showTab(this,'r_sm')">😊</button>
+            <button type="button" class="etab" onclick="showTab(this,'r_ge')">👋</button>
+            <button type="button" class="etab" onclick="showTab(this,'r_he')">❤️</button>
+            <button type="button" class="etab" onclick="showTab(this,'r_fi')">🔥</button>
+            <button type="button" class="etab" onclick="showTab(this,'r_ob')">🎁</button>
+            <button type="button" class="etab" onclick="showTab(this,'r_sy')">✅</button>
+          </div>
+          <div class="emoji-grid" id="grid-r_sm">😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😇 🥰 😍 🤩 😘 😗 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 😐 😑 😏 😒 🙄 😬 😮 😲 😳 🥺 😢 😭 😤 😠 😡 🤬</div>
+          <div class="emoji-grid" id="grid-r_ge" style="display:none">👋 🤚 🖐️ ✋ 👌 🤌 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 👍 👎 ✊ 👊 👏 🙌 🙏 💪 🤝</div>
+          <div class="emoji-grid" id="grid-r_he" style="display:none">❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❤️‍🔥 💕 💞 💓 💗 💖 💘 💝</div>
+          <div class="emoji-grid" id="grid-r_fi" style="display:none">🔥 💥 ⚡ 💫 ✨ 🌟 ⭐ 🏆 👑 💎 💰 💸 🚀 🌈 🦋 🦁 💪 🙌 🎯 🥳 🎉</div>
+          <div class="emoji-grid" id="grid-r_ob" style="display:none">🎁 🎀 🎊 🎉 🎈 🏆 🥇 💎 💰 📱 💻 📷 🎵 🎶 🎮 📚 📝 ✉️ 📩 💌</div>
+          <div class="emoji-grid" id="grid-r_sy" style="display:none">✅ ❌ ⭕ 🔴 🟠 🟡 🟢 🔵 🟣 ⚫ ⚪ 💯 ❓ ❗ ⁉️ 🔔 ♻️ ✔️ 🚫 ☑️</div>
+        </div>
+        <textarea id="response" name="response" rows="7"
+                  placeholder="متن پاسخ را اینجا بنویس...&#10;&#10;می‌توانی از {name} برای درج اسم کاربر استفاده کنی.">{{ rule.response if rule else '' }}</textarea>
+        <div class="editor-footer">
+          <span style="color:var(--text-faint)">از <code>{name}</code> برای درج خودکار اسم کاربر</span>
+          <span id="count_response">0 کاراکتر</span>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn">{{ '💾 ذخیره تغییرات' if rule else '✚ ساخت قانون' }}</button>
+        <a href="{{ url_for('dm_rules') }}" class="btn secondary">انصراف</a>
+      </div>
     </div>
+  </form>
 
-    <!-- Emoji Picker -->
-    <div class="emoji-picker" id="picker-response" style="display:none">
-      <div class="emoji-tabs">
-        <button type="button" class="etab active" onclick="showTab(this,'smileys')">😊 احساسات</button>
-        <button type="button" class="etab" onclick="showTab(this,'gestures')">👋 ژست</button>
-        <button type="button" class="etab" onclick="showTab(this,'hearts')">❤️ قلب</button>
-        <button type="button" class="etab" onclick="showTab(this,'nature')">🌸 طبیعت</button>
-        <button type="button" class="etab" onclick="showTab(this,'objects')">🎁 اشیاء</button>
-        <button type="button" class="etab" onclick="showTab(this,'symbols')">✅ نمادها</button>
-        <button type="button" class="etab" onclick="showTab(this,'fire')">🔥 ترند</button>
-      </div>
-      <div class="emoji-grid" id="grid-smileys">
-        😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😚 😙
-        🥲 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬
-        😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱
-        😤 😠 😡 🤬 😈 👿 💀 ☠️ 💩 🤡 👹 👺 👻 👽 👾 🤖
-      </div>
-      <div class="emoji-grid" id="grid-gestures" style="display:none">
-        👋 🤚 🖐️ ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 👍
-        👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪 🦾 🦿 🦵 🦶 👂
-        🦻 👃 🧠 🫀 🫁 🦷 🦴 👀 👁️ 👅 👄 💋 🩸
-      </div>
-      <div class="emoji-grid" id="grid-hearts" style="display:none">
-        ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❤️‍🔥 ❤️‍🩹 ❣️ 💕 💞 💓 💗 💖 💘 💝
-        💟 ☮️ ✝️ ☪️ 🕉️ ☸️ ✡️ 🔯 🕎 ☯️ ☦️ 🛐 ⛎ ♈ ♉ ♊ ♋ ♌ ♍ ♎
-        ♏ ♐ ♑ ♒ ♓ 🆔 ⚛️ 🉑 ☢️ ☣️ 📴 📳 🈶 🈚 🈸 🈺 🈷️ ✴️ 🆚 💮
-      </div>
-      <div class="emoji-grid" id="grid-nature" style="display:none">
-        🌸 🌺 🌻 🌹 🥀 🌷 🌼 💐 🌾 🍀 🍁 🍂 🍃 🌿 ☘️ 🌱 🌲 🌳 🌴 🌵
-        🎋 🎍 🍄 🌾 💧 🌊 🌀 🌈 ⭐ 🌟 💫 ✨ ⚡ 🔥 🌙 ☀️ 🌤️ ⛅ 🌥️ ☁️
-        🌦️ 🌧️ ⛈️ 🌩️ 🌨️ ❄️ ☃️ ⛄ 🌬️ 💨 🌪️ 🌫️ 🌈 ☂️ ☔ ⚡ ❄️ 🔥 💧 🌊
-      </div>
-      <div class="emoji-grid" id="grid-objects" style="display:none">
-        🎁 🎀 🎊 🎉 🎈 🎏 🎐 🎑 🧨 🎆 🎇 🧧 🎗️ 🎟️ 🎫 🏆 🥇 🥈 🥉 🏅
-        🎖️ 🏵️🎪 🤹 🎭 🎨 🎬 🎤 🎧 🎼 🎹 🥁 🎷 🎺 🎸 🎻 🎲 ♟️ 🎯 🎳
-        🎮 🕹️ 🎰 🧩 🪅 🪆 📱 💻 🖥️ 🖨️ ⌨️ 🖱️ 📷 📸 📹 🎥 📽️ 🎞️ 📞 ☎️
-        📟 📠 📺 📻 🧭 ⏱️ ⏰ ⌚ 📡 🔋 🔌 💡 🔦 🕯️ 🪔 💰 💳 💎 ⚖️ 🔑
-      </div>
-      <div class="emoji-grid" id="grid-symbols" style="display:none">
-        ✅ ❌ ⭕ 🔴 🟠 🟡 🟢 🔵 🟣 ⚫ ⚪ 🟤 🔶 🔷 🔸 🔹 🔺 🔻 💠 🔘
-        🔲 🔳 ▪️ ▫️ ◾ ◽ ◼️ ◻️ 🟥 🟧 🟨 🟩 🟦 🟪 ⬛ ⬜ 🔈 🔇 🔉 🔊
-        📣 📢 🔔 🔕 🎵 🎶 ⁉️ ❓ ❔ ❕ ❗ 💯 🔅 🔆 🔱 ⚜️ 🔰 ♻️ ✔️ 🔝
-        🆗 🆙 🆒 🆕 🆓 ℹ️ 🔙 🔛 🔜 🔚 🆘 🚫 🚳 🚭 🚯 🚱 🚷 📵 🔞 ☑️
-      </div>
-      <div class="emoji-grid" id="grid-fire" style="display:none">
-        🔥 💥 ⚡ 🌊 💫 ✨ 🌟 ⭐ 🏆 👑 💎 💰 💸 🤑 🚀 🛸 🌙 ☀️ 🌈 🦋
-        🐉 🦁 🐯 🦊 🐺 🦅 🦆 🦉 🦋 🐬 🦈 🐙 🦑 🦞 🦀 🍕 🍔 🌮 🍜 🍣
-        🍰 🎂 🍩 🍪 🍫 🍬 🍭 🥤 🧃 ☕ 🍵 🧋 🍺 🥂 🍾 💪 🤝 🙌 👏 🎯
+  <!-- ══ Side tips ══ -->
+  <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:80px;">
+    <div class="card" style="padding:18px 20px;">
+      <div style="font-size:13px;font-weight:800;margin-bottom:12px;">💡 راهنما</div>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:2.1;">
+        <div>🔑 <strong>چند کلمه:</strong> با ویرگول جدا کن</div>
+        <div>👤 <code>{name}</code> اسم کاربر را جایگزین می‌کند</div>
+        <div>📏 حداکثر طول پیام ۱۰۰۰ کاراکتر</div>
+        <div>🕐 هر کاربر هر ۱ ساعت یک بار پاسخ می‌گیرد</div>
       </div>
     </div>
-
-    <textarea id="response" name="response" rows="7" placeholder="متن پاسخ را اینجا بنویس...">{{ rule.response if rule else '' }}</textarea>
-    <div class="editor-footer">
-      <span>از {name} برای درج خودکار اسم کاربر استفاده کن.</span>
-      <span id="charcount">0 کاراکتر</span>
+    {% if rule %}
+    <div class="card" style="padding:18px 20px;">
+      <div style="font-size:13px;font-weight:800;margin-bottom:10px;">📊 آمار قانون</div>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:2.2;">
+        <div>⚡ <strong>{{ rule.fire_count or 0 }}</strong> بار اجرا شده</div>
+        <div>📅 ساخته شده: {{ rule.created_at.strftime('%Y/%m/%d') if rule.created_at else '—' }}</div>
+        <div>
+          وضعیت:
+          <span class="badge {{ 'ok' if rule.is_active else 'danger' }}" style="margin-right:4px;">
+            {{ '● فعال' if rule.is_active else '○ غیرفعال' }}
+          </span>
+        </div>
+      </div>
     </div>
+    {% endif %}
   </div>
 
-  <div class="form-actions">
-    <button type="submit" class="btn">{{ 'ذخیره تغییرات' if rule else '✚ ساخت قانون' }}</button>
-    <a href="{{ url_for('dm_rules') }}" class="btn secondary">انصراف</a>
-  </div>
+</div>
 
-</form>
-
-<style>
-  .emoji-toggle-btn {
-    background: var(--panel-3);
-    border-color: var(--accent-2);
-    color: var(--text);
-  }
-  .emoji-picker {
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px;
-    margin-bottom: 8px;
-  }
-  .emoji-tabs {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-  }
-  .etab {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--text-dim);
-    border-radius: 7px;
-    padding: 4px 10px;
-    font-size: 12.5px;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all .12s ease;
-  }
-  .etab:hover { background: var(--panel-3); color: var(--text); }
-  .etab.active { background: var(--panel-3); border-color: var(--accent-2); color: var(--text); }
-  .emoji-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px;
-  }
-  .emoji-btn {
-    background: none;
-    border: none;
-    font-size: 22px;
-    cursor: pointer;
-    padding: 4px 5px;
-    border-radius: 6px;
-    line-height: 1;
-    transition: background .1s ease, transform .1s ease;
-  }
-  .emoji-btn:hover { background: var(--panel-3); transform: scale(1.2); }
-</style>
-
+{% endblock %}
+{% block extra_js %}
 <script>
-  // ── فعال‌سازی textarea فعال ──
-  let activeField = 'response';
-
-  function togglePicker(fieldId) {
-    activeField = fieldId;
-    const picker = document.getElementById('picker-' + fieldId);
-    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-  }
-
-  function showTab(btn, tabName) {
-    // hide all grids in same picker
-    const picker = btn.closest('.emoji-picker');
-    picker.querySelectorAll('.emoji-grid').forEach(g => g.style.display = 'none');
-    picker.querySelectorAll('.etab').forEach(t => t.classList.remove('active'));
-    picker.querySelector('#grid-' + tabName).style.display = 'flex';
-    btn.classList.add('active');
-  }
-
-  function insertText(fieldId, snippet) {
-    const el = document.getElementById(fieldId);
-    const s = el.selectionStart, e = el.selectionEnd;
-    el.value = el.value.slice(0, s) + snippet + el.value.slice(e);
-    el.selectionStart = el.selectionEnd = s + snippet.length;
-    el.focus();
-    updateCount();
-  }
-
-  // ── تبدیل متن به دکمه‌های ایموجی ──
-  document.querySelectorAll('.emoji-grid').forEach(grid => {
-    const emojis = grid.textContent.trim().split(/\s+/);
-    grid.innerHTML = '';
-    emojis.forEach(em => {
-      if (!em) return;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'emoji-btn';
-      btn.textContent = em;
-      btn.title = em;
-      btn.onclick = () => {
-        // find which field this picker belongs to
-        const pickerId = btn.closest('.emoji-picker').id; // e.g. picker-response
-        const fieldId = pickerId.replace('picker-', '');
-        insertText(fieldId, em);
-      };
-      grid.appendChild(btn);
-    });
-  });
-
-  // ── شمارش کاراکتر ──
-  const textarea = document.getElementById('response');
-  const counter  = document.getElementById('charcount');
-  function updateCount() { counter.textContent = textarea.value.length + ' کاراکتر'; }
-  textarea.addEventListener('input', updateCount);
-  updateCount();
+// Live keyword preview
+const triggerInput = document.getElementById('triggerInput');
+const kwPreview    = document.getElementById('kwPreview');
+const colors = ['purple','pink','ok'];
+function updatePreview() {
+  const parts = triggerInput.value.split(/[،,]+/).map(s=>s.trim()).filter(Boolean);
+  kwPreview.innerHTML = parts.map((kw, i) =>
+    `<span class="badge ${colors[i%3]}">🔑 ${kw}</span>`
+  ).join('');
+}
+if (triggerInput) { triggerInput.addEventListener('input', updatePreview); updatePreview(); }
 </script>
-
 {% endblock %}
