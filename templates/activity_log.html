@@ -105,8 +105,8 @@
   </div>
 
   <!-- Pagination -->
-  {% if pagination.pages > 1 %}
-  <div class="pagination">
+  <div class="pagination" style="margin-top:20px;">
+    {% if pagination.pages > 1 %}
     <a href="{{ url_for('activity_log', type=ftype, page=1) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">«</a>
     <a href="{{ url_for('activity_log', type=ftype, page=pagination.prev_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">‹</a>
     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
@@ -118,9 +118,12 @@
     {% endfor %}
     <a href="{{ url_for('activity_log', type=ftype, page=pagination.next_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">›</a>
     <a href="{{ url_for('activity_log', type=ftype, page=pagination.pages) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">»</a>
-    <span class="pg-info">صفحه {{ pagination.page }} از {{ pagination.pages }}</span>
+    {% endif %}
+    <span class="pg-info">
+      {{ pagination.total }} رکورد
+      {% if pagination.pages > 1 %} · صفحه {{ pagination.page }} از {{ pagination.pages }}{% endif %}
+    </span>
   </div>
-  {% endif %}
 
 {% else %}
   <div class="empty">

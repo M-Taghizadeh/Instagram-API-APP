@@ -783,7 +783,7 @@ def activity_log():
     query = ActivityLog.query.filter_by(user_id=current_user.id)
     if ftype in ("dm", "comment"):
         query = query.filter_by(rule_type=ftype)
-    pagination = query.order_by(ActivityLog.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
+    pagination = query.order_by(ActivityLog.created_at.desc()).paginate(page=page, per_page=15, error_out=False)
     total = ActivityLog.query.filter_by(user_id=current_user.id).count()
     return render_template("activity_log.html", pagination=pagination, ftype=ftype, total=total)
 
