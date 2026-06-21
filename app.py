@@ -184,9 +184,12 @@ def logout():
 # ========================= WEBHOOK =========================
 @app.route("/webhook", methods=["GET"])
 def verify_webhook():
-    # اول env var رو چک می‌کنیم، اگه نبود از دیتابیس می‌خونیم
-    verify_tok = os.getenv("VERIFY_TOKEN", "")
+    incoming_token   = request.args.get("hub.verify_token", "")
+    incoming_challenge = request.args.get("hub.challenge", "")
+    incoming_mode    = request.args.get("hub.mode", "")
 
+    # اول env var، بعد دیتابیس
+    verify_tok = os.getenv("VERIFY_TOKEN", "")
     if not verify_tok:
         first_user = User.query.first()
         if first_user:
@@ -194,8 +197,13 @@ def verify_webhook():
             if s:
                 verify_tok = s.verify_token
 
-    if verify_tok and request.args.get("hub.verify_token") == verify_tok:
-        return request.args.get("hub.challenge", "")
+    print(f"[WEBHOOK VERIFY] mode={incoming_mode} token={incoming_token!r} expected={verify_tok!r}")
+
+    if incoming_mode == "subscribe" and incoming_token == verify_tok:
+        print("[WEBHOOK VERIFY] OK →", incoming_challenge)
+        return incoming_challenge, 200
+
+    print("[WEBHOOK VERIFY] FAIL")
     return "fail", 403
 
 
