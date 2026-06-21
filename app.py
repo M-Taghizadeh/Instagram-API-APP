@@ -45,7 +45,7 @@ login_manager = LoginManager(app)
 login_manager.login_view    = "login"
 login_manager.login_message = "برای دسترسی ابتدا وارد شو."
 
-GRAPH_API    = "https://graph.facebook.com/v21.0"
+GRAPH_API    = "https://graph.instagram.com/v25.0"
 PER_PAGE     = 10
 
 
@@ -285,7 +285,7 @@ def _send_dm(user_id, text, token):
     try:
         r = http_requests.post(
             f"{GRAPH_API}/me/messages",
-            params={"access_token": token},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
             json={"recipient": {"id": user_id}, "message": {"text": text}},
             timeout=10,
         )
@@ -298,14 +298,15 @@ def _reply_comment(comment_id, text, token):
     if not comment_id or not token:
         return
     try:
-        http_requests.post(
+        r = http_requests.post(
             f"{GRAPH_API}/{comment_id}/replies",
-            params={"access_token": token},
-            data={"message": text},
+            headers={"Authorization": f"Bearer {token}"},
+            json={"message": text},
             timeout=10,
         )
+        print(f"[REPLY_COMMENT] status={r.status_code} response={r.text[:300]}", flush=True)
     except Exception as e:
-        print("COMMENT REPLY ERROR:", e)
+        print("COMMENT REPLY ERROR:", e, flush=True)
 
 
 # ========================= DASHBOARD =========================
