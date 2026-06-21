@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}تنظیمات — اتومیشن اینستاگرام{% endblock %}
+{% block topbar_title %}تنظیمات{% endblock %}
+{% block content %}
+
+<div class="page-title">⚙️ تنظیمات اتصال</div>
+<div class="page-sub" style="margin-bottom:24px;">توکن دسترسی اینستاگرام و Verify Token وب‌هوک را اینجا تنظیم کن.</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+  <!-- ── Token settings ── -->
+  <div>
+    <form method="post" class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border-soft);">
+        🔑 توکن‌های اتصال
+      </div>
+
+      <div class="field">
+        <label>Access Token (از پنل متا)</label>
+        <input type="text" name="access_token" value="{{ s.access_token }}"
+               placeholder="EAAxxxxxxxxxxxxxxxxx" autocomplete="off">
+        <div class="hint">از <a href="https://developers.facebook.com/" target="_blank">Meta Developers</a> → اپت → Instagram → Generate Token</div>
+      </div>
+
+      <div class="field">
+        <label>Verify Token</label>
+        <input type="text" name="verify_token" value="{{ s.verify_token }}"
+               placeholder="mysecret123" autocomplete="off">
+        <div class="hint">همین مقدار را در پنل متا → Configure Webhooks وارد کن.</div>
+      </div>
+
+      <div class="field">
+        <label>آدرس Webhook</label>
+        <input type="text" value="{{ request.url_root }}webhook" readonly onclick="this.select()">
+        <div class="hint">کلیک کن تا انتخاب بشه، سپس کپی کن.</div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn">💾 ذخیره تنظیمات</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Security + info ── -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border-soft);">
+        🔐 امنیت حساب
+      </div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.8;">
+        کاربر فعلی: <strong style="color:var(--text)">{{ current_user.username }}</strong>
+      </div>
+      <a href="{{ url_for('change_password') }}" class="btn secondary" style="width:100%;justify-content:center;">تغییر رمز عبور</a>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px;">⚠️ نکته Render</div>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:2;">
+        تنظیمات توکن در دیتابیس SQLite ذخیره می‌شن.<br>
+        برای admin اولیه، متغیرهای
+        <code style="background:var(--panel-2);padding:1px 6px;border-radius:4px;font-family:monospace">ADMIN_USERNAME</code> و
+        <code style="background:var(--panel-2);padding:1px 6px;border-radius:4px;font-family:monospace">ADMIN_PASSWORD</code>
+        را در Render → Environment Variables تنظیم کن.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
