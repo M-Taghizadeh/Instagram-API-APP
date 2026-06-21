@@ -45,8 +45,8 @@ login_manager.login_message = "برای دسترسی ابتدا وارد شو."
 
 GRAPH_API = "https://graph.instagram.com/v25.0"
 PER_PAGE  = 10
-# مدت زمان cooldown بین دو پاسخ به یک کاربر (ثانیه)
-COOLDOWN_SECONDS = 3600
+# مدت زمان cooldown بین دو پاسخ به یک کاربر (ثانیه) — قابل تنظیم با env var
+COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", "3600"))
 
 
 # ========================= MODELS =========================
@@ -798,6 +798,15 @@ def clear_activity():
     ActivityLog.query.filter_by(user_id=current_user.id).delete()
     db.session.commit()
     flash("لاگ‌ها پاک شدند.", "success")
+    return redirect(url_for("activity_log"))
+
+
+@app.route("/activity/clear-cooldowns", methods=["POST"])
+@login_required
+def clear_cooldowns():
+    deleted = CooldownEntry.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    flash(f"کولداون‌ها پاک شدند ({deleted} ردیف).", "success")
     return redirect(url_for("activity_log"))
 
 

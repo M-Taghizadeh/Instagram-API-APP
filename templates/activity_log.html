@@ -2,12 +2,18 @@
 {% block title %}لاگ فعالیت — Insta Agent{% endblock %}
 {% block topbar_title %}لاگ فعالیت{% endblock %}
 {% block topbar_right %}
-  {% if pagination.total %}
-  <form method="post" action="{{ url_for('clear_activity') }}"
-        onsubmit="return confirm('همه لاگ‌ها پاک شوند؟')">
-    <button type="submit" class="btn danger small">🗑 پاک کردن همه</button>
-  </form>
-  {% endif %}
+  <div style="display:flex;gap:8px;align-items:center;">
+    <form method="post" action="{{ url_for('clear_cooldowns') }}"
+          onsubmit="return confirm('کولداون همه کاربران پاک شود؟ (قانون‌ها فوری دوباره اجرا می‌شن)')">
+      <button type="submit" class="btn secondary small">⏱ پاک کردن کولداون</button>
+    </form>
+    {% if pagination.total %}
+    <form method="post" action="{{ url_for('clear_activity') }}"
+          onsubmit="return confirm('همه لاگ‌ها پاک شوند؟')">
+      <button type="submit" class="btn danger small">🗑 پاک کردن لاگ‌ها</button>
+    </form>
+    {% endif %}
+  </div>
 {% endblock %}
 {% block content %}
 
