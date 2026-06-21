@@ -123,16 +123,17 @@ class CommentRule(db.Model):
 class ActivityLog(db.Model):
     """لاگ هر بار که یه قانون اجرا می‌شه"""
     __tablename__ = "activity_logs"
-    id         = db.Column(db.Integer, primary_key=True)
-    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    rule_type  = db.Column(db.String(20),  default="dm")      # dm | comment
-    rule_id    = db.Column(db.String(36),  default="")
-    rule_name  = db.Column(db.String(200), default="")        # trigger snapshot
-    ig_user_id = db.Column(db.String(100), default="")        # شناسه کاربر اینستاگرام
-    action     = db.Column(db.String(50),  default="sent_dm") # sent_dm | replied_comment | sent_dm+replied
-    status     = db.Column(db.String(20),  default="ok")      # ok | error
-    note       = db.Column(db.Text,        default="")
-    created_at = db.Column(db.DateTime,    default=now_tehran)
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    rule_type   = db.Column(db.String(20),  default="dm")
+    rule_id     = db.Column(db.String(36),  default="")
+    rule_name   = db.Column(db.String(200), default="")
+    ig_user_id  = db.Column(db.String(100), default="")
+    ig_username = db.Column(db.String(100), default="")   # @username اینستاگرام
+    action      = db.Column(db.String(50),  default="sent_dm")
+    status      = db.Column(db.String(20),  default="ok")
+    note        = db.Column(db.Text,        default="")
+    created_at  = db.Column(db.DateTime,    default=now_tehran)
 
 
 class CooldownEntry(db.Model):
@@ -221,14 +222,39 @@ def update_cooldown(user_id: int, rule_id: str, ig_user_id: str):
 
 
 def log_activity(user_id: int, rule_type: str, rule_id: str, rule_name: str,
-                 ig_user_id: str, action: str, status: str = "ok", note: str = ""):
+                 ig_user_id: str, action: str, status: str = "ok", note: str = "",
+                 ig_username: str = ""):
     log = ActivityLog(
         user_id=user_id, rule_type=rule_type, rule_id=rule_id,
         rule_name=rule_name, ig_user_id=ig_user_id,
+        ig_username=ig_username,
         action=action, status=status, note=note
     )
     db.session.add(log)
     db.session.commit()
+
+
+def get_ig_username(ig_user_id: str, access_token: str) -> str:
+    """username اینستاگرام رو از conversations API می‌گیره"""
+    if not ig_user_id or not access_token:
+        return ""
+    try:
+        r = http_requests.get(
+            f"{GRAPH_API}/me/conversations",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"fields": "participants", "user_id": ig_user_id, "platform": "instagram"},
+            timeout=8,
+        )
+        data = r.json()
+        for conv in data.get("data", []):
+            for p in conv.get("participants", {}).get("data", []):
+                if p.get("id") == ig_user_id:
+                    username = p.get("username", "")
+                    print(f"[USERNAME] {ig_user_id} → @{username}", flush=True)
+                    return username
+    except Exception as e:
+        print(f"[USERNAME] ERROR: {e}", flush=True)
+    return ""
 
 
 def resolve_post_id(post_link: str, access_token: str) -> str:
@@ -295,6 +321,15 @@ def _run_migrations():
     try:
         with db.engine.connect() as conn:
             inspector = inspect(db.engine)
+
+            # ── activity_logs ──
+            existing = {c["name"] for c in inspector.get_columns("activity_logs")}
+            for col, ddl in [
+                ("ig_username", "ALTER TABLE activity_logs ADD COLUMN ig_username VARCHAR(100) DEFAULT ''"),
+            ]:
+                if col not in existing:
+                    conn.execute(text(ddl))
+                    print(f"[MIGRATE] activity_logs.{col} added", flush=True)
 
             # ── settings ──
             existing = {c["name"] for c in inspector.get_columns("settings")}
@@ -471,8 +506,9 @@ def _handle_messaging(event, dm_rules, token, owner_id):
             rule.fire_count = (rule.fire_count or 0) + 1
             db.session.commit()
             update_cooldown(owner_id, rule.id, sender_id)
+            username = get_ig_username(sender_id, token)
             log_activity(owner_id, "dm", rule.id, rule.trigger, sender_id,
-                         "sent_dm", "ok" if ok else "error")
+                         "sent_dm", "ok" if ok else "error", ig_username=username)
             break
 
 
@@ -502,8 +538,9 @@ def _handle_comment(comment, rules, token, owner_id):
             if ig_user_id:
                 update_cooldown(owner_id, rule.id, ig_user_id)
             action_str = "+".join(actions) if actions else "no_action"
+            username = get_ig_username(ig_user_id, token) if ig_user_id else ""
             log_activity(owner_id, "comment", rule.id, rule.trigger,
-                         ig_user_id or "", action_str)
+                         ig_user_id or "", action_str, ig_username=username)
             break
 
 
