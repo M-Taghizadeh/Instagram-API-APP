@@ -579,26 +579,43 @@ def _handle_comment(comment, rules, token, owner_id):
             if is_on_cooldown(owner_id, rule.id, ig_user_id or ""):
                 print(f"[COMMENT] COOLDOWN — skipping rule {rule.id}", flush=True)
                 break
+
             actions = []
+
+            # ۱) ریپلای روی خود کامنت (عمومی، زیر همون کامنت)
             if rule.comment_reply:
                 ok = _reply_comment(comment_id, rule.comment_reply, token)
                 if ok:
                     actions.append("replied_comment")
-            if rule.dm_response:
-                # ارسال DM — فقط اگه کاربر conversation window داشته باشه
-                ok2 = _send_dm(ig_user_id, rule.dm_response, token)
-                if ok2:
-                    actions.append("sent_dm")
                 else:
-                    print(f"[COMMENT] DM failed — user has no open conversation window", flush=True)
+                    print(f"[COMMENT] comment_reply failed", flush=True)
+
+            # ۲) پیام خصوصی — اول از private_reply (مخصوص کامنت، بدون نیاز به conversation قبلی)
+            if rule.dm_response:
+                ok2 = _private_reply(comment_id, rule.dm_response, token)
+                if ok2:
+                    actions.append("sent_private_reply")
+                else:
+                    print(f"[COMMENT] private_reply failed — trying fallback to /me/messages", flush=True)
+                    # fallback: شاید کاربر قبلاً conversation باز داشته
+                    ok3 = _send_dm(ig_user_id, rule.dm_response, token)
+                    if ok3:
+                        actions.append("sent_dm_fallback")
+                    else:
+                        print(f"[COMMENT] DM fallback also failed — no open conversation window", flush=True)
+
             rule.fire_count = (rule.fire_count or 0) + 1
             db.session.commit()
+
             if ig_user_id:
                 update_cooldown(owner_id, rule.id, ig_user_id)
+
             action_str = "+".join(actions) if actions else "no_action"
             username = get_ig_username(ig_user_id, token) if ig_user_id else ""
             log_activity(owner_id, "comment", rule.id, rule.trigger,
-                         ig_user_id or "", action_str, ig_username=username)
+                         ig_user_id or "", action_str,
+                         "ok" if actions else "error",
+                         ig_username=username)
             break
 
 
