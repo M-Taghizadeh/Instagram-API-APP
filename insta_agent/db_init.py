@@ -79,53 +79,59 @@ def log_activity(user_id, rule_type, rule_id, rule_name, ig_user_id, action,
 
 def _run_migrations():
   from sqlalchemy import text, inspect
+
+  is_pg = db.engine.dialect.name == "postgresql"
+  ts_type = "TIMESTAMP" if is_pg else "DATETIME"
+
+  def _add_column(conn, table: str, col: str, ddl: str):
+    inspector = inspect(db.engine)
+    if table not in inspector.get_table_names():
+      return
+    existing = {c["name"] for c in inspector.get_columns(table)}
+    if col in existing:
+      return
+    conn.execute(text(ddl))
+    conn.commit()
+    print(f"[MIGRATE] {table}.{col} added", flush=True)
+
   try:
     with db.engine.connect() as conn:
-      inspector = inspect(db.engine)
-      tables = inspector.get_table_names()
+      _add_column(conn, "activity_logs", "ig_username",
+                  "ALTER TABLE activity_logs ADD COLUMN ig_username VARCHAR(100) DEFAULT ''")
+      _add_column(conn, "settings", "cooldown_enabled",
+                  "ALTER TABLE settings ADD COLUMN cooldown_enabled BOOLEAN DEFAULT TRUE")
+      _add_column(conn, "settings", "cooldown_seconds",
+                  "ALTER TABLE settings ADD COLUMN cooldown_seconds INTEGER DEFAULT 3600")
+      _add_column(conn, "dm_rules", "is_active",
+                  "ALTER TABLE dm_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE")
+      _add_column(conn, "dm_rules", "fire_count",
+                  "ALTER TABLE dm_rules ADD COLUMN fire_count INTEGER DEFAULT 0")
+      _add_column(conn, "comment_rules", "is_active",
+                  "ALTER TABLE comment_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE")
+      _add_column(conn, "comment_rules", "fire_count",
+                  "ALTER TABLE comment_rules ADD COLUMN fire_count INTEGER DEFAULT 0")
+      _add_column(conn, "comment_rules", "post_caption",
+                  "ALTER TABLE comment_rules ADD COLUMN post_caption TEXT DEFAULT ''")
+      _add_column(conn, "comment_rules", "post_thumb",
+                  "ALTER TABLE comment_rules ADD COLUMN post_thumb TEXT DEFAULT ''")
+      _add_column(conn, "users", "email",
+                  "ALTER TABLE users ADD COLUMN email VARCHAR(120) DEFAULT ''")
+      _add_column(conn, "users", "created_at",
+                  f"ALTER TABLE users ADD COLUMN created_at {ts_type}")
 
-      if "activity_logs" in tables:
-        existing = {c["name"] for c in inspector.get_columns("activity_logs")}
-        if "ig_username" not in existing:
-          conn.execute(text("ALTER TABLE activity_logs ADD COLUMN ig_username VARCHAR(100) DEFAULT ''"))
+      # backfill nulls on existing rows
+      for stmt in [
+        "UPDATE dm_rules SET is_active=TRUE WHERE is_active IS NULL",
+        "UPDATE dm_rules SET fire_count=0 WHERE fire_count IS NULL",
+        "UPDATE comment_rules SET is_active=TRUE WHERE is_active IS NULL",
+        "UPDATE comment_rules SET fire_count=0 WHERE fire_count IS NULL",
+      ]:
+        try:
+          conn.execute(text(stmt))
+          conn.commit()
+        except Exception:
+          conn.rollback()
 
-      if "settings" in tables:
-        existing = {c["name"] for c in inspector.get_columns("settings")}
-        for col, ddl in [
-          ("cooldown_enabled", "ALTER TABLE settings ADD COLUMN cooldown_enabled BOOLEAN DEFAULT TRUE"),
-          ("cooldown_seconds", "ALTER TABLE settings ADD COLUMN cooldown_seconds INTEGER DEFAULT 3600"),
-        ]:
-          if col not in existing:
-            conn.execute(text(ddl))
-
-      if "dm_rules" in tables:
-        existing = {c["name"] for c in inspector.get_columns("dm_rules")}
-        for col, ddl in [
-          ("is_active", "ALTER TABLE dm_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
-          ("fire_count", "ALTER TABLE dm_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
-        ]:
-          if col not in existing:
-            conn.execute(text(ddl))
-
-      if "comment_rules" in tables:
-        existing = {c["name"] for c in inspector.get_columns("comment_rules")}
-        for col, ddl in [
-          ("is_active", "ALTER TABLE comment_rules ADD COLUMN is_active BOOLEAN DEFAULT TRUE"),
-          ("fire_count", "ALTER TABLE comment_rules ADD COLUMN fire_count INTEGER DEFAULT 0"),
-          ("post_caption", "ALTER TABLE comment_rules ADD COLUMN post_caption TEXT DEFAULT ''"),
-          ("post_thumb", "ALTER TABLE comment_rules ADD COLUMN post_thumb TEXT DEFAULT ''"),
-        ]:
-          if col not in existing:
-            conn.execute(text(ddl))
-
-      if "users" in tables:
-        existing = {c["name"] for c in inspector.get_columns("users")}
-        if "email" not in existing:
-          conn.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR(120) DEFAULT ''"))
-        if "created_at" not in existing:
-          conn.execute(text("ALTER TABLE users ADD COLUMN created_at DATETIME"))
-
-      conn.commit()
     print("[MIGRATE] done", flush=True)
   except Exception as e:
     print(f"[MIGRATE] ERROR: {e}", flush=True)
