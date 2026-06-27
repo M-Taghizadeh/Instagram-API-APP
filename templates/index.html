@@ -192,7 +192,8 @@ footer { border-top:1px solid var(--border); padding:36px 5%;
     <a href="#how">نحوه کار</a>
     <a href="#stats">آمار</a>
   </div>
-  <a href="{{ url_for('auth.login') }}"><button class="nav-cta">ورود به پنل ←</button></a>
+  <a href="{{ url_for('auth.register') }}"><button class="nav-cta">ثبت‌نام رایگان ←</button></a>
+  <a href="{{ url_for('auth.login') }}" style="margin-right:10px;color:var(--text-dim);font-size:14px;text-decoration:none;">ورود</a>
 </nav>
 
 <!-- ══ Hero ══ -->
@@ -210,7 +211,7 @@ footer { border-top:1px solid var(--border); padding:36px 5%;
           کلمات کلیدی تعریف کن، قانون بساز و بقیه را به ما بسپار.
         </p>
         <div class="hero-actions">
-          <a href="{{ url_for('auth.login') }}"><button class="btn-primary">شروع رایگان ←</button></a>
+          <a href="{{ url_for('auth.register') }}"><button class="btn-primary">شروع رایگان ←</button></a>
           <a href="#features"><button class="btn-secondary">امکانات</button></a>
         </div>
       </div>
@@ -342,7 +343,7 @@ footer { border-top:1px solid var(--border); padding:36px 5%;
       <h2 class="cta-title">همین الان شروع کن</h2>
       <p class="cta-desc">اینستاگرام خود را به یک ماشین پاسخ‌دهی هوشمند تبدیل کن.</p>
       <div class="cta-actions">
-        <a href="{{ url_for('auth.login') }}"><button class="btn-primary">ورود به پنل ←</button></a>
+        <a href="{{ url_for('auth.register') }}"><button class="btn-primary">ثبت‌نام رایگان ←</button></a>
       </div>
     </div>
   </div>

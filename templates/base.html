@@ -516,6 +516,9 @@ select {
 
       <div class="nav-section">
         <div class="nav-section-title">حساب</div>
+        <a href="{{ url_for('auth.pages') }}" class="nav-item {% if request.path.startswith('/pages') %}active{% endif %}">
+          <span class="ni-icon">📸</span> پیج‌های من
+        </a>
         <a href="{{ url_for('settings.settings') }}" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
           <span class="ni-icon">⚙️</span> تنظیمات
         </a>

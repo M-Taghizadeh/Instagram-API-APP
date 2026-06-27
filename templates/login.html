@@ -454,17 +454,9 @@ input::placeholder { color: var(--text-faint); }
       </button>
     </form>
 
-    {% if oauth_ready %}
-    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);text-align:center;">
-      <div style="font-size:12px;color:var(--text-faint);margin-bottom:12px;">یا اتصال مستقیم با اینستاگرام</div>
-      <a href="{{ url_for('oauth.connect') }}" style="display:flex;align-items:center;justify-content:center;gap:10px;
-         padding:12px 20px;border-radius:var(--radius-sm);font-weight:700;font-size:14px;color:#fff;text-decoration:none;
-         background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);">
-        📸 Login with Instagram
-      </a>
-      <div style="font-size:11px;color:var(--text-faint);margin-top:10px;">فقط Business / Creator</div>
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--text-faint);">
+      حساب نداری؟ <a href="{{ url_for('auth.register') }}" style="color:var(--accent-2);font-weight:700;text-decoration:none;">ثبت‌نام رایگان</a>
     </div>
-    {% endif %}
 
   </div>
 </div>

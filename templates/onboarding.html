@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اتصال پیج — Insta Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#07060e;--panel:#0f0d1c;--panel-2:#16132a;--border:#232040;--text:#f0ecff;--text-dim:#b8b0d4;--text-faint:#7a7299;--accent-2:#6c4fff;--accent-grad:linear-gradient(135deg,#e0417f,#a855f7,#6c4fff);--ok:#22d3a0;--danger:#f87171;--radius:16px;--radius-sm:10px}
+body{font-family:'Vazirmatn',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 600px 400px at 50% 0%,rgba(108,79,255,.08),transparent 70%);pointer-events:none}
+.wrap{width:100%;max-width:520px;position:relative;z-index:1}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:36px 32px;box-shadow:0 40px 100px rgba(0,0,0,.5);text-align:center}
+.steps{display:flex;gap:8px;margin-bottom:24px}
+.step{flex:1;height:4px;border-radius:4px;background:var(--border)}
+.step.active{background:var(--accent-grad)}
+h1{font-size:24px;font-weight:800;margin-bottom:10px}
+.sub{font-size:14px;color:var(--text-dim);line-height:1.8;margin-bottom:28px}
+.ig-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;border-radius:var(--radius-sm);font-weight:800;font-size:15px;color:#fff;text-decoration:none;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);margin-bottom:16px}
+.note{font-size:12px;color:var(--text-faint);line-height:1.7;margin-top:18px}
+.checklist{text-align:right;margin:24px 0;padding:16px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.checklist div{font-size:13px;color:var(--text-dim);padding:6px 0}
+.flash{padding:11px 14px;border-radius:var(--radius-sm);margin-bottom:16px;font-size:13px;font-weight:600;text-align:right}
+.flash.error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:var(--danger)}
+.flash.success{background:rgba(34,211,160,.08);border:1px solid rgba(34,211,160,.22);color:var(--ok)}
+.user{font-size:13px;color:var(--text-faint);margin-bottom:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="steps"><div class="step active"></div><div class="step active"></div></div>
+    <div style="font-size:42px;margin-bottom:12px">📸</div>
+    <h1>پیج اینستاگرامت را وصل کن</h1>
+    <p class="sub">مرحله ۲ از ۲ — با یک کلیک وارد اینستاگرام می‌شی، دسترسی می‌دی، و توکن اتوماتیک برای پنلت ساخته می‌شه.</p>
+    <div class="user">سلام {{ current_user.username }} 👋</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+
+    <div class="checklist">
+      <div>✅ حساب باید <strong>Business</strong> یا <strong>Creator</strong> باشد</div>
+      <div>✅ دسترسی پیام و کامنت به اپ داده می‌شود</div>
+      <div>✅ توکن ۶۰ روزه خودکار ذخیره می‌شود</div>
+    </div>
+
+    {% if oauth_ready %}
+    <a href="{{ url_for('oauth.connect') }}" class="ig-btn">📸 اتصال پیج اینستاگرام</a>
+    {% else %}
+    <div class="flash error">تنظیمات OAuth در سرور کامل نیست. با ادمین تماس بگیر.</div>
+    {% endif %}
+
+    <p class="note">بعد از اتصال، به داشبورد هدایت می‌شی و می‌تونی قوانین اتومیشن بسازی.</p>
+    <a href="{{ url_for('auth.logout') }}" style="font-size:12px;color:var(--text-faint)">خروج از حساب</a>
+  </div>
+</div>
+</body>
+</html>
