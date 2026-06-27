@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 
 from insta_agent.extensions import db
 from insta_agent.models import User, Settings
-from insta_agent.services.instagram_oauth import oauth_configured
+from insta_agent.services.instagram_oauth import oauth_configured, oauth_status
 
 bp = Blueprint("auth", __name__)
 
@@ -97,7 +97,7 @@ def register():
 def onboarding():
   if user_has_connection(current_user):
     return redirect(url_for("dashboard.dashboard"))
-  return render_template("onboarding.html", oauth_ready=oauth_configured())
+  return render_template("onboarding.html", oauth_ready=oauth_configured(), oauth=oauth_status())
 
 
 @bp.route("/pages")

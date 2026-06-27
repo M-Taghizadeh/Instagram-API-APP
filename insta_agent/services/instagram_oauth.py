@@ -65,3 +65,14 @@ def is_professional_account(account_type: str) -> bool:
 
 def oauth_configured() -> bool:
   return bool(Config.META_APP_ID and Config.META_APP_SECRET and Config.OAUTH_REDIRECT_URI)
+
+
+def oauth_status() -> dict:
+  """وضعیت تنظیمات OAuth — برای نمایش در onboarding"""
+  return {
+    "ready": oauth_configured(),
+    "app_id": bool(Config.META_APP_ID),
+    "app_secret": bool(Config.META_APP_SECRET),
+    "redirect_uri": bool(Config.OAUTH_REDIRECT_URI),
+    "redirect_value": Config.OAUTH_REDIRECT_URI or "",
+  }
