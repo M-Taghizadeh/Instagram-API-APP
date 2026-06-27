@@ -519,11 +519,52 @@ def _handle_messaging(event, dm_rules, token, owner_id):
             break
 
 
+def _get_page_ig_id(token: str) -> str:
+    """ID اینستاگرامی خود پیج رو می‌گیره تا کامنت‌های خودمون رو فیلتر کنیم"""
+    try:
+        r = http_requests.get(
+            f"{GRAPH_API}/me",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"fields": "id"},
+            timeout=8,
+        )
+        return r.json().get("id", "")
+    except Exception:
+        return ""
+
+
+def _private_reply(comment_id: str, text: str, token: str) -> bool:
+    """ارسال پیام خصوصی مستقیم روی comment_id — این روش محدودیت ۷ روزه رو نداره"""
+    if not comment_id or not token:
+        return False
+    try:
+        r = http_requests.post(
+            f"{GRAPH_API}/{comment_id}/private_replies",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"message": text},
+            timeout=10,
+        )
+        print(f"[PRIVATE_REPLY] status={r.status_code} response={r.text[:300]}", flush=True)
+        return r.status_code == 200
+    except Exception as e:
+        print("PRIVATE_REPLY ERROR:", e, flush=True)
+        return False
+
+
 def _handle_comment(comment, rules, token, owner_id):
     text       = comment.get("text", "")
     media_id   = (comment.get("media") or {}).get("id")
     comment_id = comment.get("id")
     ig_user_id = (comment.get("from") or {}).get("id")
+
+    # کامنت‌های خود پیج رو نادیده بگیر
+    page_id = _get_page_ig_id(token)
+    if page_id and ig_user_id == page_id:
+        print(f"[COMMENT] skip — own page comment", flush=True)
+        return
+
+    print(f"[COMMENT] text={text!r} media={media_id} user={ig_user_id}", flush=True)
+
     for rule in rules:
         if rule.post_id and rule.post_id != media_id:
             continue
@@ -537,9 +578,15 @@ def _handle_comment(comment, rules, token, owner_id):
                 if ok:
                     actions.append("replied_comment")
             if rule.dm_response:
-                ok2 = _send_dm(ig_user_id, rule.dm_response, token)
+                # اول private_reply امتحان کن، اگه نشد _send_dm
+                ok2 = _private_reply(comment_id, rule.dm_response, token)
                 if ok2:
                     actions.append("sent_dm")
+                else:
+                    print(f"[COMMENT] private_reply failed, trying send_dm...", flush=True)
+                    ok3 = _send_dm(ig_user_id, rule.dm_response, token)
+                    if ok3:
+                        actions.append("sent_dm")
             rule.fire_count = (rule.fire_count or 0) + 1
             db.session.commit()
             if ig_user_id:
