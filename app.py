@@ -585,15 +585,12 @@ def _handle_comment(comment, rules, token, owner_id):
                 if ok:
                     actions.append("replied_comment")
             if rule.dm_response:
-                # private_reply روی همین comment_id (top-level)
-                ok2 = _private_reply(comment_id, rule.dm_response, token)
+                # ارسال DM — فقط اگه کاربر conversation window داشته باشه
+                ok2 = _send_dm(ig_user_id, rule.dm_response, token)
                 if ok2:
                     actions.append("sent_dm")
                 else:
-                    print(f"[COMMENT] private_reply failed, trying send_dm...", flush=True)
-                    ok3 = _send_dm(ig_user_id, rule.dm_response, token)
-                    if ok3:
-                        actions.append("sent_dm")
+                    print(f"[COMMENT] DM failed — user has no open conversation window", flush=True)
             rule.fire_count = (rule.fire_count or 0) + 1
             db.session.commit()
             if ig_user_id:
