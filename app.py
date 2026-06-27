@@ -555,6 +555,7 @@ def _handle_comment(comment, rules, token, owner_id):
     text       = comment.get("text", "")
     media_id   = (comment.get("media") or {}).get("id")
     comment_id = comment.get("id")
+    parent_id  = comment.get("parent_id")   # ID کامنت اصلی کاربر (اگه reply باشه)
     ig_user_id = (comment.get("from") or {}).get("id")
 
     # کامنت‌های خود پیج رو نادیده بگیر
@@ -563,7 +564,11 @@ def _handle_comment(comment, rules, token, owner_id):
         print(f"[COMMENT] skip — own page comment", flush=True)
         return
 
-    print(f"[COMMENT] text={text!r} media={media_id} user={ig_user_id}", flush=True)
+    # برای private_reply باید از comment اصلی استفاده کنیم
+    # اگه این یه reply هست (parent_id داره)، از parent_id استفاده کن
+    reply_target_id = parent_id if parent_id else comment_id
+
+    print(f"[COMMENT] text={text!r} media={media_id} user={ig_user_id} reply_target={reply_target_id}", flush=True)
 
     for rule in rules:
         if rule.post_id and rule.post_id != media_id:
@@ -578,8 +583,8 @@ def _handle_comment(comment, rules, token, owner_id):
                 if ok:
                     actions.append("replied_comment")
             if rule.dm_response:
-                # اول private_reply امتحان کن، اگه نشد _send_dm
-                ok2 = _private_reply(comment_id, rule.dm_response, token)
+                # private_reply روی comment اصلی
+                ok2 = _private_reply(reply_target_id, rule.dm_response, token)
                 if ok2:
                     actions.append("sent_dm")
                 else:
