@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}فالوآپ جدید — Insta Agent{% endblock %}
+{% block topbar_title %}زمان‌بندی پیام{% endblock %}
+{% block content %}
+
+<div style="max-width:520px;margin:0 auto;">
+  <div class="page-header">
+    <div class="page-title">⏰ پیام زمان‌بندی‌شده</div>
+    <div class="page-sub">فالوآپ دستی در دایرکت</div>
+  </div>
+  <form method="post" class="card" style="padding:20px;">
+    <div class="field">
+      <label>شناسه کاربر اینستاگرام (IG User ID)</label>
+      <input type="text" name="ig_user_id" required placeholder="1784...">
+    </div>
+    <div class="field">
+      <label>یوزرنیم (اختیاری)</label>
+      <input type="text" name="ig_username" placeholder="@username">
+    </div>
+    <div class="field">
+      <label>متن پیام</label>
+      <textarea name="message" rows="4" required></textarea>
+    </div>
+    <div class="field">
+      <label>ارسال بعد از (ساعت)</label>
+      <input type="number" name="hours" value="1" min="0" max="23">
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn">زمان‌بندی</button>
+      <a href="{{ url_for('followup.followup_list') }}" class="btn secondary">انصراف</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

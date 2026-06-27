@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ 'ویرایش' if flow else 'فلو جدید' }} — Insta Agent{% endblock %}
+{% block topbar_title %}{{ 'ویرایش فلو' if flow else 'فلو جدید' }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">🔀 {{ 'ویرایش فلو' if flow else 'ساخت فلو جدید' }}</div>
+    <div class="page-sub">متن، ویدیو، ویس، دکمه، ویترین، فرم، نظرسنجی و فالوآپ</div>
+  </div>
+</div>
+
+<form method="post">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+    <div class="card" style="padding:20px;">
+      <div class="field">
+        <label>نام فلو</label>
+        <input type="text" name="name" value="{{ flow.name if flow else '' }}" required placeholder="مثلاً: فرم ثبت‌نام">
+      </div>
+      <div class="field">
+        <label>توضیحات</label>
+        <input type="text" name="description" value="{{ flow.description if flow else '' }}">
+      </div>
+      <div class="field">
+        <label>نوع فلو</label>
+        <select name="flow_kind">
+          {% for k, label in flow_kinds.items() %}
+          <option value="{{ k }}" {{ 'selected' if flow and flow.flow_kind == k }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>کانال</label>
+        <select name="channel">
+          {% for k, label in channels.items() %}
+          <option value="{{ k }}" {{ 'selected' if flow and flow.channel == k }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>کلمه کلیدی (trigger)</label>
+        <input type="text" name="trigger" value="{{ flow.trigger if flow else '' }}" placeholder="قیمت، سلام، ...">
+      </div>
+      <div class="field">
+        <label>نوع تطبیق</label>
+        <select name="match_type">
+          <option value="contains" {{ 'selected' if flow and flow.match_type == 'contains' }}>شامل (contains)</option>
+          <option value="exact" {{ 'selected' if flow and flow.match_type == 'exact' }}>دقیق (exact)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>شناسه پست (فقط کامنت)</label>
+        <input type="text" name="post_id" value="{{ flow.post_id if flow else '' }}" placeholder="خالی = همه پست‌ها">
+      </div>
+    </div>
+
+    <div class="card" style="padding:20px;">
+      <div style="font-weight:800;margin-bottom:10px;">نودهای فلو (JSON)</div>
+      <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;">
+        انواع: text, image, video, audio, carousel, buttons, quick_replies, collect_phone, collect_text, poll, quiz, delay, save_contact
+      </p>
+      <textarea name="nodes_json" rows="18" style="font-family:monospace;font-size:12px;direction:ltr;">{{ flow.nodes_json if flow else '[]' }}</textarea>
+      <div style="margin-top:12px;font-size:11px;color:var(--text-faint);">
+        برای آپلود مدیا: POST /media/upload
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions" style="margin-top:20px;">
+    <button type="submit" class="btn">💾 ذخیره فلو</button>
+    <a href="{{ url_for('flows.flow_list') }}" class="btn secondary">انصراف</a>
+  </div>
+</form>
+
+{% endblock %}

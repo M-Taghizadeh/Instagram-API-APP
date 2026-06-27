@@ -2,7 +2,7 @@
 {% block title %}قانون‌های دایرکت — Insta Agent{% endblock %}
 {% block topbar_title %}مدیریت دایرکت و استوری{% endblock %}
 {% block topbar_right %}
-  <a href="{{ url_for('new_dm_rule') }}" class="btn small">+ قانون جدید</a>
+  <a href="{{ url_for('rules.new_dm_rule') }}" class="btn small">+ قانون جدید</a>
 {% endblock %}
 {% block content %}
 
@@ -21,9 +21,9 @@
   </div>
   <button type="submit" class="btn secondary small">جستجو</button>
   {% if q %}
-    <a href="{{ url_for('dm_rules') }}" class="btn secondary small">✕ پاک</a>
+    <a href="{{ url_for('rules.dm_rules') }}" class="btn secondary small">✕ پاک</a>
   {% endif %}
-  <a href="{{ url_for('new_dm_rule') }}" class="btn small" style="margin-right:auto;">+ قانون جدید</a>
+  <a href="{{ url_for('rules.new_dm_rule') }}" class="btn small" style="margin-right:auto;">+ قانون جدید</a>
 </form>
 
 {% if q %}
@@ -105,10 +105,10 @@
                      onchange="toggleRule('{{ rule.id }}','dm')">
               <span class="toggle-track"></span>
             </label>
-            <a href="{{ url_for('edit_dm_rule', rule_id=rule.id) }}" class="btn secondary small" title="ویرایش">
+            <a href="{{ url_for('rules.edit_dm_rule', rule_id=rule.id) }}" class="btn secondary small" title="ویرایش">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </a>
-            <form method="post" action="{{ url_for('delete_dm_rule', rule_id=rule.id) }}"
+            <form method="post" action="{{ url_for('rules.delete_dm_rule', rule_id=rule.id) }}"
                   onsubmit="return confirm('این قانون حذف شود؟')" style="display:inline;">
               <button type="submit" class="btn danger small">🗑</button>
             </form>
@@ -123,17 +123,17 @@
   <!-- ══ Pagination ══ -->
   {% if pagination.pages > 1 %}
   <div class="pagination">
-    <a href="{{ url_for('dm_rules', q=q, page=1) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">«</a>
-    <a href="{{ url_for('dm_rules', q=q, page=pagination.prev_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">‹</a>
+    <a href="{{ url_for('rules.dm_rules', q=q, page=1) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">«</a>
+    <a href="{{ url_for('rules.dm_rules', q=q, page=pagination.prev_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">‹</a>
     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
       {% if p %}
-        <a href="{{ url_for('dm_rules', q=q, page=p) }}" class="pg-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+        <a href="{{ url_for('rules.dm_rules', q=q, page=p) }}" class="pg-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
       {% else %}
         <span class="pg-info">…</span>
       {% endif %}
     {% endfor %}
-    <a href="{{ url_for('dm_rules', q=q, page=pagination.next_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">›</a>
-    <a href="{{ url_for('dm_rules', q=q, page=pagination.pages) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">»</a>
+    <a href="{{ url_for('rules.dm_rules', q=q, page=pagination.next_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">›</a>
+    <a href="{{ url_for('rules.dm_rules', q=q, page=pagination.pages) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">»</a>
     <span class="pg-info">صفحه {{ pagination.page }} از {{ pagination.pages }}</span>
   </div>
   {% endif %}

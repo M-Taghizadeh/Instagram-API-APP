@@ -3,7 +3,7 @@
 {% block topbar_title %}لاگ فعالیت{% endblock %}
 {% block topbar_right %}
   {% if pagination.total %}
-  <form method="post" action="{{ url_for('clear_activity') }}"
+  <form method="post" action="{{ url_for('activity.clear_activity') }}"
         onsubmit="return confirm('همه لاگ‌ها پاک شوند؟')">
     <button type="submit" class="btn danger small">🗑 پاک کردن لاگ‌ها</button>
   </form>
@@ -20,17 +20,17 @@
 
 <!-- ══ Filter tabs ══ -->
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-  <a href="{{ url_for('activity_log') }}"
+  <a href="{{ url_for('activity.activity_log') }}"
      class="btn {{ 'secondary' if ftype else 'ghost' }} small"
      style="{% if not ftype %}background:var(--panel-3);border-color:var(--border-glow);color:var(--text);{% endif %}">
     همه ({{ total }})
   </a>
-  <a href="{{ url_for('activity_log', type='dm') }}"
+  <a href="{{ url_for('activity.activity_log', type='dm') }}"
      class="btn {{ 'ghost' if ftype != 'dm' else '' }} small"
      style="{% if ftype=='dm' %}background:rgba(108,79,255,.15);border-color:rgba(108,79,255,.3);color:#b4a4ff;{% endif %}">
     💬 دایرکت
   </a>
-  <a href="{{ url_for('activity_log', type='comment') }}"
+  <a href="{{ url_for('activity.activity_log', type='comment') }}"
      class="btn {{ 'ghost' if ftype != 'comment' else '' }} small"
      style="{% if ftype=='comment' %}background:rgba(224,65,127,.12);border-color:rgba(224,65,127,.28);color:#f9a8d4;{% endif %}">
     📝 کامنت
@@ -116,17 +116,17 @@
   <!-- Pagination -->
   <div class="pagination" style="margin-top:20px;">
     {% if pagination.pages > 1 %}
-    <a href="{{ url_for('activity_log', type=ftype, page=1) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">«</a>
-    <a href="{{ url_for('activity_log', type=ftype, page=pagination.prev_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">‹</a>
+    <a href="{{ url_for('activity.activity_log', type=ftype, page=1) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">«</a>
+    <a href="{{ url_for('activity.activity_log', type=ftype, page=pagination.prev_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">‹</a>
     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
       {% if p %}
-        <a href="{{ url_for('activity_log', type=ftype, page=p) }}" class="pg-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
+        <a href="{{ url_for('activity.activity_log', type=ftype, page=p) }}" class="pg-btn {{ 'active' if p == pagination.page }}">{{ p }}</a>
       {% else %}
         <span class="pg-info">…</span>
       {% endif %}
     {% endfor %}
-    <a href="{{ url_for('activity_log', type=ftype, page=pagination.next_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">›</a>
-    <a href="{{ url_for('activity_log', type=ftype, page=pagination.pages) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">»</a>
+    <a href="{{ url_for('activity.activity_log', type=ftype, page=pagination.next_num) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">›</a>
+    <a href="{{ url_for('activity.activity_log', type=ftype, page=pagination.pages) }}" class="pg-btn {{ 'disabled' if not pagination.has_next }}">»</a>
     {% endif %}
     <span class="pg-info">
       {{ pagination.total }} رکورد

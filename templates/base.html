@@ -479,27 +479,44 @@ select {
     <nav class="sidebar-nav">
       <div class="nav-section">
         <div class="nav-section-title">اصلی</div>
-        <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.path == '/' %}active{% endif %}">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="nav-item {% if request.path.startswith('/dashboard') %}active{% endif %}">
           <span class="ni-icon">📊</span> داشبورد
         </a>
-        <a href="{{ url_for('activity_log') }}" class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}">
+        <a href="{{ url_for('activity.activity_log') }}" class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}">
           <span class="ni-icon">📋</span> لاگ فعالیت
+        </a>
+        <a href="{{ url_for('contacts.contact_list') }}" class="nav-item {% if request.path.startswith('/contacts') %}active{% endif %}">
+          <span class="ni-icon">👥</span> مخاطبین
         </a>
       </div>
 
       <div class="nav-section">
         <div class="nav-section-title">اتومیشن</div>
-        <a href="{{ url_for('dm_rules') }}" class="nav-item {% if request.path.startswith('/dm') %}active{% endif %}">
-          <span class="ni-icon">💬</span> مدیریت دایرکت و استوری
+        <a href="{{ url_for('flows.flow_list') }}" class="nav-item {% if request.path.startswith('/flows') %}active{% endif %}">
+          <span class="ni-icon">🔀</span> فلو هوشمند
+          <span class="ni-badge new">جدید</span>
         </a>
-        <a href="{{ url_for('comment_rules') }}" class="nav-item {% if request.path.startswith('/comment') %}active{% endif %}">
-          <span class="ni-icon">📝</span> مدیریت کامنت
+        <a href="{{ url_for('rules.dm_rules') }}" class="nav-item {% if request.path.startswith('/dm') %}active{% endif %}">
+          <span class="ni-icon">💬</span> دایرکت ساده
+        </a>
+        <a href="{{ url_for('rules.comment_rules') }}" class="nav-item {% if request.path.startswith('/comment') %}active{% endif %}">
+          <span class="ni-icon">📝</span> کامنت هوشمند
+        </a>
+        <a href="{{ url_for('followup.followup_list') }}" class="nav-item {% if request.path.startswith('/followup') %}active{% endif %}">
+          <span class="ni-icon">⏰</span> فالوآپ
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">فروش و ارتباط</div>
+        <a href="{{ url_for('sms.sms_panel') }}" class="nav-item {% if request.path.startswith('/sms') %}active{% endif %}">
+          <span class="ni-icon">📱</span> پیامک هوشمند
         </a>
       </div>
 
       <div class="nav-section">
         <div class="nav-section-title">حساب</div>
-        <a href="{{ url_for('settings') }}" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
+        <a href="{{ url_for('settings.settings') }}" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
           <span class="ni-icon">⚙️</span> تنظیمات
         </a>
       </div>
@@ -510,10 +527,10 @@ select {
         <div class="user-avatar">{{ current_user.username[0].upper() if current_user.is_authenticated else 'A' }}</div>
         <div class="user-info">
           <div class="user-name">{{ current_user.username if current_user.is_authenticated else 'Admin' }}</div>
-          <div class="user-role">ادمین</div>
+          <div class="user-role">{% if current_user.is_authenticated and current_user.primary_ig_account %}@{{ current_user.primary_ig_account.username }}{% else %}ادمین{% endif %}</div>
         </div>
       </div>
-      <form action="{{ url_for('logout') }}" method="get">
+      <form action="{{ url_for('auth.logout') }}" method="get">
         <button type="submit" class="btn-logout">⬅ خروج از حساب</button>
       </form>
     </div>

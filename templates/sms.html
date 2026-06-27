@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}پیامک — Insta Agent{% endblock %}
+{% block topbar_title %}پیامک هوشمند{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">📱 پیامک هوشمند</div>
+    <div class="page-sub">{{ phone_count }} شماره در CRM · ارسال تکی و انبوه</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+  <form method="post" action="{{ url_for('sms.sms_settings') }}" class="card" style="padding:20px;">
+    <div style="font-weight:800;margin-bottom:14px;">تنظیمات سرویس‌دهنده</div>
+    <div class="field">
+      <label>سرویس‌دهنده</label>
+      <select name="provider">
+        <option value="kavenegar" {{ 'selected' if cfg and cfg.provider == 'kavenegar' }}>کاوه‌نگار</option>
+        <option value="melipayamak" {{ 'selected' if cfg and cfg.provider == 'melipayamak' }}>ملی‌پیامک</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>API Key / Username</label>
+      <input type="text" name="api_key" value="{{ cfg.api_key if cfg else '' }}">
+    </div>
+    <div class="field">
+      <label>شماره فرستنده</label>
+      <input type="text" name="sender" value="{{ cfg.sender if cfg else '' }}">
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <input type="checkbox" name="is_active" value="1" {{ 'checked' if cfg and cfg.is_active }}>
+      فعال
+    </label>
+    <button type="submit" class="btn" style="width:100%;">ذخیره تنظیمات</button>
+  </form>
+
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <form method="post" action="{{ url_for('sms.send_single') }}" class="card" style="padding:20px;">
+      <div style="font-weight:800;margin-bottom:14px;">ارسال تکی</div>
+      <div class="field"><label>شماره</label><input type="text" name="phone" required></div>
+      <div class="field"><label>متن</label><textarea name="message" rows="3" required></textarea></div>
+      <button type="submit" class="btn secondary" style="width:100%;">ارسال</button>
+    </form>
+
+    <form method="post" action="{{ url_for('sms.send_bulk') }}" class="card" style="padding:20px;">
+      <div style="font-weight:800;margin-bottom:14px;">ارسال انبوه به CRM</div>
+      <div class="field"><label>متن پیام</label><textarea name="message" rows="3" required></textarea></div>
+      <button type="submit" class="btn" style="width:100%;">ارسال به {{ phone_count }} شماره</button>
+      <a href="{{ url_for('sms.export_phones') }}" class="btn ghost small" style="width:100%;margin-top:8px;">📥 خروجی Excel شماره‌ها</a>
+    </form>
+  </div>
+</div>
+
+{% if logs %}
+<div class="card" style="margin-top:20px;padding:16px;">
+  <div style="font-weight:800;margin-bottom:12px;">آخرین ارسال‌ها</div>
+  {% for log in logs %}
+  <div style="font-size:12px;padding:8px 0;border-bottom:1px solid var(--border-soft);">
+    {{ log.phone }} — <span class="badge {{ 'ok' if log.status == 'sent' else 'danger' }}">{{ log.status }}</span>
+    — {{ log.created_at.strftime('%m/%d %H:%M') if log.created_at else '' }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -192,7 +192,7 @@ footer { border-top:1px solid var(--border); padding:36px 5%;
     <a href="#how">نحوه کار</a>
     <a href="#stats">آمار</a>
   </div>
-  <a href="{{ url_for('login') }}"><button class="nav-cta">ورود به پنل ←</button></a>
+  <a href="{{ url_for('auth.login') }}"><button class="nav-cta">ورود به پنل ←</button></a>
 </nav>
 
 <!-- ══ Hero ══ -->
@@ -210,7 +210,7 @@ footer { border-top:1px solid var(--border); padding:36px 5%;
           کلمات کلیدی تعریف کن، قانون بساز و بقیه را به ما بسپار.
         </p>
         <div class="hero-actions">
-          <a href="{{ url_for('login') }}"><button class="btn-primary">شروع رایگان ←</button></a>
+          <a href="{{ url_for('auth.login') }}"><button class="btn-primary">شروع رایگان ←</button></a>
           <a href="#features"><button class="btn-secondary">امکانات</button></a>
         </div>
       </div>
@@ -342,7 +342,7 @@ footer { border-top:1px solid var(--border); padding:36px 5%;
       <h2 class="cta-title">همین الان شروع کن</h2>
       <p class="cta-desc">اینستاگرام خود را به یک ماشین پاسخ‌دهی هوشمند تبدیل کن.</p>
       <div class="cta-actions">
-        <a href="{{ url_for('login') }}"><button class="btn-primary">ورود به پنل ←</button></a>
+        <a href="{{ url_for('auth.login') }}"><button class="btn-primary">ورود به پنل ←</button></a>
       </div>
     </div>
   </div>

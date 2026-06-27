@@ -2,41 +2,41 @@
 {% block title %}داشبورد — Insta Agent{% endblock %}
 {% block topbar_title %}داشبورد{% endblock %}
 {% block topbar_right %}
-  <a href="{{ url_for('new_dm_rule') }}" class="btn small">+ قانون جدید</a>
+  <a href="{{ url_for('rules.new_dm_rule') }}" class="btn small">+ قانون جدید</a>
 {% endblock %}
 {% block content %}
 
 <!-- ══ Stats ══ -->
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-card-icon purple">💬</div>
-    <div class="stat-label">مدیریت دایرکت و استوری</div>
-    <div class="stat-value grad">{{ dm_count }}</div>
-    <div class="stat-sub">{{ dm_active }} فعال · <a href="{{ url_for('dm_rules') }}">مشاهده همه ←</a></div>
+    <div class="stat-card-icon purple">🔀</div>
+    <div class="stat-label">فلوهای هوشمند</div>
+    <div class="stat-value grad">{{ flow_count }}</div>
+    <div class="stat-sub">{{ flow_active }} فعال · <a href="{{ url_for('flows.flow_list') }}">مشاهده ←</a></div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon pink">📝</div>
-    <div class="stat-label">مدیریت کامنت</div>
-    <div class="stat-value grad">{{ comment_count }}</div>
-    <div class="stat-sub">{{ cm_active }} فعال · <a href="{{ url_for('comment_rules') }}">مشاهده همه ←</a></div>
+    <div class="stat-card-icon pink">👥</div>
+    <div class="stat-label">مخاطبین CRM</div>
+    <div class="stat-value grad">{{ contact_count }}</div>
+    <div class="stat-sub">{{ pending_followups }} فالوآپ در صف</div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon cyan">⚡</div>
     <div class="stat-label">پاسخ‌های ۷ روز اخیر</div>
     <div class="stat-value grad">{{ total_fires }}</div>
-    <div class="stat-sub"><a href="{{ url_for('activity_log') }}">مشاهده لاگ ←</a></div>
+    <div class="stat-sub"><a href="{{ url_for('activity.activity_log') }}">مشاهده لاگ ←</a></div>
   </div>
   <div class="stat-card">
     <div class="stat-card-icon green">🔌</div>
     <div class="stat-label">وضعیت اتصال</div>
     <div style="margin-top:4px;">
       {% if token_set %}
-        <span class="badge ok" style="font-size:13px;padding:5px 12px;">● متصل</span>
+        <span class="badge ok" style="font-size:13px;padding:5px 12px;">● متصل{% if ig_account %} @{{ ig_account.username }}{% endif %}</span>
       {% else %}
-        <span class="badge danger" style="font-size:13px;padding:5px 12px;">○ توکن تنظیم نشده</span>
+        <span class="badge danger" style="font-size:13px;padding:5px 12px;">○ متصل نیست</span>
       {% endif %}
     </div>
-    <div class="stat-sub" style="margin-top:8px;"><a href="{{ url_for('settings') }}">تنظیمات ←</a></div>
+    <div class="stat-sub" style="margin-top:8px;"><a href="{{ url_for('settings.settings') }}">تنظیمات ←</a></div>
   </div>
 </div>
 
@@ -50,7 +50,7 @@
         <div style="font-size:15px;font-weight:800;">فعالیت ۷ روز اخیر</div>
         <div style="font-size:12px;color:var(--text-faint);margin-top:2px;">تعداد پاسخ‌های ارسال‌شده</div>
       </div>
-      <a href="{{ url_for('activity_log') }}" class="btn ghost small">مشاهده همه</a>
+      <a href="{{ url_for('activity.activity_log') }}" class="btn ghost small">مشاهده همه</a>
     </div>
     <div style="position:relative;height:180px;">
       <canvas id="actChart"></canvas>
@@ -94,7 +94,7 @@
 
 <!-- ══ Quick actions ══ -->
 <div class="dash-actions-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;">
-  <a href="{{ url_for('new_dm_rule') }}" class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer;">
+  <a href="{{ url_for('rules.new_dm_rule') }}" class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer;">
     <div style="width:46px;height:46px;border-radius:13px;background:rgba(108,79,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">💬</div>
     <div>
       <div style="font-weight:800;font-size:14px;margin-bottom:3px;">قانون دایرکت جدید</div>
@@ -102,7 +102,7 @@
     </div>
     <span style="margin-right:auto;color:var(--text-faint);font-size:18px;">←</span>
   </a>
-  <a href="{{ url_for('new_comment_rule') }}" class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer;">
+  <a href="{{ url_for('rules.new_comment_rule') }}" class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer;">
     <div style="width:46px;height:46px;border-radius:13px;background:rgba(224,65,127,.12);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📝</div>
     <div>
       <div style="font-weight:800;font-size:14px;margin-bottom:3px;">قانون کامنت جدید</div>
@@ -117,7 +117,7 @@
   <div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border-soft);">
       <div style="font-size:14px;font-weight:800;">آخرین قانون‌های دایرکت</div>
-      <a href="{{ url_for('dm_rules') }}" style="font-size:12px;color:var(--accent-2);">همه ←</a>
+      <a href="{{ url_for('rules.dm_rules') }}" style="font-size:12px;color:var(--accent-2);">همه ←</a>
     </div>
     {% if recent_dm %}
       <div class="grid">
@@ -146,7 +146,7 @@
   <div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border-soft);">
       <div style="font-size:14px;font-weight:800;">آخرین قانون‌های کامنت</div>
-      <a href="{{ url_for('comment_rules') }}" style="font-size:12px;color:var(--accent-2);">همه ←</a>
+      <a href="{{ url_for('rules.comment_rules') }}" style="font-size:12px;color:var(--accent-2);">همه ←</a>
     </div>
     {% if recent_cm %}
       <div class="dash-cm-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">

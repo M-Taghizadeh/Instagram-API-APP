@@ -10,6 +10,43 @@
   </div>
 </div>
 
+<!-- ══ Instagram OAuth ══ -->
+<div class="card" style="padding:18px 20px;margin-bottom:20px;">
+  <div class="settings-section-head">
+    <div class="settings-icon pink">📸</div>
+    <div>
+      <div class="settings-title">اتصال با اینستاگرام</div>
+      <div class="settings-sub">فقط حساب Business یا Creator — Login with Instagram</div>
+    </div>
+  </div>
+  {% if ig_account %}
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+    {% if ig_account.profile_picture %}
+    <img src="{{ ig_account.profile_picture }}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+    {% else %}
+    <div class="user-avatar" style="width:48px;height:48px;font-size:20px;">@</div>
+    {% endif %}
+    <div style="flex:1;">
+      <div style="font-weight:800;">@{{ ig_account.username }}</div>
+      <div style="font-size:12px;color:var(--text-faint);">{{ ig_account.name }} · {{ ig_account.account_type }}</div>
+    </div>
+    <span class="badge ok">● متصل</span>
+  </div>
+  <a href="{{ url_for('oauth.disconnect') }}" class="btn secondary small">قطع اتصال</a>
+  {% else %}
+  <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px;">
+    با اتصال مستقیم اینستاگرام، نیازی به کپی دستی توکن نیست. حسابت باید Business یا Creator باشد.
+  </p>
+  {% if oauth_ready %}
+  <a href="{{ url_for('oauth.connect') }}" class="btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);">
+    📸 اتصال با اینستاگرام
+  </a>
+  {% else %}
+  <div class="flash error" style="margin:0;">META_APP_ID، META_APP_SECRET و OAUTH_REDIRECT_URI را در .env تنظیم کن.</div>
+  {% endif %}
+  {% endif %}
+</div>
+
 <!-- ══ Row 0: Connection status banner ══ -->
 <div class="card" style="padding:14px 20px;margin-bottom:20px;
      display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
@@ -118,7 +155,7 @@
         </div>
         <span class="badge ok" style="font-size:10px;">● فعال</span>
       </div>
-      <a href="{{ url_for('change_password') }}" class="btn secondary"
+      <a href="{{ url_for('settings.change_password') }}" class="btn secondary"
          style="width:100%;justify-content:center;">🔑 تغییر رمز عبور</a>
     </div>
 
@@ -183,7 +220,7 @@
     </form>
 
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);">
-      <form method="post" action="{{ url_for('clear_cooldowns') }}"
+      <form method="post" action="{{ url_for('activity.clear_cooldowns') }}"
             onsubmit="return confirm('کولداون همه کاربران پاک شود؟')">
         <button type="submit" class="btn secondary small" style="width:100%;">
           🗑 پاک کردن همه Cooldown‌ها

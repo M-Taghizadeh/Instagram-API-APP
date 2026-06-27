@@ -30,6 +30,8 @@ env/
 .DS_Store
 Thumbs.db
 
+uploads/
+
 # Test files (may contain tokens)
 test.py
 lookup_user.py

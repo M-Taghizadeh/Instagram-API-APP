@@ -1,0 +1,184 @@
+import json
+import requests
+
+from insta_agent.config import Config
+
+GRAPH_API = Config.GRAPH_API
+
+
+def send_text(user_id: str, text: str, token: str) -> bool:
+  if not user_id or not token or not text:
+    return False
+  try:
+    r = requests.post(
+      f"{GRAPH_API}/me/messages",
+      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+      json={"recipient": {"id": user_id}, "message": {"text": text}},
+      timeout=10,
+    )
+    print(f"[SEND_TEXT] status={r.status_code} {r.text[:200]}", flush=True)
+    return r.status_code == 200
+  except Exception as e:
+    print(f"DM ERROR: {e}", flush=True)
+    return False
+
+
+def send_media(user_id: str, media_type: str, url: str, token: str) -> bool:
+  """media_type: image | video | audio"""
+  if not user_id or not token or not url:
+    return False
+  try:
+    r = requests.post(
+      f"{GRAPH_API}/me/messages",
+      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+      json={
+        "recipient": {"id": user_id},
+        "message": {"attachment": {"type": media_type, "payload": {"url": url}}},
+      },
+      timeout=30,
+    )
+    print(f"[SEND_MEDIA:{media_type}] status={r.status_code} {r.text[:200]}", flush=True)
+    return r.status_code == 200
+  except Exception as e:
+    print(f"MEDIA ERROR: {e}", flush=True)
+    return False
+
+
+def send_quick_replies(user_id: str, text: str, options: list, token: str) -> bool:
+  """options: [{title, payload}]"""
+  if not user_id or not token:
+    return False
+  qr = [{"content_type": "text", "title": o["title"][:20], "payload": o.get("payload", o["title"])} for o in options[:13]]
+  try:
+    r = requests.post(
+      f"{GRAPH_API}/me/messages",
+      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+      json={
+        "recipient": {"id": user_id},
+        "message": {"text": text[:1000], "quick_replies": qr},
+      },
+      timeout=10,
+    )
+    return r.status_code == 200
+  except Exception as e:
+    print(f"QUICK_REPLY ERROR: {e}", flush=True)
+    return False
+
+
+def send_generic_carousel(user_id: str, elements: list, token: str) -> bool:
+  """ویترین — اسکرول افقی"""
+  if not user_id or not token or not elements:
+    return False
+  els = []
+  for el in elements[:10]:
+    item = {
+      "title": (el.get("title") or "")[:80],
+      "subtitle": (el.get("subtitle") or "")[:80],
+    }
+    if el.get("image_url"):
+      item["image_url"] = el["image_url"]
+    if el.get("url"):
+      item["default_action"] = {"type": "web_url", "url": el["url"]}
+    buttons = []
+    for btn in (el.get("buttons") or [])[:3]:
+      if btn.get("type") == "url" and btn.get("url"):
+        buttons.append({"type": "web_url", "url": btn["url"], "title": btn.get("title", "بازدید")[:20]})
+      else:
+        buttons.append({"type": "postback", "title": btn.get("title", "انتخاب")[:20], "payload": btn.get("payload", "OK")})
+    if buttons:
+      item["buttons"] = buttons
+    els.append(item)
+  try:
+    r = requests.post(
+      f"{GRAPH_API}/me/messages",
+      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+      json={
+        "recipient": {"id": user_id},
+        "message": {"attachment": {"type": "template", "payload": {"template_type": "generic", "elements": els}}},
+      },
+      timeout=15,
+    )
+    print(f"[CAROUSEL] status={r.status_code} {r.text[:200]}", flush=True)
+    return r.status_code == 200
+  except Exception as e:
+    print(f"CAROUSEL ERROR: {e}", flush=True)
+    return False
+
+
+def send_button_template(user_id: str, text: str, buttons: list, token: str) -> bool:
+  if not user_id or not token:
+    return False
+  btns = []
+  for btn in buttons[:3]:
+    if btn.get("type") == "url":
+      btns.append({"type": "web_url", "url": btn["url"], "title": btn.get("title", "لینک")[:20]})
+    else:
+      btns.append({"type": "postback", "title": btn.get("title", "انتخاب")[:20], "payload": btn.get("payload", "OK")})
+  try:
+    r = requests.post(
+      f"{GRAPH_API}/me/messages",
+      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+      json={
+        "recipient": {"id": user_id},
+        "message": {
+          "attachment": {
+            "type": "template",
+            "payload": {"template_type": "button", "text": text[:640], "buttons": btns},
+          }
+        },
+      },
+      timeout=10,
+    )
+    return r.status_code == 200
+  except Exception as e:
+    print(f"BUTTON ERROR: {e}", flush=True)
+    return False
+
+
+def send_payload(user_id: str, payload: dict, token: str) -> bool:
+  """ارسال بر اساس نوع node در فلو"""
+  ptype = payload.get("type", "text")
+  if ptype == "text":
+    return send_text(user_id, payload.get("text", ""), token)
+  if ptype in ("image", "video", "audio"):
+    return send_media(user_id, ptype, payload.get("url", ""), token)
+  if ptype == "carousel":
+    return send_generic_carousel(user_id, payload.get("elements", []), token)
+  if ptype == "buttons":
+    return send_button_template(user_id, payload.get("text", ""), payload.get("buttons", []), token)
+  if ptype == "quick_replies":
+    return send_quick_replies(user_id, payload.get("text", ""), payload.get("options", []), token)
+  return False
+
+
+def reply_comment(comment_id: str, text: str, token: str) -> bool:
+  if not comment_id or not token:
+    return False
+  try:
+    r = requests.post(
+      f"{GRAPH_API}/{comment_id}/replies",
+      headers={"Authorization": f"Bearer {token}"},
+      json={"message": text},
+      timeout=10,
+    )
+    return r.status_code == 200
+  except Exception as e:
+    print(f"COMMENT REPLY ERROR: {e}", flush=True)
+    return False
+
+
+def private_reply(comment_id: str, text: str, token: str) -> bool:
+  if not comment_id or not token:
+    return False
+  try:
+    r = requests.post(
+      f"{GRAPH_API}/{comment_id}/private_replies",
+      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+      json={"message": text},
+      timeout=10,
+    )
+    print(f"[PRIVATE_REPLY] status={r.status_code} {r.text[:200]}", flush=True)
+    return r.status_code == 200
+  except Exception as e:
+    print(f"PRIVATE_REPLY ERROR: {e}", flush=True)
+    return False

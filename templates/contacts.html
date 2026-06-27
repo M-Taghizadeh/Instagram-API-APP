@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}مخاطبین — Insta Agent{% endblock %}
+{% block topbar_title %}مخاطبین CRM{% endblock %}
+{% block topbar_right %}
+  <a href="{{ url_for('contacts.export_contacts') }}" class="btn secondary small">📥 Excel</a>
+  <a href="{{ url_for('contacts.export_phones') }}" class="btn secondary small">📱 شماره‌ها</a>
+{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">👥 مخاطبین</div>
+    <div class="page-sub">{{ total }} مخاطب · {{ with_phone }} با شماره تماس</div>
+  </div>
+</div>
+
+<form method="get" style="display:flex;gap:10px;margin-bottom:18px;">
+  <input type="text" name="q" value="{{ q }}" placeholder="جستجو نام، یوزرنیم، شماره..." style="flex:1;">
+  <button type="submit" class="btn secondary small">جستجو</button>
+</form>
+
+{% if pagination.items %}
+<div class="card" style="overflow:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);text-align:right;">
+        <th style="padding:12px;">یوزرنیم</th>
+        <th style="padding:12px;">نام</th>
+        <th style="padding:12px;">تلفن</th>
+        <th style="padding:12px;">ایمیل</th>
+        <th style="padding:12px;">منبع</th>
+        <th style="padding:12px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in pagination.items %}
+      <tr style="border-bottom:1px solid var(--border-soft);">
+        <td style="padding:12px;">@{{ c.ig_username or '—' }}</td>
+        <td style="padding:12px;">{{ c.full_name or '—' }}</td>
+        <td style="padding:12px;direction:ltr;text-align:right;">{{ c.phone or '—' }}</td>
+        <td style="padding:12px;">{{ c.email or '—' }}</td>
+        <td style="padding:12px;">{{ c.source }}</td>
+        <td style="padding:12px;">
+          <form method="post" action="{{ url_for('contacts.delete_contact', contact_id=c.id) }}" onsubmit="return confirm('حذف؟')">
+            <button type="submit" class="btn ghost small" style="color:var(--danger);">حذف</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><span class="empty-icon">👥</span>هنوز مخاطبی ثبت نشده. از فلو فرم‌ساز استفاده کن.</div>
+{% endif %}
+
+{% endblock %}
