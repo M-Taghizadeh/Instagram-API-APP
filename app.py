@@ -555,20 +555,22 @@ def _handle_comment(comment, rules, token, owner_id):
     text       = comment.get("text", "")
     media_id   = (comment.get("media") or {}).get("id")
     comment_id = comment.get("id")
-    parent_id  = comment.get("parent_id")   # ID کامنت اصلی کاربر (اگه reply باشه)
+    parent_id  = comment.get("parent_id")
     ig_user_id = (comment.get("from") or {}).get("id")
 
     # کامنت‌های خود پیج رو نادیده بگیر
     page_id = _get_page_ig_id(token)
     if page_id and ig_user_id == page_id:
-        print(f"[COMMENT] skip — own page comment", flush=True)
+        print(f"[COMMENT] skip — own page comment (id={comment_id})", flush=True)
         return
 
-    # برای private_reply باید از comment اصلی استفاده کنیم
-    # اگه این یه reply هست (parent_id داره)، از parent_id استفاده کن
-    reply_target_id = parent_id if parent_id else comment_id
+    # فقط top-level comment ها رو پردازش کن (نه reply ها)
+    # چون private_reply فقط روی top-level کار می‌کنه
+    if parent_id:
+        print(f"[COMMENT] skip — this is a reply (parent={parent_id})", flush=True)
+        return
 
-    print(f"[COMMENT] text={text!r} media={media_id} user={ig_user_id} reply_target={reply_target_id}", flush=True)
+    print(f"[COMMENT] text={text!r} media={media_id} user={ig_user_id} comment_id={comment_id}", flush=True)
 
     for rule in rules:
         if rule.post_id and rule.post_id != media_id:
@@ -583,8 +585,8 @@ def _handle_comment(comment, rules, token, owner_id):
                 if ok:
                     actions.append("replied_comment")
             if rule.dm_response:
-                # private_reply روی comment اصلی
-                ok2 = _private_reply(reply_target_id, rule.dm_response, token)
+                # private_reply روی همین comment_id (top-level)
+                ok2 = _private_reply(comment_id, rule.dm_response, token)
                 if ok2:
                     actions.append("sent_dm")
                 else:
