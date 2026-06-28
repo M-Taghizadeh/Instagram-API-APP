@@ -43,7 +43,6 @@
         <div class="nav-section-title">اتومیشن</div>
         <a href="{{ url_for('flows.flow_list') }}" class="nav-item {% if request.path.startswith('/flows') %}active{% endif %}">
           <i data-lucide="git-branch" class="nav-icon"></i> فلو هوشمند
-          <span class="nav-badge accent">جدید</span>
         </a>
         <a href="{{ url_for('rules.dm_rules') }}" class="nav-item {% if request.path.startswith('/dm') %}active{% endif %}">
           <i data-lucide="message-circle" class="nav-icon"></i> دایرکت ساده
