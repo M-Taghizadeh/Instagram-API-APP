@@ -74,21 +74,25 @@ def debug_user_token(access_token: str) -> dict:
 def probe_me(access_token: str) -> tuple[bool, str]:
   if not access_token:
     return False, "no token"
-  try:
-    r = get_no_redirect(
-      f"{GRAPH_API}/me",
-      headers={"Authorization": f"Bearer {access_token}"},
-      params={"fields": "user_id,username"},
-    )
-    raw = r.json()
-    if r.status_code == 200 and "error" not in raw:
-      data = _normalize_profile(_unwrap_payload(raw))
-      if data.get("user_id") or data.get("username"):
-        return True, ""
-    err = raw.get("error", {}) if isinstance(raw, dict) else {}
-    return False, err.get("message", r.text) if isinstance(err, dict) else r.text
-  except Exception as e:
-    return False, str(e)
+  fields = {"fields": "user_id,username"}
+  attempts = (
+    ("bearer", {"Authorization": f"Bearer {access_token}"}, fields),
+    ("query", {}, {**fields, "access_token": access_token}),
+  )
+  last_err = ""
+  for _, headers, params in attempts:
+    try:
+      r = get_no_redirect(f"{GRAPH_API}/me", headers=headers, params=params)
+      raw = r.json()
+      if r.status_code == 200 and "error" not in raw:
+        data = _normalize_profile(_unwrap_payload(raw))
+        if data.get("user_id") or data.get("username"):
+          return True, ""
+      err = raw.get("error", {}) if isinstance(raw, dict) else {}
+      last_err = err.get("message", r.text) if isinstance(err, dict) else r.text
+    except Exception as e:
+      last_err = str(e)
+  return False, last_err
 
 
 def token_health_report(access_token: str) -> dict:
@@ -200,9 +204,9 @@ def explain_meta_api_error(msg: str) -> str:
   low = (msg or "").lower()
   if "method type" in low:
     return (
-      "دسترسی «View profile and access media» (instagram_business_basic) داده نشده — "
-      "در صفحه Allow اینستاگرام هر ۳ toggle باید روشن باشد. "
-      "اکانت هم باید Business یا Creator باشد."
+      "اینستاگرام دسترسی instagram_business_basic نداد (View profile در Allow خاموش/خاکستری بود). "
+      "تا اپ Meta را Live نکردی: اکانت را در Roles → Instagram Testers اضافه کن. "
+      "برای فروش به همه مشتری‌ها: App Review + Advanced Access لازم است."
     )
   if "expired" in low:
     return "توکن منقضی شده — دوباره اتصال پیج را بزن."
@@ -210,11 +214,10 @@ def explain_meta_api_error(msg: str) -> str:
 
 
 def fetch_ig_profile_fast(access_token: str, ig_user_id: str = "") -> tuple[dict, str]:
-  """Bearer GET /me — same pattern as a working manual token test."""
+  """GET /me with Bearer or query token."""
   if not access_token:
     return {}, "توکن خالی است"
 
-  headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
   urls = [f"{GRAPH_API}/me"]
   if ig_user_id:
     urls.append(f"{GRAPH_API}/{ig_user_id}")
@@ -222,18 +225,21 @@ def fetch_ig_profile_fast(access_token: str, ig_user_id: str = "") -> tuple[dict
   last_err = ""
   for url in urls:
     for fields in (PROFILE_FIELDS, MIN_FIELDS):
-      try:
-        r = get_no_redirect(url, headers=headers, params={"fields": fields})
-        raw = r.json()
-        if r.status_code == 200 and isinstance(raw, dict) and "error" not in raw:
-          data = _normalize_profile(_unwrap_payload(raw))
-          if data.get("username") or data.get("user_id"):
-            return data, ""
-        err = raw.get("error", {}) if isinstance(raw, dict) else {}
-        last_err = err.get("message", r.text) if isinstance(err, dict) else r.text
-        print(f"[IG PROFILE] fast {url} -> {last_err}", flush=True)
-      except Exception as e:
-        last_err = str(e)
+      for mode, headers, extra in (
+        ("bearer", {"Authorization": f"Bearer {access_token}"}, {"fields": fields}),
+        ("query", {}, {"fields": fields, "access_token": access_token}),
+      ):
+        try:
+          r = get_no_redirect(url, headers=headers, params=extra)
+          raw = r.json()
+          if r.status_code == 200 and isinstance(raw, dict) and "error" not in raw:
+            data = _normalize_profile(_unwrap_payload(raw))
+            if data.get("username") or data.get("user_id"):
+              return data, ""
+          err = raw.get("error", {}) if isinstance(raw, dict) else {}
+          last_err = err.get("message", r.text) if isinstance(err, dict) else r.text
+        except Exception as e:
+          last_err = str(e)
   return {}, last_err
 
 

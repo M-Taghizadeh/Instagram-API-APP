@@ -24,6 +24,10 @@ bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
 OAUTH_FLOW_VERSION = "2025-06-28d"
 
 
+def _user_has_page(user_id: int) -> bool:
+  return IgAccount.query.filter_by(user_id=user_id).count() > 0
+
+
 @bp.route("/status")
 @login_required
 def oauth_debug_status():
@@ -154,7 +158,8 @@ def callback():
 
   except ValueError as e:
     flash(str(e), "error")
-    return redirect(url_for("auth.onboarding"))
+    dest = url_for("auth.pages") if user_is_admin or user_has_page(user_id) else url_for("auth.onboarding")
+    return redirect(dest)
   except Exception as e:
     if isinstance(e, (OperationalError, DBAPIError)) and is_disconnect_error(e):
       db.session.rollback()
