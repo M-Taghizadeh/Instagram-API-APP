@@ -35,7 +35,7 @@
 
 <!-- ══ List ══ -->
 {% if pagination.items %}
-  <div class="dm-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+  <div class="dm-grid">
     {% for rule in pagination.items %}
     <div class="card {% if not rule.is_active %}rule-inactive{% endif %}"
          id="rule-{{ rule.id }}"
@@ -140,8 +140,11 @@
 
 {% block extra_js %}
 <style>
-@media (max-width: 1100px) {
-  .dm-grid { grid-template-columns: repeat(2,1fr) !important; }
+@media (max-width: 1200px) {
+  .dm-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 900px) {
+  .dm-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 640px) {
   .dm-grid { grid-template-columns: 1fr !important; }

@@ -33,7 +33,7 @@
 
 <!-- ══ List ══ -->
 {% if pagination.items %}
-  <div class="grid-3col" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+  <div class="rules-grid">
     {% for rule in pagination.items %}
     <div class="card rule-card-post {% if not rule.is_active %}rule-inactive{% endif %}"
          id="rule-{{ rule.id }}"
@@ -189,11 +189,14 @@
 
 {% block extra_js %}
 <style>
-@media (max-width: 1100px) {
-  .grid-3col { grid-template-columns: repeat(2,1fr) !important; }
+@media (max-width: 1200px) {
+  .rules-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 900px) {
+  .rules-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 640px) {
-  .grid-3col { grid-template-columns: 1fr !important; }
+  .rules-grid { grid-template-columns: 1fr !important; }
 }
 </style>
 <script>
