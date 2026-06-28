@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{{ 'ویرایش' if flow else 'فلو جدید' }} — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon %}
+{% block title %}{{ 'ویرایش' if flow else 'فلو جدید' }} — محتوام{% endblock %}
 {% block topbar_title %}{{ 'ویرایش فلو' if flow else 'فلو جدید' }}{% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">🔀 {{ 'ویرایش فلو' if flow else 'ساخت فلو جدید' }}</div>
+    <div class="page-title">{{ icon('git-branch', 22) }} {{ 'ویرایش فلو' if flow else 'ساخت فلو جدید' }}</div>
     <div class="page-sub">متن، ویدیو، ویس، دکمه، ویترین، فرم، نظرسنجی و فالوآپ — با ویرایشگر بصری</div>
   </div>
 </div>
@@ -72,7 +73,7 @@
   </div>
 
   <div class="form-actions" style="margin-top:20px;">
-    <button type="submit" class="btn">💾 ذخیره فلو</button>
+    <button type="submit" class="btn">{{ icon('save', 16) }} ذخیره فلو</button>
     <a href="{{ url_for('flows.flow_list') }}" class="btn secondary">انصراف</a>
   </div>
 </form>

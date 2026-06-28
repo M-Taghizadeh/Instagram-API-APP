@@ -1,0 +1,16 @@
+{% macro icon(name, size=18, class='') -%}
+<i data-lucide="{{ name }}" style="width:{{ size }}px;height:{{ size }}px" class="{{ class }}"></i>
+{%- endmacro %}
+
+{% macro status_badge(active, label_on='فعال', label_off='غیرفعال') -%}
+<span class="badge {% if active %}ok{% endif %} rule-status-badge">
+  <span class="status-dot {% if active %}on{% else %}off{% endif %}"></span>
+  <span class="status-label">{{ label_on if active else label_off }}</span>
+</span>
+{%- endmacro %}
+
+{% macro icon_box(name, variant='violet', size='md') -%}
+<span class="icon-box {{ size }} {{ variant }}">
+  <i data-lucide="{{ name }}" style="width:{% if size == 'sm' %}16{% elif size == 'lg' %}22{% else %}20{% endif %}px;height:{% if size == 'sm' %}16{% elif size == 'lg' %}22{% else %}20{% endif %}px"></i>
+</span>
+{%- endmacro %}

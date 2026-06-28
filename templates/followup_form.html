@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}فالوآپ جدید — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon %}
+{% block title %}فالوآپ جدید — محتوام{% endblock %}
 {% block topbar_title %}زمان‌بندی پیام{% endblock %}
 {% block content %}
 
 <div style="max-width:520px;margin:0 auto;">
   <div class="page-header">
-    <div class="page-title">⏰ پیام زمان‌بندی‌شده</div>
+    <div class="page-title">{{ icon('clock', 22) }} پیام زمان‌بندی‌شده</div>
     <div class="page-sub">فالوآپ دستی در دایرکت</div>
   </div>
   <form method="post" class="card" style="padding:20px;">

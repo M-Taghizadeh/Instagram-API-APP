@@ -1,15 +1,16 @@
 {% extends "base.html" %}
+{% from "macros/ui.html" import icon, icon_box %}
 {% block title %}حسابداری — ادمین{% endblock %}
 {% block topbar_title %}پنل حسابداری و مالی{% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">📊 حسابداری و مالی</div>
+    <div class="page-title">{{ icon('bar-chart-3', 22) }} حسابداری و مالی</div>
     <div class="page-sub">گزارش درآمد سامانه — {{ report.period_label }}</div>
   </div>
   <a href="{{ url_for('admin.accounting_export', period=report.period, date_from=report.date_from, date_to=report.date_to, year=report.year, month=report.month, status=report.status_filter) }}"
-     class="btn secondary small">⬇ خروجی CSV</a>
+     class="btn secondary small">{{ icon('download', 14) }} خروجی CSV</a>
 </div>
 
 {% set active = 'accounting' %}
@@ -76,25 +77,25 @@
 <!-- خلاصه مالی -->
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-card-icon green">💰</div>
+    <div style="margin-bottom:12px;">{{ icon_box('banknote', 'green') }}</div>
     <div class="stat-label">درآمد دوره</div>
     <div class="stat-value" style="font-size:26px;">{{ "{:,}".format(report.revenue) }}</div>
     <div class="stat-sub">تومان · {{ report.count_paid }} تراکنش موفق</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon purple">📈</div>
+    <div style="margin-bottom:12px;">{{ icon_box('trending-up', 'violet') }}</div>
     <div class="stat-label">میانگین هر تراکنش</div>
     <div class="stat-value" style="font-size:26px;">{{ "{:,}".format(report.avg_transaction) }}</div>
     <div class="stat-sub">تومان</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon pink">⚠️</div>
+    <div style="margin-bottom:12px;">{{ icon_box('alert-triangle', 'rose') }}</div>
     <div class="stat-label">ناموفق / در انتظار</div>
     <div class="stat-value" style="font-size:26px;">{{ report.count_failed }} / {{ report.count_pending }}</div>
     <div class="stat-sub">در همین بازه</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon cyan">🏦</div>
+    <div style="margin-bottom:12px;">{{ icon_box('landmark', 'blue') }}</div>
     <div class="stat-label">درآمد کل (از ابتدا)</div>
     <div class="stat-value" style="font-size:26px;">{{ "{:,}".format(report.revenue_all) }}</div>
     <div class="stat-sub">تومان</div>

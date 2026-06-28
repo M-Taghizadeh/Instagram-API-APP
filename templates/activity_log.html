@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}لاگ فعالیت — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon, status_badge %}
+{% block title %}لاگ فعالیت — محتوام{% endblock %}
 {% block topbar_title %}لاگ فعالیت{% endblock %}
 {% block topbar_right %}
   {% if pagination.total %}
   <form method="post" action="{{ url_for('activity.clear_activity') }}"
         onsubmit="return confirm('همه لاگ‌ها پاک شوند؟')">
-    <button type="submit" class="btn danger small">🗑 پاک کردن لاگ‌ها</button>
+    <button type="submit" class="btn danger small">{{ icon('trash-2', 14) }} پاک کردن لاگ‌ها</button>
   </form>
   {% endif %}
 {% endblock %}
@@ -13,107 +14,91 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">📋 لاگ فعالیت</div>
+    <div class="page-title">{{ icon('scroll-text', 22) }} لاگ فعالیت</div>
     <div class="page-sub">تاریخچه همه پاسخ‌های ارسال‌شده توسط قانون‌ها</div>
   </div>
 </div>
 
-<!-- ══ Filter tabs ══ -->
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
   <a href="{{ url_for('activity.activity_log') }}"
-     class="btn {{ 'secondary' if ftype else 'ghost' }} small"
-     style="{% if not ftype %}background:var(--panel-3);border-color:var(--border-glow);color:var(--text);{% endif %}">
+     class="btn {{ 'secondary' if ftype else 'ghost' }} small">
     همه ({{ total }})
   </a>
   <a href="{{ url_for('activity.activity_log', type='dm') }}"
-     class="btn {{ 'ghost' if ftype != 'dm' else '' }} small"
-     style="{% if ftype=='dm' %}background:rgba(108,79,255,.15);border-color:rgba(108,79,255,.3);color:#b4a4ff;{% endif %}">
-    💬 دایرکت
+     class="btn {{ 'secondary' if ftype == 'dm' else 'ghost' }} small">
+    {{ icon('message-circle', 14) }} دایرکت
   </a>
   <a href="{{ url_for('activity.activity_log', type='comment') }}"
-     class="btn {{ 'ghost' if ftype != 'comment' else '' }} small"
-     style="{% if ftype=='comment' %}background:rgba(224,65,127,.12);border-color:rgba(224,65,127,.28);color:#f9a8d4;{% endif %}">
-    📝 کامنت
+     class="btn {{ 'secondary' if ftype == 'comment' else 'ghost' }} small">
+    {{ icon('message-square-text', 14) }} کامنت
   </a>
 </div>
 
 {% if pagination.items %}
-
-  <!-- ══ Log table ══ -->
-  <div class="card" style="padding:0;overflow:hidden;">
-    <div class="card-shine"></div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="border-bottom:1px solid var(--border-soft);">
-            <th style="padding:13px 20px;text-align:right;font-size:11.5px;color:var(--text-faint);font-weight:700;letter-spacing:.5px;white-space:nowrap;">نوع</th>
-            <th style="padding:13px 20px;text-align:right;font-size:11.5px;color:var(--text-faint);font-weight:700;letter-spacing:.5px;">قانون</th>
-            <th style="padding:13px 20px;text-align:right;font-size:11.5px;color:var(--text-faint);font-weight:700;letter-spacing:.5px;white-space:nowrap;">عملیات</th>
-            <th style="padding:13px 20px;text-align:right;font-size:11.5px;color:var(--text-faint);font-weight:700;letter-spacing:.5px;white-space:nowrap;">وضعیت</th>
-            <th style="padding:13px 20px;text-align:right;font-size:11.5px;color:var(--text-faint);font-weight:700;letter-spacing:.5px;white-space:nowrap;">زمان</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for log in pagination.items %}
-          <tr style="border-bottom:1px solid var(--border-soft);transition:background .12s;"
-              onmouseover="this.style.background='var(--panel-2)'"
-              onmouseout="this.style.background=''">
-            <td style="padding:13px 20px;">
-              <div class="act-icon {{ log.rule_type }}" style="width:30px;height:30px;font-size:14px;">
-                {{ '💬' if log.rule_type == 'dm' else '📝' }}
-              </div>
-            </td>
-            <td style="padding:13px 20px;max-width:240px;">
-              <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                {{ log.rule_name[:45] }}{% if log.rule_name|length > 45 %}…{% endif %}
-              </div>
-              {% if log.ig_username %}
-              <a href="https://instagram.com/{{ log.ig_username }}" target="_blank"
-                 style="display:inline-flex;align-items:center;gap:4px;margin-top:3px;
-                        font-size:11.5px;color:var(--accent-2);font-weight:700;">
-                <span style="width:18px;height:18px;border-radius:50%;background:var(--accent-grad);
-                             display:inline-flex;align-items:center;justify-content:center;
-                             font-size:9px;color:#fff;flex-shrink:0;">IG</span>
-                @{{ log.ig_username }}
-              </a>
-              {% elif log.ig_user_id %}
-              <div style="font-size:11px;color:var(--text-faint);margin-top:2px;font-family:monospace;">
-                ID: {{ log.ig_user_id[:20] }}
-              </div>
-              {% endif %}
-            </td>
-            <td style="padding:13px 20px;white-space:nowrap;">
-              {% if 'sent_dm' in log.action %}
-                <span class="badge purple" style="margin-left:4px;">📩 DM</span>
-              {% endif %}
-              {% if 'replied_comment' in log.action %}
-                <span class="badge pink">💬 کامنت</span>
-              {% endif %}
-              {% if log.action == 'no_action' %}
-                <span class="badge">بدون عملیات</span>
-              {% endif %}
-            </td>
-            <td style="padding:13px 20px;">
-              <span class="badge {{ 'ok' if log.status == 'ok' else 'danger' }}">
-                {{ '✓ موفق' if log.status == 'ok' else '✕ خطا' }}
-              </span>
-            </td>
-            <td style="padding:13px 20px;white-space:nowrap;">
-              <div style="font-size:12.5px;color:var(--text-dim);">
-                {{ log.created_at.strftime('%H:%M') if log.created_at else '—' }}
-              </div>
-              <div style="font-size:11px;color:var(--text-faint);margin-top:1px;">
-                {{ log.created_at.strftime('%Y/%m/%d') if log.created_at else '' }}
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>نوع</th>
+          <th>قانون</th>
+          <th>عملیات</th>
+          <th>وضعیت</th>
+          <th>زمان</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in pagination.items %}
+        <tr>
+          <td>
+            <div class="act-icon {{ log.rule_type }}">
+              {{ icon('message-circle' if log.rule_type == 'dm' else 'message-square-text', 16) }}
+            </div>
+          </td>
+          <td style="max-width:240px;">
+            <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ log.rule_name[:45] }}{% if log.rule_name|length > 45 %}…{% endif %}
+            </div>
+            {% if log.ig_username %}
+            <a href="https://instagram.com/{{ log.ig_username }}" target="_blank"
+               style="display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:12px;color:var(--primary);font-weight:500;">
+              @{{ log.ig_username }}
+            </a>
+            {% elif log.ig_user_id %}
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-family:monospace;">
+              ID: {{ log.ig_user_id[:20] }}
+            </div>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            {% if 'sent_dm' in log.action %}
+              <span class="badge purple" style="margin-left:4px;">DM</span>
+            {% endif %}
+            {% if 'replied_comment' in log.action %}
+              <span class="badge pink">کامنت</span>
+            {% endif %}
+            {% if log.action == 'no_action' %}
+              <span class="badge">بدون عملیات</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge {{ 'ok' if log.status == 'ok' else 'danger' }}">
+              {% if log.status == 'ok' %}{{ icon('check', 12) }} موفق{% else %}{{ icon('x', 12) }} خطا{% endif %}
+            </span>
+          </td>
+          <td style="white-space:nowrap;">
+            <div style="font-size:13px;color:var(--text-secondary);">
+              {{ log.created_at.strftime('%H:%M') if log.created_at else '—' }}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">
+              {{ log.created_at.strftime('%Y/%m/%d') if log.created_at else '' }}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
-  <!-- Pagination -->
   <div class="pagination" style="margin-top:20px;">
     {% if pagination.pages > 1 %}
     <a href="{{ url_for('activity.activity_log', type=ftype, page=1) }}" class="pg-btn {{ 'disabled' if not pagination.has_prev }}">«</a>
@@ -136,7 +121,7 @@
 
 {% else %}
   <div class="empty">
-    <span class="empty-icon">📋</span>
+    <div class="empty-icon">{{ icon('scroll-text', 24) }}</div>
     هنوز فعالیتی ثبت نشده.<br>
     وقتی قانون‌ها اجرا بشن اینجا نمایش داده می‌شه.
   </div>

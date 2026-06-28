@@ -1,11 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }} — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon, status_badge %}
+{% block title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }} — محتوام{% endblock %}
 {% block topbar_title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }}{% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">{{ '✏️ ویرایش قانون دایرکت' if rule else '💬 قانون جدید دایرکت' }}</div>
+    <div class="page-title">
+      {% if rule %}{{ icon('pencil', 22) }} ویرایش قانون دایرکت{% else %}{{ icon('message-circle', 22) }} قانون جدید دایرکت{% endif %}
+    </div>
     <div class="page-sub">وقتی کسی در دایرکت یا ریپلای استوری کلمه موردنظر را بفرستد، این پاسخ ارسال می‌شود.</div>
   </div>
 </div>
@@ -19,7 +22,7 @@
 
       <!-- Keywords -->
       <div class="field">
-        <label>🔑 کلمات کلیدی</label>
+        <label>کلمات کلیدی</label>
         <input type="text" name="trigger" id="triggerInput"
                value="{{ rule.trigger if rule else '' }}"
                placeholder="مثلاً: قیمت، price، پرایس" required>
@@ -46,12 +49,12 @@
 
       <!-- Response -->
       <div class="field">
-        <label>📨 پاسخ دایرکت</label>
+        <label>پاسخ دایرکت</label>
         <div class="editor-toolbar">
           <button type="button" class="emoji-toggle-btn" onclick="togglePicker('response')">😊 ایموجی</button>
           <button type="button" onclick="insertText('response','\n')">↵ خط جدید</button>
           <button type="button" onclick="insertText('response','{name}')">👤 نام کاربر</button>
-          <button type="button" onclick="insertText('response','https://')">🔗 لینک</button>
+          <button type="button" onclick="insertText('response','https://')">{{ icon('link', 12) }} لینک</button>
         </div>
         <div class="emoji-picker" id="picker-response" style="display:none">
           <div class="emoji-tabs">
@@ -78,7 +81,7 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn">{{ '💾 ذخیره تغییرات' if rule else '✚ ساخت قانون' }}</button>
+        <button type="submit" class="btn">{{ icon('save', 16) }} {{ 'ذخیره تغییرات' if rule else 'ساخت قانون' }}</button>
         <a href="{{ url_for('rules.dm_rules') }}" class="btn secondary">انصراف</a>
       </div>
     </div>
@@ -87,26 +90,21 @@
   <!-- ══ Side tips ══ -->
   <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:80px;">
     <div class="card" style="padding:18px 20px;">
-      <div style="font-size:13px;font-weight:800;margin-bottom:12px;">💡 راهنما</div>
-      <div style="font-size:12.5px;color:var(--text-dim);line-height:2.1;">
-        <div>🔑 <strong>چند کلمه:</strong> با ویرگول جدا کن</div>
-        <div>👤 <code>{name}</code> اسم کاربر را جایگزین می‌کند</div>
-        <div>📏 حداکثر طول پیام ۱۰۰۰ کاراکتر</div>
-        <div>🕐 هر کاربر هر ۱ ساعت یک بار پاسخ می‌گیرد</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;">{{ icon('lightbulb', 16) }} راهنما</div>
+      <div style="font-size:12.5px;color:var(--text-secondary);line-height:2;">
+        <div><strong>چند کلمه:</strong> با ویرگول جدا کن</div>
+        <div><code>{name}</code> اسم کاربر را جایگزین می‌کند</div>
+        <div>حداکثر طول پیام ۱۰۰۰ کاراکتر</div>
+        <div>هر کاربر هر ۱ ساعت یک بار پاسخ می‌گیرد</div>
       </div>
     </div>
     {% if rule %}
     <div class="card" style="padding:18px 20px;">
-      <div style="font-size:13px;font-weight:800;margin-bottom:10px;">📊 آمار قانون</div>
-      <div style="font-size:12.5px;color:var(--text-dim);line-height:2.2;">
-        <div>⚡ <strong>{{ rule.fire_count or 0 }}</strong> بار اجرا شده</div>
-        <div>📅 ساخته شده: {{ rule.created_at.strftime('%Y/%m/%d') if rule.created_at else '—' }}</div>
-        <div>
-          وضعیت:
-          <span class="badge {{ 'ok' if rule.is_active else 'danger' }}" style="margin-right:4px;">
-            {{ '● فعال' if rule.is_active else '○ غیرفعال' }}
-          </span>
-        </div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;">{{ icon('bar-chart-3', 16) }} آمار قانون</div>
+      <div style="font-size:12.5px;color:var(--text-secondary);line-height:2.2;">
+        <div><strong>{{ rule.fire_count or 0 }}</strong> بار اجرا شده</div>
+        <div>ساخته شده: {{ rule.created_at.strftime('%Y/%m/%d') if rule.created_at else '—' }}</div>
+        <div>وضعیت: {{ status_badge(rule.is_active) }}</div>
       </div>
     </div>
     {% endif %}
@@ -124,7 +122,7 @@ const colors = ['purple','pink','ok'];
 function updatePreview() {
   const parts = triggerInput.value.split(/[،,]+/).map(s=>s.trim()).filter(Boolean);
   kwPreview.innerHTML = parts.map((kw, i) =>
-    `<span class="badge ${colors[i%3]}">🔑 ${kw}</span>`
+    `<span class="badge ${colors[i%3]}">${kw}</span>`
   ).join('');
 }
 if (triggerInput) { triggerInput.addEventListener('input', updatePreview); updatePreview(); }

@@ -3,76 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>اتصال پیج — Insta Agent</title>
+<title>اتصال پیج — محتوام</title>
+<script>(function(){var t=localStorage.getItem('mohtavam-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/vazirmatn/vazirmatn.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#07060e;--panel:#0f0d1c;--panel-2:#16132a;--border:#232040;--text:#f0ecff;--text-dim:#b8b0d4;--text-faint:#7a7299;--accent-2:#6c4fff;--accent-grad:linear-gradient(135deg,#e0417f,#a855f7,#6c4fff);--ok:#22d3a0;--danger:#f87171;--radius:16px;--radius-sm:10px}
-body{font-family:'Vazirmatn',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 600px 400px at 50% 0%,rgba(108,79,255,.08),transparent 70%);pointer-events:none}
-.wrap{width:100%;max-width:520px;position:relative;z-index:1}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:36px 32px;box-shadow:0 40px 100px rgba(0,0,0,.5);text-align:center}
-.steps{display:flex;gap:8px;margin-bottom:24px}
-.step{flex:1;height:4px;border-radius:4px;background:var(--border)}
-.step.active{background:var(--accent-grad)}
-h1{font-size:24px;font-weight:800;margin-bottom:10px}
-.sub{font-size:14px;color:var(--text-dim);line-height:1.8;margin-bottom:28px}
-.ig-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;border-radius:var(--radius-sm);font-weight:800;font-size:15px;color:#fff;text-decoration:none;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);margin-bottom:16px}
-.note{font-size:12px;color:var(--text-faint);line-height:1.7;margin-top:18px}
-.checklist{text-align:right;margin:24px 0;padding:16px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
-.checklist div{font-size:13px;color:var(--text-dim);padding:6px 0}
-.flash{padding:11px 14px;border-radius:var(--radius-sm);margin-bottom:16px;font-size:13px;font-weight:600;text-align:right}
-.flash.error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:var(--danger)}
-.flash.success{background:rgba(34,211,160,.08);border:1px solid rgba(34,211,160,.22);color:var(--ok)}
-.user{font-size:13px;color:var(--text-faint);margin-bottom:18px}
+.onboard-card { max-width: 520px; width: 100%; text-align: center; }
+.steps { display: flex; gap: 6px; margin-bottom: 24px; }
+.step { flex: 1; height: 3px; border-radius: 99px; background: var(--border); }
+.step.active { background: var(--primary); }
+.ig-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px 20px; border-radius: var(--radius-sm); font-weight: 600; font-size: 15px;
+  color: #fff; text-decoration: none;
+  background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+  margin-bottom: 16px;
+}
+.checklist {
+  text-align: right; margin: 24px 0; padding: 16px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.checklist div { font-size: 13px; color: var(--text-secondary); padding: 6px 0; display: flex; align-items: center; gap: 8px; }
+.note { font-size: 12px; color: var(--text-muted); line-height: 1.7; margin-top: 18px; }
+.user { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
 </style>
 </head>
-<body>
-<div class="wrap">
-  <div class="card">
-    <div class="steps"><div class="step active"></div><div class="step active"></div></div>
-    <div style="font-size:42px;margin-bottom:12px">📸</div>
-    <h1>پیج اینستاگرامت را وصل کن</h1>
-    <p class="sub">مرحله ۲ از ۲ — با یک کلیک وارد اینستاگرام می‌شی، دسترسی می‌دی، و توکن اتوماتیک برای پنلت ساخته می‌شه.</p>
-    <div class="user">سلام {{ current_user.username }} 👋</div>
+<body class="auth-page">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
-    {% endwith %}
+<button type="button" class="icon-btn auth-theme-toggle" onclick="toggleTheme()" aria-label="تغییر تم">
+  <i data-theme-icon="sun" data-lucide="sun" style="width:18px;height:18px;display:none"></i>
+  <i data-theme-icon="moon" data-lucide="moon" style="width:18px;height:18px"></i>
+</button>
 
-    <div class="checklist">
-      <div>✅ حساب باید <strong>Business</strong> یا <strong>Creator</strong> باشد</div>
-      <div>✅ دسترسی پیام و کامنت به اپ داده می‌شود</div>
-      <div>✅ توکن ۶۰ روزه خودکار ذخیره می‌شود</div>
-    </div>
+<div class="register-card onboard-card">
+  <div class="steps"><div class="step active"></div><div class="step active"></div></div>
 
-    {% if oauth_ready %}
-    <a href="{{ url_for('oauth.connect') }}" class="ig-btn">📸 اتصال پیج اینستاگرام</a>
-    {% else %}
-    <div class="flash error" style="text-align:right;line-height:1.8;">
-      <strong>OAuth روی سرور تنظیم نشده</strong><br>
-      ادمین باید این متغیرها را در Render → Environment وارد کند:
-      <ul style="margin:10px 20px 0 0;padding:0;list-style:disc;font-size:12px;font-weight:500;">
-        <li style="margin:4px 0;color:{{ 'var(--ok)' if oauth.app_id else 'var(--danger)' }}">META_APP_ID {{ '✓' if oauth.app_id else '✕' }}</li>
-        <li style="margin:4px 0;color:{{ 'var(--ok)' if oauth.app_secret else 'var(--danger)' }}">META_APP_SECRET {{ '✓' if oauth.app_secret else '✕' }}</li>
-        <li style="margin:4px 0;color:{{ 'var(--ok)' if oauth.redirect_uri else 'var(--danger)' }}">OAUTH_REDIRECT_URI {{ '✓' if oauth.redirect_uri else '✕' }}</li>
-      </ul>
-    </div>
-    <div class="checklist" style="text-align:right;font-size:12px;line-height:1.9;">
-      <div><strong>مقدار OAUTH_REDIRECT_URI:</strong></div>
-      <div style="direction:ltr;text-align:left;font-family:monospace;font-size:11px;word-break:break-all;color:var(--accent-2);">
-        https://instaagentapp.onrender.com/auth/instagram/callback
-      </div>
-      <div style="margin-top:10px;">همین آدرس را در Meta Developers → Instagram Login → Redirect URI هم اضافه کن.</div>
-    </div>
-    <a href="{{ url_for('settings.settings') }}" style="display:inline-block;margin-top:12px;font-size:13px;color:var(--accent-2);font-weight:700;text-decoration:none;">
-      یا توکن را دستی در تنظیمات وارد کن ←
-    </a>
-    {% endif %}
-
-    <p class="note">بعد از اتصال، به داشبورد هدایت می‌شی و می‌تونی قوانین اتومیشن بسازی.</p>
-    <a href="{{ url_for('auth.logout') }}" style="font-size:12px;color:var(--text-faint)">خروج از حساب</a>
+  <div class="auth-brand" style="justify-content:center;margin-bottom:20px;">
+    <div class="auth-brand-mark"><i data-lucide="instagram" style="width:20px;height:20px"></i></div>
   </div>
+
+  <div class="auth-form-head">
+    <div class="auth-form-title">پیج اینستاگرامت را وصل کن</div>
+    <div class="auth-form-sub">مرحله ۲ از ۲ — با یک کلیک وارد اینستاگرام می‌شی و توکن اتوماتیک ساخته می‌شه.</div>
+  </div>
+
+  <div class="user">سلام {{ current_user.username }}</div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">
+        <i data-lucide="{% if category == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px;height:16px"></i>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="checklist">
+    <div><i data-lucide="check" style="width:16px;height:16px;color:var(--success)"></i> حساب باید <strong>Business</strong> یا <strong>Creator</strong> باشد</div>
+    <div><i data-lucide="check" style="width:16px;height:16px;color:var(--success)"></i> دسترسی پیام و کامنت به اپ داده می‌شود</div>
+    <div><i data-lucide="check" style="width:16px;height:16px;color:var(--success)"></i> توکن ۶۰ روزه خودکار ذخیره می‌شود</div>
+  </div>
+
+  {% if oauth_ready %}
+  <a href="{{ url_for('oauth.connect') }}" class="ig-btn">
+    <i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج اینستاگرام
+  </a>
+  {% else %}
+  <div class="flash error" style="text-align:right;line-height:1.8;">
+    <strong>OAuth روی سرور تنظیم نشده</strong><br>
+    ادمین باید این متغیرها را در Render → Environment وارد کند:
+    <ul style="margin:10px 20px 0 0;padding:0;list-style:none;font-size:12px;font-weight:500;">
+      <li style="margin:4px 0;color:{{ 'var(--success)' if oauth.app_id else 'var(--danger)' }};display:flex;align-items:center;gap:6px;">
+        <i data-lucide="{% if oauth.app_id %}check{% else %}x{% endif %}" style="width:14px;height:14px"></i> META_APP_ID
+      </li>
+      <li style="margin:4px 0;color:{{ 'var(--success)' if oauth.app_secret else 'var(--danger)' }};display:flex;align-items:center;gap:6px;">
+        <i data-lucide="{% if oauth.app_secret %}check{% else %}x{% endif %}" style="width:14px;height:14px"></i> META_APP_SECRET
+      </li>
+      <li style="margin:4px 0;color:{{ 'var(--success)' if oauth.redirect_uri else 'var(--danger)' }};display:flex;align-items:center;gap:6px;">
+        <i data-lucide="{% if oauth.redirect_uri %}check{% else %}x{% endif %}" style="width:14px;height:14px"></i> OAUTH_REDIRECT_URI
+      </li>
+    </ul>
+  </div>
+  <div class="checklist" style="text-align:right;font-size:12px;line-height:1.9;">
+    <div><strong>مقدار OAUTH_REDIRECT_URI:</strong></div>
+    <div style="direction:ltr;text-align:left;font-family:monospace;font-size:11px;word-break:break-all;color:var(--primary);">
+      https://instaagentapp.onrender.com/auth/instagram/callback
+    </div>
+    <div style="margin-top:10px;">همین آدرس را در Meta Developers → Instagram Login → Redirect URI هم اضافه کن.</div>
+  </div>
+  <a href="{{ url_for('settings.settings') }}" style="display:inline-block;margin-top:12px;font-size:13px;color:var(--primary);font-weight:600;text-decoration:none;">
+    یا توکن را دستی در تنظیمات وارد کن
+  </a>
+  {% endif %}
+
+  <p class="note">بعد از اتصال، به داشبورد هدایت می‌شی و می‌تونی قوانین اتومیشن بسازی.</p>
+  <a href="{{ url_for('auth.logout') }}" style="font-size:12px;color:var(--text-muted);">خروج از حساب</a>
 </div>
+
+<script src="{{ url_for('static', filename='vendor/lucide/lucide.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

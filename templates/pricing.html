@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}تعرفه‌ها — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon, icon_box, status_badge %}
+{% block title %}تعرفه‌ها — محتوام{% endblock %}
 {% block topbar_title %}تعرفه و اشتراک{% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">💎 تعرفه‌ها</div>
+    <div class="page-title">{{ icon('gem', 22) }} تعرفه‌ها</div>
     <div class="page-sub">دسترسی کامل به تمام امکانات — قیمت بر اساس فالوور پیج شما</div>
   </div>
 </div>
@@ -14,12 +15,12 @@
 <div class="card pricing-status-bar">
   <div>
   {% if sub_info.active %}
-    <span class="badge ok">● {{ sub_info.label }}</span>
+    <span class="badge ok"><span class="status-dot on"></span> {{ sub_info.label }}</span>
     {% if sub_info.followers %}
     <span class="pricing-status-meta">فالوور پیج: <span class="fa-num">{{ sub_info.followers }}</span></span>
     {% endif %}
   {% else %}
-    <span class="badge danger">○ {{ sub_info.label }}</span>
+    <span class="badge danger"><span class="status-dot off"></span> {{ sub_info.label }}</span>
     {% if sub_info.suggested_plan %}
     <span class="pricing-status-meta">پلن پیشنهادی: <b>{{ sub_info.suggested_plan.name }}</b></span>
     {% endif %}
@@ -54,24 +55,24 @@
     <div class="pricing-price-unit">تومان / دوره</div>
   </div>
   <ul class="pricing-features">
-    <li><span class="pricing-check">✓</span> پاسخ اتوماتیک به کامنت <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> کامنت اتوماتیک <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> دایرکت هوشمند <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> دایرکت هوشمند (فلو چارت) <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> ارسال ویس در دایرکت <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> ارسال ویدیو در دایرکت <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> فضای ذخیره‌سازی <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> پیام پیگیری <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> پاسخ به ریپلای استوری <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> کمپین پاسخ اتوماتیک <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> کمپین کامنت اتوماتیک <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> پاسخ به منشن استوری <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> تعداد دستور <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> دایرکت دکمه‌دار <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> دایرکت چرخ‌وفلک <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> پیام خوش‌آمدگویی <b>نامحدود</b></li>
-    <li><span class="pricing-check">✓</span> CRM مخاطبین و پیامک</li>
-    <li><span class="pricing-check">✓</span> اتصال به <b>۱</b> اکانت اینستاگرام</li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> پاسخ اتوماتیک به کامنت <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> کامنت اتوماتیک <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> دایرکت هوشمند <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> دایرکت هوشمند (فلو چارت) <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> ارسال ویس در دایرکت <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> ارسال ویدیو در دایرکت <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> فضای ذخیره‌سازی <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> پیام پیگیری <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> پاسخ به ریپلای استوری <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> کمپین پاسخ اتوماتیک <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> کمپین کامنت اتوماتیک <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> پاسخ به منشن استوری <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> تعداد دستور <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> دایرکت دکمه‌دار <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> دایرکت چرخ‌وفلک <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> پیام خوش‌آمدگویی <b>نامحدود</b></li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> CRM مخاطبین و پیامک</li>
+    <li><span class="pricing-check">{{ icon('check', 14) }}</span> اتصال به <b>۱</b> اکانت اینستاگرام</li>
   </ul>
   <form method="post" action="{{ url_for('billing.checkout') }}" class="pricing-card-form">
     <input type="hidden" name="plan_slug" value="{{ plan.slug }}">
@@ -251,10 +252,15 @@
   font-weight: 700;
 }
 .pricing-check {
-  color: var(--ok);
-  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--success-muted);
+  color: var(--success);
   flex-shrink: 0;
-  margin-top: 1px;
 }
 .pricing-card-form {
   padding: 16px 20px 22px;

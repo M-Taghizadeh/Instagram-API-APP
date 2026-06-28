@@ -1,29 +1,28 @@
 {% extends "base.html" %}
-{% block title %}قانون‌های کامنت — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon, icon_box, status_badge %}
+{% block title %}قانون‌های کامنت — محتوام{% endblock %}
 {% block topbar_title %}قانون‌های کامنت{% endblock %}
 {% block topbar_right %}
-  <a href="{{ url_for('rules.new_comment_rule') }}" class="btn small">+ قانون جدید</a>
+  <a href="{{ url_for('rules.new_comment_rule') }}" class="btn small">{{ icon('plus', 14) }} قانون جدید</a>
 {% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div class="page-header-left">
-    <div class="page-title">📝 مدیریت کامنت</div>
+    <div class="page-title">{{ icon('message-square-text', 22) }} مدیریت کامنت</div>
     <div class="page-sub">پاسخ خودکار به کامنت‌ها — هم زیر پست (عمومی) هم دایرکت (خصوصی)</div>
   </div>
 </div>
 
-<!-- ══ Toolbar ══ -->
 <form method="get" class="toolbar">
   <div class="search-bar">
-    <span class="si">🔍</span>
-    <input type="text" name="q" value="{{ q }}" placeholder="جستجو در کلمات کلیدی یا پاسخ‌ها...">
+    <span class="search-icon">{{ icon('search', 16) }}</span>
+    <input type="search" name="q" value="{{ q }}" placeholder="جستجو در کلمات کلیدی یا پاسخ‌ها...">
   </div>
   <button type="submit" class="btn secondary small">جستجو</button>
   {% if q %}
-    <a href="{{ url_for('rules.comment_rules') }}" class="btn secondary small">✕ پاک</a>
+    <a href="{{ url_for('rules.comment_rules') }}" class="btn secondary small">{{ icon('x', 14) }} پاک کردن</a>
   {% endif %}
-  <a href="{{ url_for('rules.new_comment_rule') }}" class="btn small" style="margin-right:auto;">+ قانون جدید</a>
 </form>
 
 {% if q %}
@@ -63,12 +62,7 @@
         <!-- gradient overlay -->
         <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,14,.85) 0%,transparent 55%);pointer-events:none;"></div>
         <!-- top-right status badge -->
-        <div style="position:absolute;top:10px;left:10px;">
-          <span class="badge {{ 'ok' if rule.is_active else '' }}"
-                style="font-size:10px;backdrop-filter:blur(6px);background:rgba(7,6,14,.55);">
-            {{ '● فعال' if rule.is_active else '○ غیرفعال' }}
-          </span>
-        </div>
+        <div style="position:absolute;top:10px;left:10px;">{{ status_badge(rule.is_active) }}</div>
         <!-- top-left open link -->
         {% if rule.post_link %}
         <a href="{{ rule.post_link }}" target="_blank"
@@ -76,20 +70,20 @@
                   border-radius:8px;background:rgba(7,6,14,.55);backdrop-filter:blur(6px);
                   display:flex;align-items:center;justify-content:center;
                   border:1px solid rgba(255,255,255,.1);color:var(--text-dim);font-size:13px;"
-           title="مشاهده پست">↗</a>
+           title="مشاهده پست">{{ icon('external-link', 14) }}</a>
         {% endif %}
         <!-- no-image placeholder -->
         {% if not rule.post_thumb %}
         <div style="position:absolute;inset:0;display:flex;flex-direction:column;
                     align-items:center;justify-content:center;gap:6px;color:var(--text-faint);">
-          <span style="font-size:36px;opacity:.3;">🖼</span>
+          {{ icon('image', 32) }}
           <span style="font-size:11px;">بدون تصویر</span>
         </div>
         {% endif %}
         <!-- post status bottom-left -->
         <div style="position:absolute;bottom:8px;right:10px;">
           {% if rule.post_id or rule.post_thumb %}
-          <span class="badge ok" style="font-size:9.5px;backdrop-filter:blur(6px);background:rgba(7,6,14,.55);">✓ پست شناسایی شده</span>
+          <span class="badge ok" style="font-size:9.5px;backdrop-filter:blur(6px);">{{ icon('check', 10) }} پست شناسایی شده</span>
           {% endif %}
         </div>
       </div>
@@ -110,7 +104,7 @@
           {% for kw in rule.trigger.split(',') %}
             {% set kw = kw.strip() %}
             {% if kw %}
-              <span class="rule-trigger {% if loop.index > 1 %}multi{% endif %}" style="font-size:11px;">🔑 {{ kw }}</span>
+              <span class="rule-trigger {% if loop.index > 1 %}multi{% endif %}" style="font-size:11px;">{{ icon('key-round', 11) }} {{ kw }}</span>
             {% endif %}
           {% endfor %}
           <span class="badge {{ 'purple' if rule.match_type == 'contains' else 'pink' }}" style="font-size:10px;">
@@ -123,14 +117,14 @@
           {% if rule.comment_reply %}
           <div style="font-size:11.5px;color:var(--text-dim);background:var(--panel-2);
                       border-radius:6px;padding:6px 10px;border:1px solid var(--border-soft);">
-            <span style="font-size:10px;color:var(--text-faint);font-weight:700;margin-left:5px;">💬 کامنت</span>
+            <span style="font-size:10px;color:var(--text-muted);font-weight:600;margin-left:5px;">{{ icon('message-square-text', 11) }} کامنت</span>
             {{ rule.comment_reply[:60] }}{% if rule.comment_reply|length > 60 %}…{% endif %}
           </div>
           {% endif %}
           {% if rule.dm_response %}
           <div style="font-size:11.5px;color:var(--text-dim);background:var(--panel-2);
                       border-radius:6px;padding:6px 10px;border:1px solid var(--border-soft);">
-            <span style="font-size:10px;color:var(--text-faint);font-weight:700;margin-left:5px;">📩 دایرکت</span>
+            <span style="font-size:10px;color:var(--text-muted);font-weight:600;margin-left:5px;">{{ icon('send', 11) }} دایرکت</span>
             {{ rule.dm_response[:60] }}{% if rule.dm_response|length > 60 %}…{% endif %}
           </div>
           {% endif %}
@@ -141,7 +135,7 @@
                     margin-top:auto;padding-top:10px;border-top:1px solid var(--border-soft);">
           <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
             {% if rule.fire_count %}
-            <span class="badge purple" style="font-size:9.5px;">⚡ {{ rule.fire_count }} بار</span>
+            <span class="badge purple" style="font-size:9.5px;">{{ icon('zap', 11) }} {{ rule.fire_count }} بار</span>
             {% endif %}
             {% if rule.created_at %}
             <span style="font-size:10.5px;color:var(--text-faint);">{{ rule.created_at.strftime('%Y/%m/%d') }}</span>
@@ -153,12 +147,10 @@
                      onchange="toggleRule('{{ rule.id }}','comment')">
               <span class="toggle-track"></span>
             </label>
-            <a href="{{ url_for('rules.edit_comment_rule', rule_id=rule.id) }}" class="btn secondary small" title="ویرایش">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </a>
+            <a href="{{ url_for('rules.edit_comment_rule', rule_id=rule.id) }}" class="btn secondary small" title="ویرایش">{{ icon('pencil', 14) }}</a>
             <form method="post" action="{{ url_for('rules.delete_comment_rule', rule_id=rule.id) }}"
                   onsubmit="return confirm('این قانون حذف شود؟')" style="display:inline;">
-              <button type="submit" class="btn danger small">🗑</button>
+              <button type="submit" class="btn danger small" title="حذف">{{ icon('trash-2', 14) }}</button>
             </form>
           </div>
         </div>
@@ -187,7 +179,7 @@
 
 {% else %}
   <div class="empty">
-    <span class="empty-icon">📝</span>
+    <div class="empty-icon">{{ icon('message-square-text', 24) }}</div>
     {% if q %}نتیجه‌ای برای «{{ q }}» پیدا نشد.
     {% else %}هنوز قانونی برای کامنت نساخته‌ای.<br>با دکمه «قانون جدید» شروع کن.{% endif %}
   </div>

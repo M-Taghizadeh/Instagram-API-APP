@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% from "macros/ui.html" import icon, icon_box %}
 {% block title %}پرداخت‌ها — ادمین{% endblock %}
 {% block topbar_title %}تاریخچه پرداخت{% endblock %}
 {% block content %}
 
 <div class="page-header">
-  <div class="page-title">💳 پرداخت‌ها</div>
+  <div class="page-title">{{ icon('credit-card', 22) }} پرداخت‌ها</div>
   <a href="{{ url_for('admin.dashboard') }}" class="btn secondary small">بازگشت</a>
 </div>
 

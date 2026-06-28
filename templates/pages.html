@@ -1,16 +1,17 @@
 {% extends "base.html" %}
-{% block title %}اتصال به اینستاگرام — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon, icon_box %}
+{% block title %}اتصال به اینستاگرام — محتوام{% endblock %}
 {% block topbar_title %}اتصال به اینستاگرام{% endblock %}
 {% block topbar_right %}
   {% if oauth_ready and not accounts %}
-  <a href="{{ url_for('oauth.connect') }}" class="btn small">+ اتصال پیج</a>
+  <a href="{{ url_for('oauth.connect') }}" class="btn small">{{ icon('plus', 14) }} اتصال پیج</a>
   {% endif %}
 {% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">📸 اتصال به اینستاگرام</div>
+    <div class="page-title">{{ icon('instagram', 22) }} اتصال به اینستاگرام</div>
     <div class="page-sub">پیج متصل‌شده — توکن به‌صورت خودکار از Instagram OAuth دریافت می‌شود</div>
   </div>
 </div>
@@ -26,15 +27,17 @@
       <div class="user-avatar" style="width:52px;height:52px;font-size:20px;">@</div>
       {% endif %}
       <div style="flex:1;">
-        <div style="font-weight:800;font-size:15px;">@{{ acc.username }}</div>
-        <div style="font-size:12px;color:var(--text-faint);">{{ acc.name }} · {{ acc.account_type }}{% if acc.follower_count %} · {{ "{:,}".format(acc.follower_count) }} فالوور{% endif %}</div>
-        <div style="font-size:11px;color:var(--text-faint);margin-top:4px;">متصل از {{ acc.connected_at.strftime('%Y/%m/%d') if acc.connected_at else '—' }}</div>
+        <div style="font-weight:600;font-size:15px;">@{{ acc.username }}</div>
+        <div style="font-size:12px;color:var(--text-muted);">{{ acc.name }} · {{ acc.account_type }}{% if acc.follower_count %} · {{ "{:,}".format(acc.follower_count) }} فالوور{% endif %}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">متصل از {{ acc.connected_at.strftime('%Y/%m/%d') if acc.connected_at else '—' }}</div>
       </div>
       {% if acc.is_primary %}
       <span class="badge ok">پیج فعال</span>
       {% endif %}
     </div>
-    <div style="font-size:12px;color:var(--ok);margin-bottom:12px;">● توکن فعال — نیازی به کپی دستی نیست</div>
+    <div style="font-size:12px;color:var(--success);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+      <span class="status-dot on"></span> توکن فعال — نیازی به کپی دستی نیست
+    </div>
     <form method="post" action="{{ url_for('oauth.disconnect', account_id=acc.id) }}" onsubmit="return confirm('این پیج قطع شود؟')">
       <button type="submit" class="btn ghost small" style="color:var(--danger);">قطع اتصال</button>
     </form>
@@ -43,7 +46,7 @@
 </div>
 {% else %}
 <div class="empty">
-  <span class="empty-icon">📸</span>
+  <div class="empty-icon">{{ icon('instagram', 24) }}</div>
   هنوز پیجی وصل نکردی.
   {% if oauth_ready %}
   <div style="margin-top:16px;"><a href="{{ url_for('oauth.connect') }}" class="btn">اتصال اولین پیج</a></div>

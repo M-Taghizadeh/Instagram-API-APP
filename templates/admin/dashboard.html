@@ -1,15 +1,16 @@
 {% extends "base.html" %}
-{% block title %}پنل ادمین — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon, icon_box, status_badge %}
+{% block title %}پنل ادمین — محتوام{% endblock %}
 {% block topbar_title %}مدیریت سامانه{% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">🛡️ پنل ادمین</div>
+    <div class="page-title">{{ icon('shield', 22) }} پنل ادمین</div>
     <div class="page-sub">گزارش جامع و مدیریت سامانه</div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
-    <a href="{{ url_for('admin.accounting') }}" class="btn secondary small">📊 حسابداری</a>
+    <a href="{{ url_for('admin.accounting') }}" class="btn secondary small">{{ icon('bar-chart-3', 14) }} حسابداری</a>
     <a href="{{ url_for('admin.plans') }}" class="btn secondary small">قیمت پلن‌ها</a>
     <a href="{{ url_for('admin.users') }}" class="btn secondary small">کاربران</a>
   </div>
@@ -20,25 +21,25 @@
 
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-card-icon purple">👥</div>
+    <div style="margin-bottom:12px;">{{ icon_box('users', 'violet') }}</div>
     <div class="stat-label">کاربران</div>
     <div class="stat-value">{{ total_users }}</div>
     <div class="stat-sub">{{ total_pages }} پیج متصل</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon green">✓</div>
+    <div style="margin-bottom:12px;">{{ icon_box('badge-check', 'green') }}</div>
     <div class="stat-label">اشتراک فعال</div>
     <div class="stat-value">{{ active_subs }}</div>
     <div class="stat-sub">{{ paid_subs }} پولی · {{ trial_subs }} تریال</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon pink">💰</div>
+    <div style="margin-bottom:12px;">{{ icon_box('banknote', 'amber') }}</div>
     <div class="stat-label">درآمد کل</div>
     <div class="stat-value" style="font-size:22px;">{{ "{:,}".format(revenue_total) }}</div>
     <div class="stat-sub">این ماه: {{ "{:,}".format(revenue_month) }} تومان</div>
   </div>
   <div class="stat-card">
-    <div class="stat-card-icon cyan">📊</div>
+    <div style="margin-bottom:12px;">{{ icon_box('bar-chart-3', 'blue') }}</div>
     <div class="stat-label">فعالیت ۷ روز</div>
     <div class="stat-value">{{ activity_7d }}</div>
     <div class="stat-sub">{{ total_flows }} فلو · {{ total_contacts }} مخاطب</div>
@@ -91,7 +92,7 @@
         <td>@{{ row.ig.username if row.ig else '—' }}</td>
         <td>{{ "{:,}".format(row.ig.follower_count) if row.ig and row.ig.follower_count else '—' }}</td>
         <td>{% if row.sub %}{{ row.sub.plan_slug }}{% else %}—{% endif %}</td>
-        <td>{% if row.user.is_admin %}✓{% else %}—{% endif %}</td>
+        <td>{% if row.user.is_admin %}{{ icon('check', 14) }}{% else %}—{% endif %}</td>
       </tr>
       {% endfor %}
     </table>

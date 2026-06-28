@@ -63,7 +63,7 @@ def checkout():
   db.session.commit()
 
   callback = url_for("billing.callback", _external=True)
-  desc = f"اشتراک Insta Agent — پلن {plan.name} — {period} ماه"
+  desc = f"اشتراک محتوام — پلن {plan.name} — {period} ماه"
   try:
     result = zarinpal.request_payment(amount, callback, desc)
     payment.authority = result["authority"]

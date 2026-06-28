@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}تنظیمات — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon, icon_box, status_badge %}
+{% block title %}تنظیمات — محتوام{% endblock %}
 {% block topbar_title %}تنظیمات{% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">⚙️ تنظیمات</div>
+    <div class="page-title">{{ icon('settings', 22) }} تنظیمات</div>
     <div class="page-sub">توکن اینستاگرام، Webhook، امنیت حساب و Cooldown</div>
   </div>
 </div>
 
-<!-- ══ Instagram OAuth ══ -->
 <div class="card" style="padding:18px 20px;margin-bottom:20px;">
   <div class="settings-section-head">
-    <div class="settings-icon pink">📸</div>
+    {{ icon_box('instagram', 'rose', 'md') }}
     <div>
       <div class="settings-title">اتصال با اینستاگرام</div>
       <div class="settings-sub">فقط حساب Business یا Creator — Login with Instagram</div>
@@ -30,7 +30,7 @@
       <div style="font-weight:800;">@{{ ig_account.username }}</div>
       <div style="font-size:12px;color:var(--text-faint);">{{ ig_account.name }} · {{ ig_account.account_type }}</div>
     </div>
-    <span class="badge ok">● متصل</span>
+    <span class="badge ok"><span class="status-dot on"></span> متصل</span>
   </div>
   <a href="{{ url_for('auth.pages') }}" class="btn secondary small">مدیریت پیج‌ها</a>
   {% else %}
@@ -39,7 +39,7 @@
   </p>
   {% if oauth_ready %}
   <a href="{{ url_for('oauth.connect') }}" class="btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);">
-    📸 اتصال با اینستاگرام
+    {{ icon('instagram', 16) }} اتصال با اینستاگرام
   </a>
   {% else %}
   <div class="flash error" style="margin:0;">META_APP_ID، META_APP_SECRET و OAUTH_REDIRECT_URI را در .env تنظیم کن.</div>
@@ -51,15 +51,15 @@
 <!-- ══ Zarinpal (admin only) ══ -->
 <div class="card" style="padding:20px 22px;margin-bottom:20px;border-color:rgba(34,211,160,.2);">
   <div class="settings-section-head">
-    <div class="settings-icon green">💳</div>
+    {{ icon_box('credit-card', 'green', 'md') }}
     <div>
       <div class="settings-title">درگاه پرداخت زرین‌پال</div>
       <div class="settings-sub">فقط ادمین — Merchant ID و حالت تست/واقعی</div>
     </div>
     {% if app_cfg.zarinpal_merchant_id %}
-    <span class="badge ok" style="margin-right:auto;">● پیکربندی شده</span>
+    <span class="badge ok" style="margin-right:auto;"><span class="status-dot on"></span> پیکربندی شده</span>
     {% else %}
-    <span class="badge danger" style="margin-right:auto;">○ تنظیم نشده</span>
+    <span class="badge danger" style="margin-right:auto;"><span class="status-dot off"></span> تنظیم نشده</span>
     {% endif %}
   </div>
   <form method="post">
@@ -80,7 +80,7 @@
         <span class="toggle-track"></span>
       </label>
     </div>
-    <button type="submit" class="btn" style="width:100%;max-width:320px;">💾 ذخیره تنظیمات زرین‌پال</button>
+    <button type="submit" class="btn" style="width:100%;max-width:320px;">{{ icon('save', 16) }} ذخیره تنظیمات زرین‌پال</button>
   </form>
 </div>
 {% endif %}
@@ -98,9 +98,9 @@
     {% endif %}
   </div>
   {% if s.access_token %}
-    <span class="badge ok" style="font-size:12px;padding:5px 14px;">● متصل</span>
+    <span class="badge ok" style="font-size:12px;padding:5px 14px;"><span class="status-dot on"></span> متصل</span>
   {% else %}
-    <span class="badge danger" style="font-size:12px;padding:5px 14px;">○ قطع</span>
+    <span class="badge danger" style="font-size:12px;padding:5px 14px;"><span class="status-dot off"></span> قطع</span>
   {% endif %}
 </div>
 
@@ -112,7 +112,7 @@
     <div class="card">
       <div class="card-shine"></div>
       <div class="settings-section-head">
-        <div class="settings-icon purple">🔑</div>
+        {{ icon_box('key-round', 'violet', 'md') }}
         <div>
           <div class="settings-title">توکن‌های اتصال</div>
           <div class="settings-sub">Instagram Graph API</div>
@@ -146,7 +146,7 @@
       </div>
 
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft);">
-        <button type="submit" class="btn" style="width:100%;">💾 ذخیره توکن‌ها</button>
+        <button type="submit" class="btn" style="width:100%;">{{ icon('save', 16) }} ذخیره توکن‌ها</button>
       </div>
     </div>
   </form>
@@ -157,7 +157,7 @@
     <!-- webhook url -->
     <div class="card" style="padding:18px 20px;">
       <div class="settings-section-head">
-        <div class="settings-icon cyan">🔗</div>
+        {{ icon_box('link', 'blue', 'md') }}
         <div>
           <div class="settings-title">آدرس Webhook</div>
           <div class="settings-sub">این آدرس را در متا وارد کن</div>
@@ -167,14 +167,14 @@
         <input type="text" value="{{ request.url_root }}webhook" readonly
                id="webhookUrl" onclick="this.select()"
                style="font-size:11.5px;font-family:monospace;flex:1;color:var(--text-dim);">
-        <button type="button" onclick="copyWebhook()" class="btn secondary small" id="copyBtn">📋 کپی</button>
+        <button type="button" onclick="copyWebhook()" class="btn secondary small" id="copyBtn">{{ icon('copy', 14) }} کپی</button>
       </div>
     </div>
 
     <!-- security -->
     <div class="card" style="padding:18px 20px;">
       <div class="settings-section-head">
-        <div class="settings-icon pink">🔐</div>
+        {{ icon_box('lock', 'rose', 'md') }}
         <div>
           <div class="settings-title">امنیت حساب</div>
           <div class="settings-sub">رمز عبور و اطلاعات کاربری</div>
@@ -191,10 +191,10 @@
           <div style="font-size:13px;font-weight:700;">{{ current_user.username }}</div>
           <div style="font-size:11px;color:var(--text-faint);">ادمین</div>
         </div>
-        <span class="badge ok" style="font-size:10px;">● فعال</span>
+        <span class="badge ok" style="font-size:10px;"><span class="status-dot on"></span> فعال</span>
       </div>
       <a href="{{ url_for('settings.change_password') }}" class="btn secondary"
-         style="width:100%;justify-content:center;">🔑 تغییر رمز عبور</a>
+         style="width:100%;justify-content:center;">{{ icon('key-round', 16) }} تغییر رمز عبور</a>
     </div>
 
   </div>
@@ -207,7 +207,7 @@
   <div class="card">
     <div class="card-shine"></div>
     <div class="settings-section-head">
-      <div class="settings-icon cyan">⏱</div>
+      {{ icon_box('timer', 'blue', 'md') }}
       <div>
         <div class="settings-title">تنظیمات Cooldown</div>
         <div class="settings-sub">جلوگیری از ارسال مکرر به یک کاربر</div>
@@ -254,14 +254,14 @@
         </div>
       </div>
 
-      <button type="submit" class="btn" style="width:100%;">💾 ذخیره Cooldown</button>
+      <button type="submit" class="btn" style="width:100%;">{{ icon('save', 16) }} ذخیره Cooldown</button>
     </form>
 
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);">
       <form method="post" action="{{ url_for('activity.clear_cooldowns') }}"
             onsubmit="return confirm('کولداون همه کاربران پاک شود؟')">
         <button type="submit" class="btn secondary small" style="width:100%;">
-          🗑 پاک کردن همه Cooldown‌ها
+          {{ icon('trash-2', 14) }} پاک کردن همه Cooldown‌ها
         </button>
       </form>
       <div style="font-size:11px;color:var(--text-faint);margin-top:7px;text-align:center;">
@@ -275,7 +275,7 @@
 
     <div class="card" style="padding:20px 22px;">
       <div class="settings-section-head">
-        <div class="settings-icon green">📖</div>
+        {{ icon_box('book-open', 'green', 'md') }}
         <div>
           <div class="settings-title">راهنمای راه‌اندازی</div>
           <div class="settings-sub">مراحل اتصال به Meta</div>
@@ -307,7 +307,7 @@
 
     <div class="card" style="padding:16px 20px;border-color:rgba(245,158,11,.25);">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <span style="font-size:16px;">⚠️</span>
+        {{ icon('alert-triangle', 18) }}
         <span style="font-size:13px;font-weight:800;color:var(--warn);">نکته Render / Deploy</span>
       </div>
       <div style="font-size:12px;color:var(--text-dim);line-height:2;">
@@ -359,8 +359,12 @@ if (ti && ti.value) ti.type = 'password';
 function copyWebhook() {
   navigator.clipboard.writeText(document.getElementById('webhookUrl').value).then(() => {
     const btn = document.getElementById('copyBtn');
-    btn.textContent = '✓ کپی شد!';
-    setTimeout(() => btn.textContent = '📋 کپی', 2000);
+    btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px"></i> کپی شد!';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    setTimeout(() => {
+      btn.innerHTML = '<i data-lucide="copy" style="width:14px;height:14px"></i> کپی';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }, 2000);
   });
 }
 

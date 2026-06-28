@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}پیامک — Insta Agent{% endblock %}
+{% from "macros/ui.html" import icon %}
+{% block title %}پیامک — محتوام{% endblock %}
 {% block topbar_title %}پیامک هوشمند{% endblock %}
 {% block content %}
 
 <div class="page-header">
   <div>
-    <div class="page-title">📱 پیامک هوشمند</div>
+    <div class="page-title">{{ icon('smartphone', 22) }} پیامک هوشمند</div>
     <div class="page-sub">{{ phone_count }} شماره در CRM · ارسال تکی و انبوه</div>
   </div>
 </div>
