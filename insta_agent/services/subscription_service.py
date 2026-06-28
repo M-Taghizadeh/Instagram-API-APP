@@ -198,6 +198,42 @@ def maybe_start_trial(user_id: int, ig_user_id: str) -> Subscription | None:
   return sub
 
 
+def admin_deactivate_subscriptions(user_id: int) -> int:
+  subs = Subscription.query.filter_by(user_id=user_id, status="active").all()
+  for sub in subs:
+    sub.status = "expired"
+  if subs:
+    db.session.commit()
+  return len(subs)
+
+
+def admin_grant_subscription(
+  user_id: int,
+  plan_slug: str,
+  starts_at: datetime.datetime,
+  expires_at: datetime.datetime,
+  period_months: int = 1,
+  is_trial: bool = False,
+) -> Subscription:
+  for sub in Subscription.query.filter_by(user_id=user_id, status="active").all():
+    sub.status = "expired"
+
+  ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
+  sub = Subscription(
+    user_id=user_id,
+    plan_slug=plan_slug or "trial",
+    period_months=period_months,
+    is_trial=is_trial,
+    ig_user_id=ig.ig_user_id if ig else "",
+    status="active",
+    starts_at=starts_at,
+    expires_at=expires_at,
+  )
+  db.session.add(sub)
+  db.session.commit()
+  return sub
+
+
 def activate_paid_subscription(
   user_id: int, plan_slug: str, period_months: int, ig_user_id: str = ""
 ) -> Subscription:

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import icon, icon_box, status_badge %}
+{% block title %}اشتراک {{ target.username }} — ادمین{% endblock %}
+{% block topbar_title %}مدیریت اشتراک کاربر{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ icon('credit-card', 22) }} اشتراک — {{ target.username }}</div>
+    <div class="page-sub">
+      {% if ig %}@{{ ig.username }} · {{ "{:,}".format(ig.follower_count or 0) }} فالوور{% else %}بدون پیج متصل{% endif %}
+      {% if target.is_admin %} · <span class="badge ok">مدیر سامانه</span>{% endif %}
+    </div>
+  </div>
+  <a href="{{ url_for('admin.users') }}" class="btn secondary small">بازگشت به کاربران</a>
+</div>
+
+{% set active = 'users' %}
+{% include "admin/_nav.html" %}
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+  <div class="card" style="padding:22px;">
+    <div style="font-weight:800;margin-bottom:16px;font-size:14px;">تخصیص / ویرایش پلن</div>
+
+    {% if active_sub %}
+    <div style="margin-bottom:16px;padding:12px 14px;background:var(--success-muted);border:1px solid var(--success-border);border-radius:var(--radius-sm);font-size:12.5px;">
+      <span class="badge ok">فعال</span>
+      پلن <b>{{ active_sub.plan_slug }}</b>
+      · شروع {{ active_sub.starts_at | jalali }}
+      · انقضا {{ active_sub.expires_at | jalali }}
+      {% if active_sub.is_trial %}<span class="badge pink" style="margin-right:6px;">تریال</span>{% endif %}
+    </div>
+    {% else %}
+    <div style="margin-bottom:16px;padding:12px 14px;background:var(--danger-muted);border:1px solid var(--danger-border);border-radius:var(--radius-sm);font-size:12.5px;">
+      <span class="badge danger">غیرفعال</span> این کاربر اشتراک فعال ندارد.
+    </div>
+    {% endif %}
+
+    <form method="post">
+      <input type="hidden" name="action" value="save">
+
+      <div class="field">
+        <label>پلن اشتراک</label>
+        <select name="plan_slug" required>
+          <option value="trial" {{ 'selected' if default_plan == 'trial' }}>تریال (trial)</option>
+          {% for p in plans %}
+          <option value="{{ p.slug }}" {{ 'selected' if default_plan == p.slug }}>{{ p.name }} ({{ p.slug }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label>دوره (ماه)</label>
+          <select name="period_months" id="periodMonths">
+            <option value="0" {{ 'selected' if default_period == 0 }}>دستی (فقط تاریخ انقضا)</option>
+            <option value="1" {{ 'selected' if default_period == 1 }}>۱ ماهه</option>
+            <option value="6" {{ 'selected' if default_period == 6 }}>۶ ماهه</option>
+            <option value="12" {{ 'selected' if default_period == 12 }}>۱۲ ماهه</option>
+          </select>
+        </div>
+        <div class="field" style="display:flex;align-items:flex-end;padding-bottom:2px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" name="is_trial" value="1" {{ 'checked' if default_trial }}>
+            ثبت به‌عنوان تریال
+          </label>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label>تاریخ شروع (شمسی)</label>
+          <input type="text" name="starts_at" id="startsAt" value="{{ default_starts }}" placeholder="۱۴۰۴/۰۱/۰۱" dir="ltr" required>
+          <div class="hint">فرمت: سال/ماه/روز — مثال ۱۴۰۴/۰۴/۰۸</div>
+        </div>
+        <div class="field">
+          <label>تاریخ انقضا (شمسی)</label>
+          <input type="text" name="expires_at" id="expiresAt" value="{{ default_expires }}" placeholder="۱۴۰۴/۰۷/۰۱" dir="ltr" required>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button type="button" class="btn ghost small" data-add-months="1">+ ۱ ماه</button>
+        <button type="button" class="btn ghost small" data-add-months="6">+ ۶ ماه</button>
+        <button type="button" class="btn ghost small" data-add-months="12">+ ۱۲ ماه</button>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn">{{ icon('save', 16) }} ذخیره و فعال‌سازی</button>
+      </div>
+    </form>
+
+    {% if active_sub %}
+    <form method="post" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-subtle);"
+          onsubmit="return confirm('اشتراک فعال این کاربر غیرفعال شود؟')">
+      <input type="hidden" name="action" value="deactivate">
+      <button type="submit" class="btn danger small">{{ icon('circle-off', 14) }} غیرفعال کردن اشتراک</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="card" style="padding:18px;">
+    <div style="font-weight:800;margin-bottom:12px;font-size:13px;">تاریخچه اشتراک</div>
+    {% if history %}
+    <div style="display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto;">
+      {% for sub in history %}
+      <div style="padding:10px 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);font-size:12px;">
+        <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px;">
+          <span class="badge {% if sub.status == 'active' %}ok{% else %}danger{% endif %}">{{ sub.status }}</span>
+          <span class="badge purple">{{ sub.plan_slug }}</span>
+        </div>
+        <div style="color:var(--text-muted);line-height:1.7;">
+          {{ sub.starts_at | jalali }} → {{ sub.expires_at | jalali }}
+          {% if sub.is_trial %} · تریال{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty" style="padding:24px;">تاریخچه‌ای نیست</div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const starts = document.getElementById('startsAt');
+  const expires = document.getElementById('expiresAt');
+  const period = document.getElementById('periodMonths');
+
+  function parseJalali(s) {
+    const p = (s || '').trim().replace(/-/g, '/').split('/');
+    if (p.length !== 3) return null;
+    const y = +p[0], m = +p[1], d = +p[2];
+    if (!y || !m || !d) return null;
+    return { y, m, d };
+  }
+
+  function formatJalali(obj) {
+    return obj.y + '/' + String(obj.m).padStart(2, '0') + '/' + String(obj.d).padStart(2, '0');
+  }
+
+  function addMonths(j, months) {
+    let total = j.y * 12 + (j.m - 1) + months;
+    let ny = Math.floor(total / 12);
+    let nm = (total % 12) + 1;
+    let nd = j.d;
+    for (let day = nd; day >= 1; day--) {
+      if (day <= 31) return { y: ny, m: nm, d: day };
+    }
+    return { y: ny, m: nm, d: 1 };
+  }
+
+  document.querySelectorAll('[data-add-months]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const base = parseJalali(starts.value) || parseJalali(expires.value);
+      if (!base) return;
+      const months = +btn.dataset.addMonths;
+      expires.value = formatJalali(addMonths(base, months));
+      if (period) period.value = String(months);
+    });
+  });
+
+  if (period) {
+    period.addEventListener('change', () => {
+      const m = +period.value;
+      if (!m) return;
+      const base = parseJalali(starts.value);
+      if (!base) return;
+      expires.value = formatJalali(addMonths(base, m));
+    });
+  }
+})();
+</script>
+{% endblock %}

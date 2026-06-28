@@ -9,7 +9,8 @@ from insta_agent.extensions import db
 from insta_agent.models import (
   User, Plan, Subscription, Payment, IgAccount, Flow, Contact, ActivityLog,
 )
-from insta_agent.utils import now_tehran
+from insta_agent.utils import now_tehran, parse_jalali_date, format_jalali, jalali_years, add_jalali_months
+from insta_agent.services.subscription_service import admin_grant_subscription, admin_deactivate_subscriptions
 from insta_agent.services.accounting_service import build_report, export_csv, MONTH_NAMES
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -114,14 +115,101 @@ def users():
   if q:
     query = query.filter(User.username.ilike(f"%{q}%") | User.email.ilike(f"%{q}%"))
   users_list = query.order_by(User.id.desc()).limit(100).all()
+  now = now_tehran()
   rows = []
   for u in users_list:
     ig = IgAccount.query.filter_by(user_id=u.id, is_primary=True).first()
-    sub = Subscription.query.filter_by(user_id=u.id, status="active").order_by(
-      Subscription.expires_at.desc()
-    ).first()
-    rows.append({"user": u, "ig": ig, "sub": sub})
+    sub = Subscription.query.filter_by(user_id=u.id, status="active").filter(
+      Subscription.expires_at > now
+    ).order_by(Subscription.expires_at.desc()).first()
+    if not sub:
+      sub = Subscription.query.filter_by(user_id=u.id).order_by(
+        Subscription.expires_at.desc()
+      ).first()
+    sub_live = bool(sub and sub.status == "active" and sub.expires_at and sub.expires_at > now)
+    rows.append({"user": u, "ig": ig, "sub": sub, "sub_live": sub_live})
   return render_template("admin/users.html", rows=rows, q=q)
+
+
+@bp.route("/users/<int:user_id>/subscription", methods=["GET", "POST"])
+@login_required
+@admin_required
+def user_subscription(user_id):
+  target = User.query.get_or_404(user_id)
+  plans = Plan.query.order_by(Plan.sort_order).all()
+  now = now_tehran()
+
+  active_sub = Subscription.query.filter_by(user_id=user_id, status="active").filter(
+    Subscription.expires_at > now
+  ).order_by(Subscription.expires_at.desc()).first()
+  history = Subscription.query.filter_by(user_id=user_id).order_by(
+    Subscription.created_at.desc()
+  ).limit(30).all()
+
+  if request.method == "POST":
+    action = request.form.get("action", "save")
+
+    if action == "deactivate":
+      n = admin_deactivate_subscriptions(user_id)
+      flash(f"اشتراک کاربر غیرفعال شد ({n} مورد).", "success")
+      return redirect(url_for("admin.user_subscription", user_id=user_id))
+
+    plan_slug = request.form.get("plan_slug", "").strip()
+    period_months = request.form.get("period_months", 1, type=int)
+    is_trial = request.form.get("is_trial") == "1"
+
+    starts = parse_jalali_date(request.form.get("starts_at", ""))
+    if not starts:
+      starts = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    expires = parse_jalali_date(request.form.get("expires_at", ""))
+    if not expires:
+      flash("تاریخ انقضا نامعتبر است — فرمت شمسی: ۱۴۰۴/۰۶/۱۵", "error")
+      return redirect(url_for("admin.user_subscription", user_id=user_id))
+
+    expires = expires.replace(hour=23, minute=59, second=59)
+    if expires <= starts:
+      flash("تاریخ انقضا باید بعد از تاریخ شروع باشد.", "error")
+      return redirect(url_for("admin.user_subscription", user_id=user_id))
+
+    admin_grant_subscription(
+      user_id=user_id,
+      plan_slug=plan_slug,
+      starts_at=starts,
+      expires_at=expires,
+      period_months=period_months,
+      is_trial=is_trial,
+    )
+    flash("پلن کاربر ذخیره و فعال شد.", "success")
+    return redirect(url_for("admin.user_subscription", user_id=user_id))
+
+  default_starts = format_jalali(active_sub.starts_at if active_sub else now)
+  if active_sub:
+    default_expires = format_jalali(active_sub.expires_at)
+    default_plan = active_sub.plan_slug
+    default_period = active_sub.period_months or 1
+    default_trial = active_sub.is_trial
+  else:
+    default_expires = format_jalali(add_jalali_months(now, 1))
+    default_plan = plans[0].slug if plans else "10k"
+    default_period = 1
+    default_trial = False
+
+  ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
+
+  return render_template(
+    "admin/user_subscription.html",
+    target=target,
+    ig=ig,
+    plans=plans,
+    active_sub=active_sub,
+    history=history,
+    default_starts=default_starts,
+    default_expires=default_expires,
+    default_plan=default_plan,
+    default_period=default_period,
+    default_trial=default_trial,
+  )
 
 
 @bp.route("/payments")
@@ -143,7 +231,7 @@ def accounting():
   status_filter = request.args.get("status", "")
 
   report = build_report(period, date_from, date_to, year, month, status_filter)
-  years = list(range(now_tehran().year, now_tehran().year - 5, -1))
+  years = jalali_years(6)
 
   return render_template(
     "admin/accounting.html",

@@ -72,6 +72,7 @@ def create_app():
   def inject_globals():
     from flask_login import current_user
     from insta_agent.services.subscription_service import subscription_status, subscription_banner
+    from insta_agent.utils import JALALI_MONTH_NAMES
     sub_info = None
     sub_banner = None
     if current_user.is_authenticated:
@@ -80,6 +81,11 @@ def create_app():
         sub_banner = subscription_banner(current_user.id)
       except Exception:
         pass
-    return dict(sub_info=sub_info, sub_banner=sub_banner)
+    return dict(sub_info=sub_info, sub_banner=sub_banner, jalali_month_names=JALALI_MONTH_NAMES)
+
+  @app.template_filter("jalali")
+  def jalali_filter(dt, fmt="%Y/%m/%d"):
+    from insta_agent.utils import format_jalali
+    return format_jalali(dt, fmt)
 
   return app

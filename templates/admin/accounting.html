@@ -32,7 +32,7 @@
 
     <div id="monthPick" style="display:{% if report.period == 'month_pick' %}flex{% else %}none{% endif %};gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:end;">
       <div class="field" style="margin:0;">
-        <label>سال</label>
+        <label>سال شمسی</label>
         <select name="year" style="width:100px;">
           {% for y in years %}
           <option value="{{ y }}" {{ 'selected' if report.year == y }}>{{ y }}</option>
@@ -40,7 +40,7 @@
         </select>
       </div>
       <div class="field" style="margin:0;">
-        <label>ماه</label>
+        <label>ماه شمسی</label>
         <select name="month" style="width:120px;">
           {% for m in range(1, 13) %}
           <option value="{{ m }}" {{ 'selected' if report.month == m }}>{{ month_names[m] }}</option>
@@ -53,12 +53,12 @@
 
     <div id="customRange" style="display:{% if report.period == 'custom' %}flex{% else %}none{% endif %};gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:end;">
       <div class="field" style="margin:0;">
-        <label>از تاریخ</label>
-        <input type="date" name="date_from" value="{{ report.date_from }}" dir="ltr">
+        <label>از تاریخ (شمسی)</label>
+        <input type="text" name="date_from" value="{{ report.date_from }}" placeholder="۱۴۰۴/۰۱/۰۱" dir="ltr">
       </div>
       <div class="field" style="margin:0;">
-        <label>تا تاریخ</label>
-        <input type="date" name="date_to" value="{{ report.date_to }}" dir="ltr">
+        <label>تا تاریخ (شمسی)</label>
+        <input type="text" name="date_to" value="{{ report.date_to }}" placeholder="۱۴۰۴/۰۶/۳۱" dir="ltr">
       </div>
       <input type="hidden" name="period" value="custom">
       <button type="submit" class="btn small">اعمال</button>
@@ -193,7 +193,7 @@
         <td><span class="badge {% if p.status == 'paid' %}ok{% elif p.status == 'failed' %}danger{% else %}pink{% endif %}">{{ p.status }}</span></td>
         <td style="font-family:monospace;font-size:11px;">{{ p.ref_id or '—' }}</td>
         <td style="color:var(--text-faint);white-space:nowrap;">
-          {{ (p.verified_at or p.created_at).strftime('%Y/%m/%d %H:%M') if (p.verified_at or p.created_at) else '—' }}
+          {{ (p.verified_at or p.created_at) | jalali('%Y/%m/%d %H:%M') if (p.verified_at or p.created_at) else '—' }}
         </td>
       </tr>
       {% else %}

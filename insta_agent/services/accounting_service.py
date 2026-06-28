@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from insta_agent.extensions import db
 from insta_agent.models import Payment
-from insta_agent.utils import now_tehran
+from insta_agent.utils import now_tehran, parse_jalali_date, format_jalali, jalali_month_bounds, now_jalali
 
 PERIOD_LABELS = {
   "today": "امروز",
@@ -23,6 +23,9 @@ MONTH_NAMES = [
 
 
 def parse_date(s: str) -> datetime.datetime | None:
+  j = parse_jalali_date(s)
+  if j:
+    return j.replace(hour=0, minute=0, second=0, microsecond=0)
   if not s:
     return None
   try:
@@ -39,25 +42,26 @@ def resolve_range(period: str, date_from: str = "", date_to: str = "",
 
   if period == "today":
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    label = f"امروز ({now.strftime('%Y/%m/%d')})"
+    label = f"امروز ({format_jalali(now)})"
   elif period == "month":
-    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    label = f"ماه جاری ({now.year}/{now.month:02d})"
-  elif period == "year":
-    y = year or now.year
-    start = datetime.datetime(y, 1, 1)
-    end = datetime.datetime(y, 12, 31, 23, 59, 59, 999999)
-    if y == now.year:
+    jnow = now_jalali()
+    start, end = jalali_month_bounds(jnow.year, jnow.month)
+    if end > now:
       end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-    label = f"سال {y}"
-    year = y
+    label = f"ماه جاری ({MONTH_NAMES[jnow.month]} {jnow.year})"
+    year = jnow.year
+    month = jnow.month
+  elif period == "year":
+    jy = year or now_jalali().year
+    start, _ = jalali_month_bounds(jy, 1)
+    _, end = jalali_month_bounds(jy, 12)
+    if end > now:
+      end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+    label = f"سال {jy}"
+    year = jy
+    month = now_jalali().month
   elif period == "month_pick" and year and month:
-    start = datetime.datetime(year, month, 1)
-    if month == 12:
-      next_m = datetime.datetime(year + 1, 1, 1)
-    else:
-      next_m = datetime.datetime(year, month + 1, 1)
-    end = next_m - datetime.timedelta(seconds=1)
+    start, end = jalali_month_bounds(year, month)
     if end > now:
       end = now.replace(hour=23, minute=59, second=59)
     mn = MONTH_NAMES[month] if 1 <= month <= 12 else str(month)
@@ -66,7 +70,7 @@ def resolve_range(period: str, date_from: str = "", date_to: str = "",
     start = parse_date(date_from) or now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     end_d = parse_date(date_to) or now
     end = end_d.replace(hour=23, minute=59, second=59, microsecond=999999)
-    label = f"{start.strftime('%Y/%m/%d')} — {end_d.strftime('%Y/%m/%d')}"
+    label = f"{format_jalali(start)} — {format_jalali(end_d)}"
   else:
     start = datetime.datetime(2000, 1, 1)
     end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -74,9 +78,9 @@ def resolve_range(period: str, date_from: str = "", date_to: str = "",
     label = "کل دوره"
 
   if not year:
-    year = now.year
+    year = now_jalali().year
   if not month:
-    month = now.month
+    month = now_jalali().month
   return start, end, period, label, year, month
 
 
@@ -138,23 +142,20 @@ def build_report(period: str, date_from: str = "", date_to: str = "",
   chart_labels = [d[5:].replace("-", "/") for d, _ in daily_sorted]
   chart_data = [v for _, v in daily_sorted]
 
-  monthly = defaultdict(int)
-  for p in all_payments:
-    if p.status != "paid":
-      continue
-    dt = p.verified_at or p.created_at
-    if not dt:
-      continue
-    key = f"{dt.year}-{dt.month:02d}"
-    monthly[key] += p.amount_toman
   monthly_rows = []
   for m in range(1, 13):
-    key = f"{year}-{m:02d}"
+    m_start, m_end = jalali_month_bounds(year, m)
+    rev = 0
+    for p in all_payments:
+      if p.status != "paid":
+        continue
+      dt = p.verified_at or p.created_at
+      if dt and m_start <= dt <= m_end:
+        rev += p.amount_toman
     monthly_rows.append({
       "month": m,
       "name": MONTH_NAMES[m],
-      "revenue": monthly.get(key, 0),
-      "key": key,
+      "revenue": rev,
     })
 
   return {
