@@ -18,7 +18,7 @@ def _unwrap_payload(data) -> dict:
   return data if isinstance(data, dict) else {}
 
 
-def build_authorize_url(state: str = "") -> str:
+def build_authorize_url(state: str = "", force_reauth: bool = True) -> str:
   redirect = Config.OAUTH_REDIRECT_URI or ""
   params = {
     "client_id": Config.META_APP_ID,
@@ -26,6 +26,8 @@ def build_authorize_url(state: str = "") -> str:
     "response_type": "code",
     "scope": Config.OAUTH_SCOPES,
   }
+  if force_reauth:
+    params["force_reauth"] = "true"
   if state:
     params["state"] = state
   return f"{AUTH_URL}?{urlencode(params)}"
@@ -45,6 +47,13 @@ def exchange_code_for_token(code: str) -> dict:
     raise ValueError(api_message(data) or r.text)
   if not data.get("access_token"):
     raise ValueError("توکن کوتاه‌مدت از اینستاگرام دریافت نشد.")
+  perms = str(data.get("permissions") or "")
+  if perms and "instagram_business_basic" not in perms:
+    raise ValueError(
+      "اینستاگرام دسترسی View profile (instagram_business_basic) را نداد. "
+      f"فقط این‌ها داده شد: {perms}. "
+      "اکانت را در اپ اینستاگرام کامل Professional کن یا در Meta Dashboard به Instagram Testers اضافه کن."
+    )
   return data
 
 
