@@ -3,45 +3,73 @@ import { createRoot } from 'react-dom/client';
 import FlowEditor from './FlowEditor';
 import './editor.css';
 
+function readInitialNodes(hiddenInput) {
+  const dataEl = document.getElementById('flow-editor-nodes-data');
+  if (dataEl?.textContent?.trim()) {
+    try {
+      const parsed = JSON.parse(dataEl.textContent);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  const raw = hiddenInput?.value?.trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  return [];
+}
+
 function mount() {
   const rootEl = document.getElementById('flow-editor-root');
   const hiddenInput = document.getElementById('nodes_json');
   if (!rootEl || !hiddenInput) return;
 
-  let initialNodes = [];
-  try {
-    const raw = rootEl.dataset.nodes || '[]';
-    initialNodes = JSON.parse(raw);
-  } catch {
-    initialNodes = [];
-  }
-
+  const initialNodes = readInitialNodes(hiddenInput);
   let latest = initialNodes;
   const editorRef = createRef();
 
   const syncHidden = (nodes) => {
     latest = nodes;
-    const json = JSON.stringify(nodes, null, 2);
+    const json = JSON.stringify(nodes);
     hiddenInput.value = json;
     const pre = document.getElementById('nodes_json_preview');
-    if (pre) pre.textContent = json;
+    if (pre) pre.textContent = JSON.stringify(nodes, null, 2);
   };
 
   const onChange = (nodes) => syncHidden(nodes);
 
-  hiddenInput.value = JSON.stringify(initialNodes, null, 2);
+  if (initialNodes.length) {
+    syncHidden(initialNodes);
+  }
 
   const form = rootEl.closest('form');
   if (form) {
-    form.addEventListener('submit', () => {
-      const fresh = editorRef.current?.getNodes?.();
-      if (fresh) syncHidden(fresh);
-      hiddenInput.value = JSON.stringify(latest, null, 2);
-    }, true);
+    form.addEventListener(
+      'submit',
+      (e) => {
+        const fresh = editorRef.current?.getNodes?.();
+        if (fresh) syncHidden(fresh);
+        if (!latest.length) {
+          e.preventDefault();
+          window.alert('حداقل یک نود در ویرایشگر بسازید و به هم وصل کنید.');
+          return;
+        }
+        hiddenInput.value = JSON.stringify(latest);
+      },
+      true,
+    );
   }
 
   createRoot(rootEl).render(
-    <FlowEditor editorRef={editorRef} initialNodes={initialNodes} onChange={onChange} />
+    <FlowEditor ref={editorRef} initialNodes={initialNodes} onChange={onChange} />,
   );
 }
 

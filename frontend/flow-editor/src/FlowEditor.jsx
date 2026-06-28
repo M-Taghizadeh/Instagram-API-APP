@@ -153,10 +153,10 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ initialNodes, onCh
   );
 });
 
-export default function FlowEditor({ editorRef, ...props }) {
+export default forwardRef(function FlowEditor(props, ref) {
   return (
     <ReactFlowProvider>
-      <FlowEditorInner ref={editorRef} {...props} />
+      <FlowEditorInner ref={ref} {...props} />
     </ReactFlowProvider>
   );
-}
+});

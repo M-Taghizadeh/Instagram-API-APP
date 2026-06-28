@@ -96,16 +96,14 @@ def flow_list():
   return render_template("flows.html", pagination=pagination, q=q, kind=kind, flow_kinds=FLOW_KINDS)
 
 
-def _parse_nodes_from_form(raw: str, flow_kind: str) -> list:
+def _parse_nodes_from_form(raw: str) -> list | None:
   try:
     nodes = json.loads(raw or "[]")
-    if isinstance(nodes, list) and nodes:
+    if isinstance(nodes, list):
       return nodes
   except json.JSONDecodeError:
     pass
-  nodes = _default_nodes(flow_kind)
-  _link_nodes(nodes)
-  return nodes
+  return None
 
 
 @bp.route("/new", methods=["GET", "POST"])
@@ -114,7 +112,25 @@ def new_flow():
   if request.method == "POST":
     kind = request.form.get("flow_kind", "automation")
     channel = request.form.get("channel", "dm")
-    nodes = _parse_nodes_from_form(request.form.get("nodes_json", "[]"), kind)
+    nodes = _parse_nodes_from_form(request.form.get("nodes_json", "[]"))
+    if nodes is None:
+      flash("فرمت نودهای فلو نامعتبر است.", "error")
+      return render_template(
+        "flow_form.html",
+        flow=None,
+        flow_kinds=FLOW_KINDS,
+        channels=CHANNELS,
+        nodes_for_editor=[],
+      )
+    if not nodes:
+      flash("حداقل یک نود در ویرایشگر بسازید.", "error")
+      return render_template(
+        "flow_form.html",
+        flow=None,
+        flow_kinds=FLOW_KINDS,
+        channels=CHANNELS,
+        nodes_for_editor=[],
+      )
     flow = Flow(
       user_id=current_user.id,
       name=request.form.get("name", "فلو جدید").strip(),
@@ -153,10 +169,8 @@ def edit_flow(flow_id):
     flow.match_type = request.form.get("match_type", "contains")
     flow.post_id = request.form.get("post_id", "").strip()
     nodes_raw = request.form.get("nodes_json", "[]")
-    try:
-      json.loads(nodes_raw)
-      flow.nodes_json = nodes_raw
-    except json.JSONDecodeError:
+    nodes = _parse_nodes_from_form(nodes_raw)
+    if nodes is None:
       flash("فرمت JSON نودها نامعتبر است.", "error")
       return render_template(
         "flow_form.html",
@@ -165,6 +179,16 @@ def edit_flow(flow_id):
         channels=CHANNELS,
         nodes_for_editor=parse_nodes(flow),
       )
+    if not nodes:
+      flash("حداقل یک نود در ویرایشگر بسازید.", "error")
+      return render_template(
+        "flow_form.html",
+        flow=flow,
+        flow_kinds=FLOW_KINDS,
+        channels=CHANNELS,
+        nodes_for_editor=parse_nodes(flow),
+      )
+    flow.nodes_json = json.dumps(nodes, ensure_ascii=False)
     db.session.commit()
     flash("فلو ذخیره شد.", "success")
     return redirect(url_for("flows.flow_list"))

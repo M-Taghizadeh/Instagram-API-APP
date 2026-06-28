@@ -101,6 +101,24 @@ export default function NodePanel({ node, onChange, onDelete, onSetStart }) {
         </Field>
       )}
 
+      {nodeType === 'carousel' && (
+        <Field label="عناصر ویترین (JSON)">
+          <textarea
+            rows={8}
+            dir="ltr"
+            value={JSON.stringify(data.elements || [], null, 2)}
+            onChange={(e) => {
+              try {
+                const elements = JSON.parse(e.target.value || '[]');
+                if (Array.isArray(elements)) setData('elements', elements);
+              } catch {
+                /* ignore while typing */
+              }
+            }}
+          />
+        </Field>
+      )}
+
       {nodeType === 'save_contact' && (
         <p className="fe-hint">اطلاعات جمع‌آوری‌شده در مخاطبین ذخیره می‌شود.</p>
       )}

@@ -36,6 +36,8 @@ export function previewText(nodeType, data) {
     case 'video':
     case 'audio':
       return data.url || 'بدون URL';
+    case 'carousel':
+      return `${(data.elements || []).length} آیتم ویترین`;
     default:
       return data.text || data.question || '';
   }

@@ -60,10 +60,8 @@
 
     <div class="card" style="padding:16px;">
       <div style="font-weight:800;margin-bottom:12px;">ویرایشگر فلو</div>
-      <div
-        id="flow-editor-root"
-        data-nodes="{{ nodes_for_editor | tojson }}"
-      ></div>
+      <script type="application/json" id="flow-editor-nodes-data">{{ nodes_for_editor | tojson }}</script>
+      <div id="flow-editor-root"></div>
       <textarea id="nodes_json" name="nodes_json" style="display:none">{{ flow.nodes_json if flow else '[]' }}</textarea>
       <details style="margin-top:12px;">
         <summary style="font-size:11px;color:var(--text-faint);cursor:pointer;">نمایش JSON (پیشرفته)</summary>
