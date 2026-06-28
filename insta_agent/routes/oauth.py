@@ -158,7 +158,7 @@ def callback():
 
   except ValueError as e:
     flash(str(e), "error")
-    dest = url_for("auth.pages") if user_is_admin or user_has_page(user_id) else url_for("auth.onboarding")
+    dest = url_for("auth.pages") if user_is_admin or _user_has_page(user_id) else url_for("auth.onboarding")
     return redirect(dest)
   except Exception as e:
     if isinstance(e, (OperationalError, DBAPIError)) and is_disconnect_error(e):
