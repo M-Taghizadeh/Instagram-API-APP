@@ -7,8 +7,8 @@ from insta_agent.extensions import db
 from insta_agent.models import Payment, Plan, User
 from insta_agent.services import zarinpal
 from insta_agent.services.subscription_service import (
-  get_plans, get_plan, plan_for_followers, subscription_status,
-  validate_plan_for_user, activate_paid_subscription,
+  get_plans, get_plan, subscription_status,
+  validate_plan_for_user, activate_paid_subscription, pricing_context_for_user,
 )
 from insta_agent.utils import now_tehran
 
@@ -19,11 +19,15 @@ bp = Blueprint("billing", __name__, url_prefix="/billing")
 @login_required
 def pricing():
   plans = get_plans()
-  sub_info = subscription_status(current_user.id)
+  ctx = pricing_context_for_user(current_user.id)
   return render_template(
     "pricing.html",
     plans=plans,
-    sub_info=sub_info,
+    sub_info=ctx["sub_info"],
+    pricing_followers=ctx["followers"],
+    suggested_plan=ctx["suggested_plan"],
+    suggested_slug=ctx["suggested_slug"],
+    has_page=ctx["has_page"],
     zarinpal_ready=zarinpal.is_configured(),
   )
 

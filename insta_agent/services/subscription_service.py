@@ -274,7 +274,33 @@ def validate_plan_for_user(user_id: int, plan_slug: str) -> tuple[bool, str]:
   if not ig:
     return False, "ابتدا پیج اینستاگرام را وصل کن."
   followers = ig.follower_count or 0
-  if followers < plan.follower_min or followers > plan.follower_max:
-    needed = plan_for_followers(followers)
-    return False, f"پیج شما {followers:,} فالوور دارد — پلن مناسب: {needed.name if needed else plan_slug}"
+  needed = plan_for_followers(followers)
+  if not needed or needed.slug != plan_slug:
+    return False, (
+      f"پیج شما {followers:,} فالوور دارد — پلن مناسب: {needed.name if needed else '—'}"
+    )
   return True, ""
+
+
+def pricing_context_for_user(user_id: int) -> dict:
+  """Follower count + suggested plan for pricing UI (refreshes profile when possible)."""
+  from insta_agent.services.instagram_profile import sync_ig_account_profile
+
+  ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
+  if ig and ig.access_token:
+    sync_ig_account_profile(ig)
+    try:
+      db.session.commit()
+    except Exception:
+      db.session.rollback()
+
+  sub_info = subscription_status(user_id)
+  suggested = sub_info.get("suggested_plan")
+  followers = sub_info.get("followers") or 0
+  return {
+    "sub_info": sub_info,
+    "followers": followers,
+    "suggested_plan": suggested,
+    "suggested_slug": suggested.slug if suggested else "",
+    "has_page": ig is not None,
+  }

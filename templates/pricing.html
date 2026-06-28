@@ -16,16 +16,22 @@
   <div>
   {% if sub_info.active %}
     <span class="badge ok"><span class="status-dot on"></span> {{ sub_info.label }}</span>
-    {% if sub_info.followers %}
-    <span class="pricing-status-meta">فالوور پیج: <span class="fa-num">{{ sub_info.followers }}</span></span>
+    {% if pricing_followers is not none %}
+    <span class="pricing-status-meta">فالوور پیج: <span class="fa-num">{{ "{:,}".format(pricing_followers) }}</span></span>
     {% endif %}
   {% else %}
     <span class="badge danger"><span class="status-dot off"></span> {{ sub_info.label }}</span>
-    {% if sub_info.suggested_plan %}
-    <span class="pricing-status-meta">پلن پیشنهادی: <b>{{ sub_info.suggested_plan.name }}</b></span>
+    {% if has_page and suggested_plan %}
+    <span class="pricing-status-meta">
+      فالوور پیج: <span class="fa-num">{{ "{:,}".format(pricing_followers) }}</span>
+      — پلن پیشنهادی: <b>{{ suggested_plan.name }}</b>
+      <span style="color:var(--text-faint);">({{ suggested_plan.follower_label() }})</span>
+    </span>
+    {% elif not has_page %}
+    <span class="pricing-status-meta">ابتدا پیج اینستاگرام را وصل کن تا پلن مناسب فالوورت نمایش داده شود</span>
     {% endif %}
     {% if sub_info.trial_available %}
-    <span class="pricing-status-meta pricing-trial-hint">— با وصل پیج، ۷ روز تریال رایگان</span>
+    <span class="pricing-status-meta pricing-trial-hint">— با اتصال پیج، ۷ روز تریال رایگان</span>
     {% endif %}
   {% endif %}
   </div>
@@ -48,7 +54,11 @@
 </div>
 
 {% macro plan_card(plan) %}
-<div class="pricing-card card">
+{% set is_suggested = suggested_slug and plan.slug == suggested_slug %}
+<div class="pricing-card card{% if is_suggested %} pricing-card--suggested{% endif %}{% if has_page and not is_suggested %} pricing-card--muted{% endif %}">
+  {% if is_suggested %}
+  <div class="pricing-ribbon">پلن پیشنهادی شما</div>
+  {% endif %}
   <div class="pricing-card-head">
     <div class="pricing-plan-name">{{ plan.name }}</div>
     <div class="pricing-follower-range">{{ plan.follower_label() }} فالوور</div>
@@ -84,8 +94,11 @@
   <form method="post" action="{{ url_for('billing.checkout') }}" class="pricing-card-form">
     <input type="hidden" name="plan_slug" value="{{ plan.slug }}">
     <input type="hidden" name="period" value="1" class="period-input">
-    <button type="submit" class="btn pricing-buy-btn" {% if not zarinpal_ready %}disabled{% if current_user.is_admin %} title="درگاه پرداخت تنظیم نشده"{% else %} title="فعلاً امکان پرداخت آنلاین وجود ندارد"{% endif %}{% endif %}>
-      خرید اشتراک
+    <button type="submit" class="btn pricing-buy-btn"
+      {% if not zarinpal_ready %}disabled{% if current_user.is_admin %} title="درگاه پرداخت تنظیم نشده"{% else %} title="فعلاً امکان پرداخت آنلاین وجود ندارد"{% endif %}
+      {% elif not has_page %}disabled title="ابتدا پیج اینستاگرام را وصل کن"
+      {% elif not is_suggested %}disabled title="این پلن با تعداد فالوور پیج شما هم‌خوانی ندارد"{% endif %}>
+      {% if is_suggested %}خرید این پلن{% else %}غیرفعال{% endif %}
     </button>
   </form>
 </div>
@@ -131,6 +144,33 @@
   margin-right: 10px;
 }
 .pricing-trial-hint { color: var(--ok); }
+
+.pricing-card--suggested {
+  border-color: var(--primary-border);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15), var(--shadow-card);
+}
+.pricing-card--muted {
+  opacity: 0.55;
+}
+.pricing-card--muted .pricing-buy-btn {
+  pointer-events: none;
+}
+.pricing-ribbon {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--primary-muted);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+}
+.pricing-card {
+  position: relative;
+}
 
 .pricing-period-toggle {
   display: flex;

@@ -8,7 +8,9 @@
   <div>
     <div class="page-title">{{ icon('credit-card', 22) }} اشتراک — {{ target.username }}</div>
     <div class="page-sub">
-      {% if ig %}@{{ ig.username }} · {{ "{:,}".format(ig.follower_count or 0) }} فالوور{% else %}بدون پیج متصل{% endif %}
+      {% if ig %}@{{ ig.username }} · {{ "{:,}".format(followers) }} فالوور
+      {% if suggested_plan %} · پلن پیشنهادی: <b>{{ suggested_plan.name }}</b>{% endif %}
+      {% else %}بدون پیج متصل{% endif %}
       {% if target.is_admin %} · <span class="badge ok">مدیر سامانه</span>{% endif %}
     </div>
   </div>

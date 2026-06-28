@@ -10,7 +10,9 @@ from insta_agent.models import (
   User, Plan, Subscription, Payment, IgAccount, Flow, Contact, ActivityLog,
 )
 from insta_agent.utils import now_tehran, parse_jalali_date, format_jalali, jalali_years, add_jalali_months
-from insta_agent.services.subscription_service import admin_grant_subscription, admin_deactivate_subscriptions
+from insta_agent.services.subscription_service import (
+  admin_grant_subscription, admin_deactivate_subscriptions, plan_for_followers,
+)
 from insta_agent.services.accounting_service import build_report, export_csv, MONTH_NAMES
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -184,6 +186,18 @@ def user_subscription(user_id):
     return redirect(url_for("admin.user_subscription", user_id=user_id))
 
   default_starts = format_jalali(active_sub.starts_at if active_sub else now)
+  ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
+  if ig and ig.access_token:
+    from insta_agent.services.instagram_profile import sync_ig_account_profile
+    sync_ig_account_profile(ig)
+    try:
+      db.session.commit()
+    except Exception:
+      db.session.rollback()
+
+  followers = (ig.follower_count or 0) if ig else 0
+  suggested = plan_for_followers(followers)
+
   if active_sub:
     default_expires = format_jalali(active_sub.expires_at)
     default_plan = active_sub.plan_slug
@@ -191,11 +205,9 @@ def user_subscription(user_id):
     default_trial = active_sub.is_trial
   else:
     default_expires = format_jalali(add_jalali_months(now, 1))
-    default_plan = plans[0].slug if plans else "10k"
+    default_plan = suggested.slug if suggested else (plans[0].slug if plans else "10k")
     default_period = 1
     default_trial = False
-
-  ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
 
   return render_template(
     "admin/user_subscription.html",
@@ -209,6 +221,8 @@ def user_subscription(user_id):
     default_plan=default_plan,
     default_period=default_period,
     default_trial=default_trial,
+    suggested_plan=suggested,
+    followers=followers,
   )
 
 
