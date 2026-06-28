@@ -122,9 +122,21 @@ def onboarding():
 @login_required
 def pages():
   from insta_agent.models import IgAccount
+  from insta_agent.services.instagram_profile import sync_ig_account_profile
+
   accounts = IgAccount.query.filter_by(user_id=current_user.id).order_by(
     IgAccount.is_primary.desc(), IgAccount.connected_at.desc()
   ).all()
+
+  needs_sync = [
+    a for a in accounts
+    if not a.profile_synced_at or (not a.profile_picture and not a.follower_count)
+  ]
+  for acc in needs_sync:
+    sync_ig_account_profile(acc)
+  if needs_sync:
+    db.session.commit()
+
   return render_template("pages.html", accounts=accounts, oauth_ready=oauth_configured())
 
 

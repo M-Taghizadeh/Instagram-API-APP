@@ -22,11 +22,15 @@ class IgAccount(db.Model):
   name = db.Column(db.String(200), default="")
   account_type = db.Column(db.String(50), default="")  # BUSINESS | MEDIA_CREATOR
   profile_picture = db.Column(db.Text, default="")
+  biography = db.Column(db.Text, default="")
   follower_count = db.Column(db.Integer, default=0)
+  follows_count = db.Column(db.Integer, default=0)
+  media_count = db.Column(db.Integer, default=0)
   access_token = db.Column(db.Text, default="")
   token_expires_at = db.Column(db.DateTime, nullable=True)
   is_primary = db.Column(db.Boolean, default=True)
   connected_at = db.Column(db.DateTime, default=now_tehran)
+  profile_synced_at = db.Column(db.DateTime, nullable=True)
   updated_at = db.Column(db.DateTime, default=now_tehran, onupdate=now_tehran)
 
   def is_professional(self) -> bool:

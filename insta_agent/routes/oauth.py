@@ -9,6 +9,7 @@ from insta_agent.services.instagram_oauth import (
   build_authorize_url, exchange_code_for_token, exchange_long_lived_token,
   get_me, is_professional_account, oauth_configured,
 )
+from insta_agent.services.instagram_profile import sync_ig_account_profile
 from insta_agent.services.subscription_service import maybe_start_trial
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
@@ -75,7 +76,6 @@ def callback():
 
     ig_id = str(profile.get("user_id") or ig_user_id)
     ig_username = profile.get("username", "") or f"ig_{ig_id[:8]}"
-    follower_count = int(profile.get("followers_count") or 0)
 
     existing = IgAccount.query.filter_by(ig_user_id=ig_id).first()
     if existing and existing.user_id != user.id:
@@ -99,14 +99,12 @@ def callback():
       db.session.add(acc)
 
     acc.username = ig_username
-    acc.name = profile.get("name", "")
-    acc.account_type = account_type
-    acc.profile_picture = profile.get("profile_picture_url", "")
-    acc.follower_count = follower_count
     acc.access_token = access_token
     acc.token_expires_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
     acc.is_primary = True
     acc.connected_at = datetime.datetime.utcnow()
+
+    sync_ig_account_profile(acc, access_token)
 
     s = Settings.query.filter_by(user_id=user.id).first()
     if not s:
@@ -127,6 +125,19 @@ def callback():
   except Exception as e:
     flash(f"خطا در اتصال اینستاگرام: {e}", "error")
     return redirect(url_for("auth.onboarding") if user else url_for("auth.login"))
+
+
+@bp.route("/refresh-profiles", methods=["POST"])
+@login_required
+def refresh_profiles():
+  accounts = IgAccount.query.filter_by(user_id=current_user.id).all()
+  updated = 0
+  for acc in accounts:
+    if sync_ig_account_profile(acc):
+      updated += 1
+  db.session.commit()
+  flash(f"اطلاعات {updated} از {len(accounts)} پیج به‌روز شد.", "success")
+  return redirect(url_for("auth.pages"))
 
 
 @bp.route("/disconnect/<int:account_id>", methods=["POST"])

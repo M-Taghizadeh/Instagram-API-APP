@@ -3,6 +3,11 @@
 {% block title %}اتصال به اینستاگرام — محتوام{% endblock %}
 {% block topbar_title %}اتصال به اینستاگرام{% endblock %}
 {% block topbar_right %}
+  {% if accounts %}
+  <form method="post" action="{{ url_for('oauth.refresh_profiles') }}" style="display:inline;">
+    <button type="submit" class="btn secondary small">{{ icon('refresh-cw', 14) }} به‌روزرسانی اطلاعات</button>
+  </form>
+  {% endif %}
   {% if oauth_ready and (not accounts or current_user.is_admin) %}
   <a href="{{ url_for('oauth.connect') }}" class="btn small">{{ icon('plus', 14) }} اتصال پیج</a>
   {% endif %}
@@ -12,35 +17,61 @@
 <div class="page-header">
   <div>
     <div class="page-title">{{ icon('instagram', 22) }} اتصال به اینستاگرام</div>
-    <div class="page-sub">پیج متصل‌شده — توکن به‌صورت خودکار از Instagram OAuth دریافت می‌شود{% if current_user.is_admin %} · مدیر سامانه: بدون محدودیت تعداد پیج{% endif %}</div>
+    <div class="page-sub">پیج متصل‌شده — اطلاعات پروفایل از Instagram API ذخیره می‌شود{% if current_user.is_admin %} · مدیر سامانه: بدون محدودیت تعداد پیج{% endif %}</div>
   </div>
 </div>
 
 {% if accounts %}
 <div class="grid">
   {% for acc in accounts %}
-  <div class="card" style="padding:18px 20px;">
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+  <div class="card ig-page-card">
+    <div class="ig-page-card-head">
       {% if acc.profile_picture %}
-      <img src="{{ acc.profile_picture }}" alt="" style="width:52px;height:52px;border-radius:50%;object-fit:cover;">
+      <img src="{{ acc.profile_picture }}" alt="@{{ acc.username }}" class="ig-page-avatar"
+           referrerpolicy="no-referrer" crossorigin="anonymous"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="user-avatar ig-page-avatar-fallback" style="display:none;">@</div>
       {% else %}
-      <div class="user-avatar" style="width:52px;height:52px;font-size:20px;">@</div>
+      <div class="user-avatar ig-page-avatar">@</div>
       {% endif %}
-      <div style="flex:1;">
-        <div style="font-weight:600;font-size:15px;">@{{ acc.username }}</div>
-        <div style="font-size:12px;color:var(--text-muted);">{{ acc.name }} · {{ acc.account_type }}{% if acc.follower_count %} · {{ "{:,}".format(acc.follower_count) }} فالوور{% endif %}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">متصل از {{ acc.connected_at.strftime('%Y/%m/%d') if acc.connected_at else '—' }}</div>
+      <div class="ig-page-meta">
+        <div class="ig-page-username">@{{ acc.username }}</div>
+        {% if acc.name %}<div class="ig-page-name">{{ acc.name }}</div>{% endif %}
+        <div class="ig-page-tags">
+          <span class="badge purple" style="font-size:10px;">{{ acc.account_type or 'Instagram' }}</span>
+          {% if acc.is_primary %}<span class="badge ok" style="font-size:10px;">پیج فعال</span>{% endif %}
+        </div>
       </div>
-      {% if acc.is_primary %}
-      <span class="badge ok">پیج فعال</span>
-      {% endif %}
     </div>
-    <div style="font-size:12px;color:var(--success);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-      <span class="status-dot on"></span> توکن فعال — نیازی به کپی دستی نیست
+
+    <div class="ig-page-stats">
+      <div class="ig-page-stat">
+        <div class="ig-page-stat-num">{{ "{:,}".format(acc.follower_count or 0) }}</div>
+        <div class="ig-page-stat-label">فالوور</div>
+      </div>
+      <div class="ig-page-stat">
+        <div class="ig-page-stat-num">{{ "{:,}".format(acc.follows_count or 0) }}</div>
+        <div class="ig-page-stat-label">فالوینگ</div>
+      </div>
+      <div class="ig-page-stat">
+        <div class="ig-page-stat-num">{{ "{:,}".format(acc.media_count or 0) }}</div>
+        <div class="ig-page-stat-label">پست</div>
+      </div>
     </div>
-    <form method="post" action="{{ url_for('oauth.disconnect', account_id=acc.id) }}" onsubmit="return confirm('این پیج قطع شود؟')">
-      <button type="submit" class="btn ghost small" style="color:var(--danger);">قطع اتصال</button>
-    </form>
+
+    {% if acc.biography %}
+    <div class="ig-page-bio">{{ acc.biography[:160] }}{% if acc.biography|length > 160 %}…{% endif %}</div>
+    {% endif %}
+
+    <div class="ig-page-foot">
+      <span class="ig-page-sync">
+        {{ icon('check', 12) }} توکن فعال
+        {% if acc.profile_synced_at %}· به‌روز {{ acc.profile_synced_at.strftime('%Y/%m/%d %H:%M') }}{% endif %}
+      </span>
+      <form method="post" action="{{ url_for('oauth.disconnect', account_id=acc.id) }}" onsubmit="return confirm('این پیج قطع شود؟')">
+        <button type="submit" class="btn ghost small" style="color:var(--danger);">قطع اتصال</button>
+      </form>
+    </div>
   </div>
   {% endfor %}
 </div>

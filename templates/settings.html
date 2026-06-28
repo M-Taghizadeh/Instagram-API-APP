@@ -22,13 +22,17 @@
   {% if ig_account %}
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
     {% if ig_account.profile_picture %}
-    <img src="{{ ig_account.profile_picture }}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+    <img src="{{ ig_account.profile_picture }}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" referrerpolicy="no-referrer">
     {% else %}
     <div class="user-avatar" style="width:48px;height:48px;font-size:20px;">@</div>
     {% endif %}
     <div style="flex:1;">
       <div style="font-weight:800;">@{{ ig_account.username }}</div>
-      <div style="font-size:12px;color:var(--text-faint);">{{ ig_account.name }} · {{ ig_account.account_type }}</div>
+      <div style="font-size:12px;color:var(--text-faint);">
+        {{ ig_account.name }} · {{ ig_account.account_type }}
+        {% if ig_account.follower_count is not none %} · {{ "{:,}".format(ig_account.follower_count) }} فالوور{% endif %}
+        {% if ig_account.media_count %} · {{ "{:,}".format(ig_account.media_count) }} پست{% endif %}
+      </div>
     </div>
     <span class="badge ok"><span class="status-dot on"></span> متصل</span>
   </div>

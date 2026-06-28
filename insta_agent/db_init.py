@@ -130,6 +130,14 @@ def _run_migrations():
                   "ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
       _add_column(conn, "ig_accounts", "follower_count",
                   "ALTER TABLE ig_accounts ADD COLUMN follower_count INTEGER DEFAULT 0")
+      _add_column(conn, "ig_accounts", "follows_count",
+                  "ALTER TABLE ig_accounts ADD COLUMN follows_count INTEGER DEFAULT 0")
+      _add_column(conn, "ig_accounts", "media_count",
+                  "ALTER TABLE ig_accounts ADD COLUMN media_count INTEGER DEFAULT 0")
+      _add_column(conn, "ig_accounts", "biography",
+                  "ALTER TABLE ig_accounts ADD COLUMN biography TEXT DEFAULT ''")
+      _add_column(conn, "ig_accounts", "profile_synced_at",
+                  "ALTER TABLE ig_accounts ADD COLUMN profile_synced_at TIMESTAMP")
 
       # backfill nulls on existing rows
       for stmt in [

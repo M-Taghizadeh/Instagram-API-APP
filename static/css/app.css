@@ -1040,6 +1040,66 @@ textarea { resize: vertical; min-height: 110px; line-height: 1.65; }
 }
 .activity-row-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
+/* ── Instagram pages cards ── */
+.ig-page-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.ig-page-card-head { display: flex; align-items: center; gap: 14px; }
+.ig-page-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--border-subtle);
+}
+.ig-page-avatar-fallback,
+.ig-page-card .ig-page-avatar.user-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.ig-page-meta { flex: 1; min-width: 0; }
+.ig-page-username { font-weight: 700; font-size: 15px; }
+.ig-page-name { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.ig-page-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.ig-page-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+.ig-page-stat { text-align: center; }
+.ig-page-stat-num { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.ig-page-stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.ig-page-bio {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.ig-page-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle);
+}
+.ig-page-sync {
+  font-size: 11px;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
 .chart-wrap { position: relative; height: 180px; }
 
 .sub-banner {
