@@ -27,6 +27,25 @@ def _api_error(data, fallback: str = "") -> str:
   return data.get("error_message") or fallback or str(data)
 
 
+def _post_form(url: str, payload: dict) -> requests.Response:
+  """POST form without redirect-to-GET (causes Meta 'method type: get' errors)."""
+  r = requests.post(url, data=payload, timeout=15, allow_redirects=False)
+  if r.status_code in (301, 302, 303, 307, 308):
+    loc = r.headers.get("Location")
+    if loc:
+      r = requests.post(loc, data=payload, timeout=15, allow_redirects=False)
+  return r
+
+
+def _get_json(url: str, params: dict) -> requests.Response:
+  r = requests.get(url, params=params, timeout=15, allow_redirects=False)
+  if r.status_code in (301, 302, 303, 307, 308):
+    loc = r.headers.get("Location")
+    if loc:
+      r = requests.get(loc, params=params, timeout=15, allow_redirects=False)
+  return r
+
+
 def build_authorize_url(state: str = "") -> str:
   redirect = Config.OAUTH_REDIRECT_URI or ""
   params = {
@@ -41,13 +60,14 @@ def build_authorize_url(state: str = "") -> str:
 
 
 def exchange_code_for_token(code: str) -> dict:
-  r = requests.post(TOKEN_URL, data={
+  payload = {
     "client_id": Config.META_APP_ID,
     "client_secret": Config.META_APP_SECRET,
     "grant_type": "authorization_code",
     "redirect_uri": Config.OAUTH_REDIRECT_URI,
     "code": code,
-  }, timeout=15)
+  }
+  r = _post_form(TOKEN_URL, payload)
   data = _unwrap_payload(r.json())
   if r.status_code != 200:
     raise ValueError(_api_error(data, r.text))
@@ -70,9 +90,9 @@ def exchange_long_lived_token(short_token: str) -> dict:
   for method in ("post", "get"):
     try:
       if method == "post":
-        r = requests.post(f"{GRAPH_BASE}/access_token", data=payload, timeout=15)
+        r = _post_form(f"{GRAPH_BASE}/access_token", payload)
       else:
-        r = requests.get(f"{GRAPH_BASE}/access_token", params=payload, timeout=15)
+        r = _get_json(f"{GRAPH_BASE}/access_token", payload)
       data = r.json()
       if r.status_code == 200 and data.get("access_token"):
         return data
@@ -84,11 +104,13 @@ def exchange_long_lived_token(short_token: str) -> dict:
   return {"access_token": short_token, "expires_in": 3600}
 
 
-def get_me(access_token: str) -> dict:
+def get_me(access_token: str, ig_user_id: str = "") -> dict:
   if not access_token:
     raise ValueError("توکن دسترسی خالی است.")
 
   urls = [f"{GRAPH_BASE}/me", f"{Config.GRAPH_API}/me"]
+  if ig_user_id:
+    urls.extend([f"{GRAPH_BASE}/{ig_user_id}", f"{Config.GRAPH_API}/{ig_user_id}"])
   field_sets = [
     "user_id,username,account_type",
     "user_id,username,name,account_type,profile_picture_url,followers_count",
@@ -97,13 +119,23 @@ def get_me(access_token: str) -> dict:
 
   for url in urls:
     for fields in field_sets:
-      r = requests.get(url, params={"fields": fields, "access_token": access_token}, timeout=15)
+      r = _get_json(url, {"fields": fields, "access_token": access_token})
       data = _unwrap_payload(r.json())
-      if r.status_code == 200 and (data.get("user_id") or data.get("username")):
+      if r.status_code == 200 and (data.get("user_id") or data.get("username") or data.get("id")):
+        if not data.get("user_id") and data.get("id"):
+          data["user_id"] = data["id"]
         return data
       last_error = _api_error(data, r.text)
 
   raise ValueError(last_error or "پروفایل اینستاگرام دریافت نشد.")
+
+
+def get_me_optional(access_token: str, ig_user_id: str = "") -> dict:
+  try:
+    return get_me(access_token, ig_user_id=ig_user_id)
+  except Exception as e:
+    print(f"[IG OAuth] get_me skipped: {e}", flush=True)
+    return {"user_id": ig_user_id, "username": ""}
 
 
 def is_professional_account(account_type: str) -> bool:

@@ -7,12 +7,28 @@ from insta_agent.extensions import db
 from insta_agent.models import User, IgAccount, Settings
 from insta_agent.services.instagram_oauth import (
   build_authorize_url, exchange_code_for_token, exchange_long_lived_token,
-  get_me, is_professional_account, oauth_configured,
+  get_me_optional, is_professional_account, oauth_configured, oauth_status,
 )
 from insta_agent.services.instagram_profile import sync_ig_account_profile
 from insta_agent.services.subscription_service import maybe_start_trial
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
+OAUTH_FLOW_VERSION = "2025-06-28b"
+
+
+@bp.route("/status")
+@login_required
+def oauth_debug_status():
+  if not current_user.is_admin:
+    return {"error": "forbidden"}, 403
+  st = oauth_status()
+  return {
+    "flow_version": OAUTH_FLOW_VERSION,
+    "configured": st["ready"],
+    "app_id_set": st["app_id"],
+    "secret_set": st["app_secret"],
+    "redirect_uri": st["redirect_value"],
+  }
 
 
 @bp.route("/connect")
@@ -58,12 +74,14 @@ def callback():
     short = exchange_code_for_token(code)
     short_token = short.get("access_token", "")
     ig_user_id = str(short.get("user_id", ""))
+    if not short_token or not ig_user_id:
+      raise ValueError("پاسخ اینستاگرام ناقص بود — توکن یا شناسه کاربر دریافت نشد.")
 
     long = exchange_long_lived_token(short_token)
     access_token = long.get("access_token", short_token)
     expires_in = int(long.get("expires_in", 3600))
 
-    profile = get_me(access_token)
+    profile = get_me_optional(access_token, ig_user_id=ig_user_id)
     account_type = profile.get("account_type", "")
 
     if account_type and not is_professional_account(account_type):
