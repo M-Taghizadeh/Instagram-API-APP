@@ -14,6 +14,8 @@ from insta_agent.services.subscription_service import (
   admin_grant_subscription, admin_deactivate_subscriptions, plan_for_followers,
 )
 from insta_agent.services.accounting_service import build_report, export_csv, MONTH_NAMES
+from insta_agent.config import Config
+from insta_agent.services.instagram_oauth import oauth_configured, oauth_status
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -223,6 +225,23 @@ def user_subscription(user_id):
     default_trial=default_trial,
     suggested_plan=suggested,
     followers=followers,
+  )
+
+
+@bp.route("/integrations")
+@login_required
+@admin_required
+def integrations():
+  oauth = oauth_status()
+  return render_template(
+    "admin/integrations.html",
+    oauth=oauth,
+    oauth_ready=oauth_configured(),
+    meta_app_id=Config.META_APP_ID,
+    oauth_redirect=Config.OAUTH_REDIRECT_URI,
+    verify_token=Config.VERIFY_TOKEN,
+    webhook_url=url_for("webhook.webhook", _external=True),
+    oauth_status_url=url_for("oauth.oauth_debug_status"),
   )
 
 

@@ -29,6 +29,8 @@ class Config:
   COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", "3600"))
 
   # Instagram OAuth (Business Login)
+  # Instagram OAuth — use IDs from Meta Dashboard → Instagram → API setup with Instagram login
+  # (NOT the top-level "App ID" on the app homepage; those are often different numbers.)
   META_APP_ID = os.getenv("META_APP_ID", os.getenv("INSTAGRAM_APP_ID", ""))
   META_APP_SECRET = os.getenv("META_APP_SECRET", os.getenv("INSTAGRAM_APP_SECRET", ""))
   OAUTH_REDIRECT_URI = os.getenv("OAUTH_REDIRECT_URI", "")

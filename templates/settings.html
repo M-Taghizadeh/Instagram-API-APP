@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import icon, icon_box, status_badge %}
+{% from "macros/ui.html" import icon, icon_box %}
 {% block title %}تنظیمات — محتوام{% endblock %}
 {% block topbar_title %}تنظیمات{% endblock %}
 {% block content %}
@@ -7,7 +7,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">{{ icon('settings', 22) }} تنظیمات</div>
-    <div class="page-sub">توکن اینستاگرام، Webhook، امنیت حساب و Cooldown</div>
+    <div class="page-sub">اتصال اینستاگرام، Cooldown و امنیت حساب</div>
   </div>
 </div>
 
@@ -16,8 +16,11 @@
     {{ icon_box('instagram', 'rose', 'md') }}
     <div>
       <div class="settings-title">اتصال با اینستاگرام</div>
-      <div class="settings-sub">فقط حساب Business یا Creator — Login with Instagram</div>
+      <div class="settings-sub">فقط حساب Business یا Creator — با یک کلیک وصل می‌شود</div>
     </div>
+    {% if ig_account %}
+    <span class="badge ok" style="margin-right:auto;"><span class="status-dot on"></span> متصل</span>
+    {% endif %}
   </div>
   {% if ig_account %}
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
@@ -29,208 +32,44 @@
     <div style="flex:1;">
       <div style="font-weight:800;">@{{ ig_account.username }}</div>
       <div style="font-size:12px;color:var(--text-faint);">
-        {{ ig_account.name }} · {{ ig_account.account_type }}
-        {% if ig_account.follower_count is not none %} · {{ "{:,}".format(ig_account.follower_count) }} فالوور{% endif %}
-        {% if ig_account.media_count %} · {{ "{:,}".format(ig_account.media_count) }} پست{% endif %}
+        {{ ig_account.name }} · {{ ig_account.account_type or 'Instagram' }}
+        {% if ig_account.follower_count %} · {{ "{:,}".format(ig_account.follower_count) }} فالوور{% endif %}
       </div>
     </div>
-    <span class="badge ok"><span class="status-dot on"></span> متصل</span>
   </div>
-  <a href="{{ url_for('auth.pages') }}" class="btn secondary small">مدیریت پیج‌ها</a>
+  <a href="{{ url_for('auth.pages') }}" class="btn secondary small">مدیریت پیج</a>
   {% else %}
   <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px;">
-    با اتصال مستقیم اینستاگرام، نیازی به کپی دستی توکن نیست. حسابت باید Business یا Creator باشد.
+    برای استفاده از اتوماسیون، پیج اینستاگرامت را وصل کن. نیازی به کپی توکن یا تنظیمات فنی نیست.
   </p>
   {% if oauth_ready %}
   <a href="{{ url_for('oauth.connect') }}" class="btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);">
     {{ icon('instagram', 16) }} اتصال با اینستاگرام
   </a>
   {% else %}
-  <div class="flash error" style="margin:0;">META_APP_ID، META_APP_SECRET و OAUTH_REDIRECT_URI را در .env تنظیم کن.</div>
+  <div class="flash error" style="margin:0;font-size:13px;">
+    اتصال اینستاگرام موقتاً در دسترس نیست. لطفاً بعداً دوباره تلاش کن یا با پشتیبانی تماس بگیر.
+  </div>
   {% endif %}
   {% endif %}
 </div>
 
-{% if current_user.is_admin %}
-<!-- ══ Zarinpal (admin only) ══ -->
-<div class="card" style="padding:20px 22px;margin-bottom:20px;border-color:rgba(34,211,160,.2);">
-  <div class="settings-section-head">
-    {{ icon_box('credit-card', 'green', 'md') }}
-    <div>
-      <div class="settings-title">درگاه پرداخت زرین‌پال</div>
-      <div class="settings-sub">فقط ادمین — Merchant ID و حالت تست/واقعی</div>
-    </div>
-    {% if app_cfg.zarinpal_merchant_id %}
-    <span class="badge ok" style="margin-right:auto;"><span class="status-dot on"></span> پیکربندی شده</span>
-    {% else %}
-    <span class="badge danger" style="margin-right:auto;"><span class="status-dot off"></span> تنظیم نشده</span>
-    {% endif %}
-  </div>
-  <form method="post">
-    <input type="hidden" name="form_type" value="zarinpal">
-    <div class="field">
-      <label>Merchant ID</label>
-      <input type="text" name="zarinpal_merchant_id" value="{{ app_cfg.zarinpal_merchant_id }}"
-             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" dir="ltr" autocomplete="off">
-      <div class="hint">از پنل زرین‌پال → درگاه پرداخت → اطلاعات درگاه</div>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:16px;">
-      <div>
-        <div style="font-size:13px;font-weight:700;">حالت Sandbox (تست)</div>
-        <div style="font-size:11px;color:var(--text-faint);margin-top:2px;">برای تست پرداخت فعال کن — در production خاموش کن</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" name="zarinpal_sandbox" value="1" {{ 'checked' if app_cfg.zarinpal_sandbox else '' }}>
-        <span class="toggle-track"></span>
-      </label>
-    </div>
-    <button type="submit" class="btn" style="width:100%;max-width:320px;">{{ icon('save', 16) }} ذخیره تنظیمات زرین‌پال</button>
-  </form>
-</div>
-{% endif %}
-
-<!-- ══ Row 0: Connection status banner ══ -->
-<div class="card" style="padding:14px 20px;margin-bottom:20px;
-     display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-  <div style="font-size:20px;">🔌</div>
-  <div style="flex:1;min-width:0;">
-    <div style="font-size:13px;font-weight:800;margin-bottom:2px;">وضعیت اتصال</div>
-    {% if s.access_token %}
-      <div style="font-size:12px;color:var(--ok);">توکن تنظیم شده — اتصال به Instagram Graph API برقرار است</div>
-    {% else %}
-      <div style="font-size:12px;color:var(--danger);">توکن تنظیم نشده — Webhook پاسخ نمی‌دهد</div>
-    {% endif %}
-  </div>
-  {% if s.access_token %}
-    <span class="badge ok" style="font-size:12px;padding:5px 14px;"><span class="status-dot on"></span> متصل</span>
-  {% else %}
-    <span class="badge danger" style="font-size:12px;padding:5px 14px;"><span class="status-dot off"></span> قطع</span>
-  {% endif %}
-</div>
-
-<!-- ══ Row 1: Tokens | Security ══ -->
-<div class="settings-row" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;align-items:start;">
-
-  <!-- tokens -->
-  <form method="post" id="tokenForm">
-    <div class="card">
-      <div class="card-shine"></div>
-      <div class="settings-section-head">
-        {{ icon_box('key-round', 'violet', 'md') }}
-        <div>
-          <div class="settings-title">توکن‌های اتصال</div>
-          <div class="settings-sub">Instagram Graph API</div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Access Token</label>
-        <div style="position:relative;">
-          <input type="text" name="access_token" value="{{ s.access_token }}"
-                 placeholder="EAAxxxxxxxxxxxxxxxxx" autocomplete="off"
-                 id="tokenInput" style="padding-left:76px;">
-          <button type="button" onclick="toggleToken()"
-            style="position:absolute;left:10px;top:50%;transform:translateY(-50%);
-                   background:var(--panel-3);border:1px solid var(--border);
-                   color:var(--text-dim);border-radius:5px;padding:3px 8px;
-                   font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;"
-            id="tokenToggle">نمایش</button>
-        </div>
-        <div class="hint">
-          <a href="https://developers.facebook.com/" target="_blank">Meta Developers</a>
-          ← اپت ← Instagram ← Generate Token
-        </div>
-      </div>
-
-      <div class="field" style="margin-bottom:0;">
-        <label>Verify Token</label>
-        <input type="text" name="verify_token" value="{{ s.verify_token }}"
-               placeholder="mysecret123" autocomplete="off">
-        <div class="hint">در پنل متا → Configure Webhooks وارد کن.</div>
-      </div>
-
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft);">
-        <button type="submit" class="btn" style="width:100%;">{{ icon('save', 16) }} ذخیره توکن‌ها</button>
-      </div>
-    </div>
-  </form>
-
-  <!-- security + webhook -->
-  <div style="display:flex;flex-direction:column;gap:16px;">
-
-    <!-- webhook url -->
-    <div class="card" style="padding:18px 20px;">
-      <div class="settings-section-head">
-        {{ icon_box('link', 'blue', 'md') }}
-        <div>
-          <div class="settings-title">آدرس Webhook</div>
-          <div class="settings-sub">این آدرس را در متا وارد کن</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input type="text" value="{{ request.url_root }}webhook" readonly
-               id="webhookUrl" onclick="this.select()"
-               style="font-size:11.5px;font-family:monospace;flex:1;color:var(--text-dim);">
-        <button type="button" onclick="copyWebhook()" class="btn secondary small" id="copyBtn">{{ icon('copy', 14) }} کپی</button>
-      </div>
-    </div>
-
-    <!-- security -->
-    <div class="card" style="padding:18px 20px;">
-      <div class="settings-section-head">
-        {{ icon_box('lock', 'rose', 'md') }}
-        <div>
-          <div class="settings-title">امنیت حساب</div>
-          <div class="settings-sub">رمز عبور و اطلاعات کاربری</div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;
-                  padding:10px 12px;background:var(--panel-2);
-                  border:1px solid var(--border);border-radius:var(--radius-sm);
-                  margin-bottom:12px;">
-        <div class="user-avatar" style="width:34px;height:34px;font-size:15px;">
-          {{ current_user.username[0].upper() }}
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:700;">{{ current_user.username }}</div>
-          <div style="font-size:11px;color:var(--text-faint);">ادمین</div>
-        </div>
-        <span class="badge ok" style="font-size:10px;"><span class="status-dot on"></span> فعال</span>
-      </div>
-      <a href="{{ url_for('settings.change_password') }}" class="btn secondary"
-         style="width:100%;justify-content:center;">{{ icon('key-round', 16) }} تغییر رمز عبور</a>
-    </div>
-
-  </div>
-</div>
-
-<!-- ══ Row 2: Cooldown | Setup guide ══ -->
 <div class="settings-row" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
 
-  <!-- cooldown -->
   <div class="card">
-    <div class="card-shine"></div>
     <div class="settings-section-head">
       {{ icon_box('timer', 'blue', 'md') }}
       <div>
         <div class="settings-title">تنظیمات Cooldown</div>
-        <div class="settings-sub">جلوگیری از ارسال مکرر به یک کاربر</div>
+        <div class="settings-sub">جلوگیری از پاسخ مکرر به یک کاربر</div>
       </div>
     </div>
-
     <form method="post">
-      <input type="hidden" name="access_token" value="{{ s.access_token }}">
-      <input type="hidden" name="verify_token" value="{{ s.verify_token }}">
-
-      <!-- toggle row -->
-      <div style="display:flex;align-items:center;justify-content:space-between;
-                  padding:12px 14px;background:var(--panel-2);border:1px solid var(--border);
-                  border-radius:var(--radius-sm);margin-bottom:14px;">
+      <input type="hidden" name="form_type" value="cooldown">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:14px;">
         <div>
           <div style="font-size:13px;font-weight:700;">فعال‌سازی Cooldown</div>
-          <div style="font-size:11px;color:var(--text-faint);margin-top:2px;">
-            هر کاربر در بازه زمانی مشخص فقط یک‌بار پاسخ می‌گیرد
-          </div>
+          <div style="font-size:11px;color:var(--text-faint);margin-top:2px;">هر کاربر در بازه مشخص فقط یک‌بار پاسخ می‌گیرد</div>
         </div>
         <label class="toggle">
           <input type="checkbox" name="cooldown_enabled" value="1" id="cooldownToggle"
@@ -239,92 +78,70 @@
           <span class="toggle-track"></span>
         </label>
       </div>
-
-      <div id="cooldownBody"
-           style="display:{{ 'block' if s.cooldown_enabled != False else 'none' }};">
+      <div id="cooldownBody" style="display:{{ 'block' if s.cooldown_enabled != False else 'none' }};">
         <div class="field" style="margin-bottom:14px;">
-          <label>مدت زمان</label>
+          <label>مدت زمان (ثانیه)</label>
           <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
             <input type="number" name="cooldown_seconds" min="0" step="60"
-                   value="{{ s.cooldown_seconds or 3600 }}"
-                   id="cooldownSecs" oninput="updateCooldownLabel()">
-            <span id="cooldownLabel"
-                  style="font-size:12px;color:var(--accent-2);font-weight:700;
-                         white-space:nowrap;min-width:80px;text-align:center;
-                         background:rgba(108,79,255,.1);padding:4px 8px;
-                         border-radius:6px;border:1px solid rgba(108,79,255,.2);"></span>
+                   value="{{ s.cooldown_seconds or 3600 }}" id="cooldownSecs" oninput="updateCooldownLabel()">
+            <span id="cooldownLabel" style="font-size:12px;color:var(--primary);font-weight:700;white-space:nowrap;"></span>
           </div>
-          <div class="hint">ثانیه — ۳۶۰۰ = ۱ ساعت · ۳۰۰ = ۵ دقیقه · ۰ = بدون محدودیت</div>
+          <div class="hint">۳۶۰۰ = ۱ ساعت · ۰ = بدون محدودیت</div>
         </div>
       </div>
-
-      <button type="submit" class="btn" style="width:100%;">{{ icon('save', 16) }} ذخیره Cooldown</button>
+      <button type="submit" class="btn" style="width:100%;">{{ icon('save', 16) }} ذخیره</button>
     </form>
-
-    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-soft);">
-      <form method="post" action="{{ url_for('activity.clear_cooldowns') }}"
-            onsubmit="return confirm('کولداون همه کاربران پاک شود؟')">
-        <button type="submit" class="btn secondary small" style="width:100%;">
-          {{ icon('trash-2', 14) }} پاک کردن همه Cooldown‌ها
-        </button>
-      </form>
-      <div style="font-size:11px;color:var(--text-faint);margin-top:7px;text-align:center;">
-        قانون‌ها بلافاصله دوباره اجرا می‌شوند
-      </div>
-    </div>
+    <form method="post" action="{{ url_for('activity.clear_cooldowns') }}" style="margin-top:12px;"
+          onsubmit="return confirm('کولداون همه کاربران پاک شود؟')">
+      <button type="submit" class="btn secondary small" style="width:100%;">{{ icon('trash-2', 14) }} پاک کردن Cooldown‌ها</button>
+    </form>
   </div>
 
-  <!-- setup guide + render note -->
-  <div style="display:flex;flex-direction:column;gap:16px;">
-
-    <div class="card" style="padding:20px 22px;">
-      <div class="settings-section-head">
-        {{ icon_box('book-open', 'green', 'md') }}
-        <div>
-          <div class="settings-title">راهنمای راه‌اندازی</div>
-          <div class="settings-sub">مراحل اتصال به Meta</div>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        {% for step in [
-          ('1', 'اپ Meta Business ایجاد کن', 'developers.facebook.com'),
-          ('2', 'Instagram را به اپ اضافه کن', 'بخش Products'),
-          ('3', 'توکن را Generate کن', 'Instagram → Generate Token'),
-          ('4', 'Webhook را تنظیم کن', 'آدرس بالا + Verify Token'),
-          ('5', 'Subscribe به messages و comments', 'Webhook Fields'),
-        ] %}
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <span style="width:22px;height:22px;border-radius:50%;
-                       background:var(--accent-grad);flex-shrink:0;
-                       display:flex;align-items:center;justify-content:center;
-                       font-size:10.5px;font-weight:800;color:#fff;margin-top:1px;">
-            {{ step[0] }}
-          </span>
-          <div>
-            <div style="font-size:12.5px;font-weight:700;">{{ step[1] }}</div>
-            <div style="font-size:11px;color:var(--text-faint);">{{ step[2] }}</div>
-          </div>
-        </div>
-        {% endfor %}
+  <div class="card" style="padding:18px 20px;">
+    <div class="settings-section-head">
+      {{ icon_box('lock', 'rose', 'md') }}
+      <div>
+        <div class="settings-title">امنیت حساب</div>
+        <div class="settings-sub">رمز عبور و اطلاعات ورود</div>
       </div>
     </div>
-
-    <div class="card" style="padding:16px 20px;border-color:rgba(245,158,11,.25);">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        {{ icon('alert-triangle', 18) }}
-        <span style="font-size:13px;font-weight:800;color:var(--warn);">نکته Render / Deploy</span>
-      </div>
-      <div style="font-size:12px;color:var(--text-dim);line-height:2;">
-        متغیرهای
-        <code style="background:var(--panel-2);padding:1px 6px;border-radius:4px;font-size:11px;">ADMIN_USERNAME</code>
-        و
-        <code style="background:var(--panel-2);padding:1px 6px;border-radius:4px;font-size:11px;">ADMIN_PASSWORD</code>
-        را در Environment Variables پلتفرم Render تنظیم کن.
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:12px;">
+      <div class="user-avatar" style="width:34px;height:34px;font-size:15px;">{{ current_user.username[0].upper() }}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;">{{ current_user.username }}</div>
+        <div style="font-size:11px;color:var(--text-faint);">{% if current_user.is_admin %}مدیر سامانه{% else %}کاربر{% endif %}</div>
       </div>
     </div>
-
+    <a href="{{ url_for('settings.change_password') }}" class="btn secondary" style="width:100%;justify-content:center;">{{ icon('key-round', 16) }} تغییر رمز عبور</a>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('admin.integrations') }}" class="btn ghost small" style="width:100%;margin-top:10px;justify-content:center;">{{ icon('plug', 14) }} تنظیمات Meta / Webhook (ادمین)</a>
+    {% endif %}
   </div>
 </div>
+
+{% if current_user.is_admin %}
+<div class="card" style="padding:18px 20px;margin-top:20px;border-color:rgba(34,211,160,.2);">
+  <div class="settings-section-head" style="margin-bottom:12px;padding-bottom:12px;">
+    {{ icon_box('credit-card', 'green', 'md') }}
+    <div>
+      <div class="settings-title">درگاه زرین‌پال</div>
+      <div class="settings-sub">فقط مدیر سامانه</div>
+    </div>
+  </div>
+  <form method="post">
+    <input type="hidden" name="form_type" value="zarinpal">
+    <div class="field">
+      <label>Merchant ID</label>
+      <input type="text" name="zarinpal_merchant_id" value="{{ app_cfg.zarinpal_merchant_id }}" dir="ltr" autocomplete="off">
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;">
+      <input type="checkbox" name="zarinpal_sandbox" value="1" {{ 'checked' if app_cfg.zarinpal_sandbox else '' }}>
+      حالت Sandbox (تست)
+    </label>
+    <button type="submit" class="btn small">{{ icon('save', 16) }} ذخیره زرین‌پال</button>
+  </form>
+</div>
+{% endif %}
 
 {% endblock %}
 
@@ -337,41 +154,11 @@
 }
 .settings-title { font-size:14px; font-weight:800; }
 .settings-sub   { font-size:11.5px; color:var(--text-faint); margin-top:1px; }
-.settings-icon  {
-  width:38px; height:38px; border-radius:11px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:17px; flex-shrink:0;
-}
-.settings-icon.purple { background:rgba(108,79,255,.15); }
-.settings-icon.pink   { background:rgba(224,65,127,.12); }
-.settings-icon.cyan   { background:rgba(0,212,255,.1); }
-.settings-icon.green  { background:rgba(34,211,160,.1); }
 @media (max-width:860px) {
-  .settings-grid-2 { grid-template-columns:1fr !important; }
+  .settings-row { grid-template-columns:1fr !important; }
 }
 </style>
 <script>
-function toggleToken() {
-  const inp = document.getElementById('tokenInput');
-  const btn = document.getElementById('tokenToggle');
-  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'پنهان'; }
-  else { inp.type = 'password'; btn.textContent = 'نمایش'; }
-}
-const ti = document.getElementById('tokenInput');
-if (ti && ti.value) ti.type = 'password';
-
-function copyWebhook() {
-  navigator.clipboard.writeText(document.getElementById('webhookUrl').value).then(() => {
-    const btn = document.getElementById('copyBtn');
-    btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px"></i> کپی شد!';
-    if (typeof refreshIcons === 'function') refreshIcons();
-    setTimeout(() => {
-      btn.innerHTML = '<i data-lucide="copy" style="width:14px;height:14px"></i> کپی';
-      if (typeof refreshIcons === 'function') refreshIcons();
-    }, 2000);
-  });
-}
-
 function updateCooldownLabel() {
   const secs = parseInt(document.getElementById('cooldownSecs').value) || 0;
   const lbl  = document.getElementById('cooldownLabel');

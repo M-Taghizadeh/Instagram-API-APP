@@ -1,8 +1,8 @@
 import json
 import os
 
-from flask import Blueprint, request, jsonify
-from flask_login import login_required
+from flask import Blueprint, request, jsonify, abort
+from flask_login import login_required, current_user
 
 from insta_agent.extensions import db
 from insta_agent.models import User, DmRule, CommentRule, Settings
@@ -35,6 +35,8 @@ def verify_webhook():
 @bp.route("/debug/webhook")
 @login_required
 def debug_webhook():
+  if not current_user.is_admin:
+    abort(403)
   return jsonify(payloads=_last_webhook_payload)
 
 

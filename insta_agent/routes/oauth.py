@@ -7,17 +7,18 @@ from insta_agent.config import Config
 from insta_agent.extensions import db
 from insta_agent.models import User, IgAccount, Settings
 from insta_agent.services.instagram_oauth import (
-  build_authorize_url, exchange_code_for_token, exchange_long_lived_token,
+  build_authorize_url, exchange_code_for_token, resolve_access_token,
   get_me_optional, is_professional_account, oauth_configured, oauth_status,
 )
 from insta_agent.services.instagram_profile import (
   sync_ig_account_profile, fetch_ig_profile, apply_profile_to_account,
   fetch_ig_profile_with_debug, debug_user_token, explain_profile_failure,
+  token_health_report,
 )
 from insta_agent.services.subscription_service import maybe_start_trial
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
-OAUTH_FLOW_VERSION = "2025-06-28c"
+OAUTH_FLOW_VERSION = "2025-06-28d"
 
 
 @bp.route("/status")
@@ -29,24 +30,23 @@ def oauth_debug_status():
   ig = IgAccount.query.filter_by(user_id=current_user.id, is_primary=True).first()
   debug = {}
   if ig and ig.access_token:
+    debug = token_health_report(ig.access_token)
     profile, err = fetch_ig_profile_with_debug(ig.access_token, ig.ig_user_id)
-    token_dbg = debug_user_token(ig.access_token)
-    debug = {
-      "profile_ok": bool(profile),
-      "api_error": err,
-      "username": profile.get("username", ""),
-      "token_valid": token_dbg.get("is_valid"),
-      "token_scopes": token_dbg.get("scopes"),
-      "token_app_id": token_dbg.get("app_id"),
-      "configured_app_id": Config.META_APP_ID,
-    }
+    debug["profile_ok"] = bool(profile)
+    debug["profile_error"] = err
+    debug["username"] = profile.get("username", "")
   return {
     "flow_version": OAUTH_FLOW_VERSION,
     "configured": st["ready"],
+    "configured_app_id": Config.META_APP_ID,
     "app_id_set": st["app_id"],
     "secret_set": st["app_secret"],
     "redirect_uri": st["redirect_value"],
-    "profile_test": debug,
+    "hint": (
+      "META_APP_ID باید Instagram App ID از "
+      "Instagram → API setup with Instagram login باشد (معمولاً با App ID بالای داشبورد فرق دارد)"
+    ),
+    "token_health": debug,
   }
 
 
@@ -96,9 +96,7 @@ def callback():
     if not short_token or not ig_user_id:
       raise ValueError("پاسخ اینستاگرام ناقص بود — توکن یا شناسه کاربر دریافت نشد.")
 
-    long = exchange_long_lived_token(short_token)
-    access_token = long.get("access_token", short_token)
-    expires_in = int(long.get("expires_in", 3600))
+    access_token, expires_in = resolve_access_token(short_token)
 
     profile = get_me_optional(access_token, ig_user_id=ig_user_id)
     account_type = profile.get("account_type", "")

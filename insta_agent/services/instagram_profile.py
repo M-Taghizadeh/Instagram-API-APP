@@ -45,11 +45,85 @@ def debug_user_token(access_token: str) -> dict:
       params={"input_token": access_token, "access_token": _app_access_token()},
       timeout=15,
     )
-    data = r.json()
-    return _unwrap_payload(data) if isinstance(data, dict) else {}
+    raw = r.json()
+    if isinstance(raw, dict) and raw.get("error"):
+      err = raw["error"]
+      msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+      return {
+        "is_valid": False,
+        "debug_error": msg,
+        "configured_app_id": Config.META_APP_ID,
+      }
+    result = _unwrap_payload(raw)
+    if result:
+      result["configured_app_id"] = Config.META_APP_ID
+      if result.get("app_id"):
+        result["app_id_match"] = str(result["app_id"]) == str(Config.META_APP_ID)
+    return result
   except Exception as e:
     print(f"[IG PROFILE] debug_token error: {e}", flush=True)
-    return {}
+    return {"is_valid": False, "debug_error": str(e)}
+
+
+def probe_me(access_token: str) -> tuple[bool, str]:
+  if not access_token:
+    return False, "no token"
+  try:
+    r = requests.get(
+      f"{GRAPH_API}/me",
+      headers={"Authorization": f"Bearer {access_token}"},
+      params={"fields": "user_id,username"},
+      timeout=12,
+    )
+    raw = r.json()
+    if r.status_code == 200 and "error" not in raw:
+      data = _normalize_profile(_unwrap_payload(raw))
+      if data.get("user_id") or data.get("username"):
+        return True, ""
+    err = raw.get("error", {}) if isinstance(raw, dict) else {}
+    return False, err.get("message", r.text) if isinstance(err, dict) else r.text
+  except Exception as e:
+    return False, str(e)
+
+
+def token_health_report(access_token: str) -> dict:
+  dbg = debug_user_token(access_token)
+  me_ok, me_err = probe_me(access_token)
+  return {
+    "token_length": len(access_token or ""),
+    "configured_app_id": Config.META_APP_ID,
+    "debug": dbg,
+    "me_works": me_ok,
+    "me_error": me_err,
+    "app_id_match": dbg.get("app_id_match"),
+    "token_app_id": dbg.get("app_id"),
+    "scopes": dbg.get("scopes"),
+    "is_valid": dbg.get("is_valid"),
+  }
+
+
+def format_token_error(debug: dict, me_err: str = "") -> str:
+  if debug.get("app_id_match") is False:
+    return (
+      f"META_APP_ID در Render ({debug.get('configured_app_id')}) "
+      f"با اپ صادرکننده توکن ({debug.get('app_id')}) یکی نیست. "
+      "در Render باید Instagram App ID و Instagram App Secret از "
+      "Meta Dashboard → Instagram → API setup with Instagram login باشد "
+      "(نه App ID بالای صفحه اپ)."
+    )
+  if debug.get("debug_error"):
+    return f"App ID یا Secret در Render اشتباه است: {debug['debug_error']}"
+  if debug.get("is_valid") is False:
+    return "توکن نامعتبر یا منقضی — قطع اتصال و دوباره Allow بزن."
+  if me_err:
+    if "method type" in me_err.lower():
+      return (
+        f"Instagram Graph API درخواست را رد کرد: {me_err}. "
+        "احتمالاً App ID/Secret اشتباه است یا دسترسی‌های instagram_business_* "
+        "در App Review هنوز Advanced نشده‌اند."
+      )
+    return me_err
+  return "توکن به Instagram Graph API دسترسی ندارد."
 
 
 def refresh_ig_access_token(access_token: str) -> dict:
@@ -109,18 +183,7 @@ def _graph_read(url: str, access_token: str, fields: str) -> tuple[dict, str]:
 
 
 def explain_profile_failure(api_error: str, token_debug: dict) -> str:
-  if token_debug and token_debug.get("is_valid") is False:
-    return "توکن منقضی یا نامعتبر است — یک‌بار قطع اتصال و دوباره وصل کن."
-  scopes = token_debug.get("scopes") or []
-  if scopes and "instagram_business_basic" not in scopes:
-    return "دسترسی instagram_business_basic داده نشده — در Allow همه دسترسی‌ها را بپذیر."
-
-  if "method type: get" in (api_error or "").lower():
-    return (
-      "متا endpoint پروفایل (/me) را رد می‌کند. در Meta Developer → App Review → Permissions "
-      "برای instagram_business_basic حالت Advanced Access بگیر. Live بودن اپ کافی نیست."
-    )
-  return api_error or "پروفایل از API دریافت نشد."
+  return format_token_error(token_debug, api_error)
 
 
 def fetch_ig_profile(access_token: str, ig_user_id: str = "") -> dict:
@@ -133,32 +196,23 @@ def fetch_ig_profile_with_debug(access_token: str, ig_user_id: str = "") -> tupl
     return {}, "توکن خالی است"
 
   token_debug = debug_user_token(access_token)
-  urls = [f"{GRAPH_API}/me", f"{GRAPH_BASE}/me", f"{FB_GRAPH}/me"]
-  if ig_user_id:
-    urls.extend([f"{GRAPH_API}/{ig_user_id}", f"{GRAPH_BASE}/{ig_user_id}"])
-
-  last_error = ""
-  for url in urls:
-    profile, err = _graph_read(url, access_token, MIN_FIELDS)
-    if profile:
-      full, err2 = _graph_read(url, access_token, PROFILE_FIELDS)
-      return full or profile, ""
-    last_error = err or last_error
+  profile, err = _graph_read(f"{GRAPH_API}/me", access_token, MIN_FIELDS)
+  if profile:
+    full, _ = _graph_read(f"{GRAPH_API}/me", access_token, PROFILE_FIELDS)
+    return full or profile, ""
 
   refreshed = refresh_ig_access_token(access_token)
   new_token = refreshed.get("access_token", "")
   if new_token and new_token != access_token:
-    for url in urls[:2]:
-      profile, err = _graph_read(url, new_token, MIN_FIELDS)
-      if profile:
-        full, _ = _graph_read(url, new_token, PROFILE_FIELDS)
-        merged = full or profile
-        merged["_refreshed_access_token"] = new_token
-        merged["_expires_in"] = refreshed.get("expires_in")
-        return merged, ""
-      last_error = err or last_error
+    profile, err = _graph_read(f"{GRAPH_API}/me", new_token, MIN_FIELDS)
+    if profile:
+      full, _ = _graph_read(f"{GRAPH_API}/me", new_token, PROFILE_FIELDS)
+      merged = full or profile
+      merged["_refreshed_access_token"] = new_token
+      merged["_expires_in"] = refreshed.get("expires_in")
+      return merged, ""
 
-  return {}, explain_profile_failure(last_error, token_debug)
+  return {}, format_token_error(token_debug, err)
 
 
 def apply_profile_to_account(account, profile: dict) -> bool:

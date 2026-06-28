@@ -204,6 +204,7 @@
   </div>
 </div>
 
+{% if current_user.is_admin %}
 <div class="card" style="margin-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
   {{ icon_box('link', 'violet', 'md') }}
   <div style="flex:1;min-width:0;">
@@ -215,6 +216,7 @@
   <i data-lucide="copy" style="width:14px;height:14px"></i> کپی
   </button>
 </div>
+{% endif %}
 
 {{ sub_ticker_footer(sub_banner) }}
 

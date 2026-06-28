@@ -104,7 +104,28 @@ def exchange_long_lived_token(short_token: str) -> dict:
   return {"access_token": short_token, "expires_in": 3600}
 
 
-from insta_agent.services.instagram_profile import fetch_ig_profile
+from insta_agent.services.instagram_profile import fetch_ig_profile, probe_me, debug_user_token, format_token_error
+
+
+def resolve_access_token(short_token: str) -> tuple[str, int]:
+  """Use short or long-lived token — whichever actually works on Graph API."""
+  short_ok, short_err = probe_me(short_token)
+  print(f"[IG OAuth] short token probe: ok={short_ok} err={short_err}", flush=True)
+
+  long = exchange_long_lived_token(short_token)
+  long_token = long.get("access_token", short_token)
+  if long_token != short_token:
+    long_ok, long_err = probe_me(long_token)
+    print(f"[IG OAuth] long token probe: ok={long_ok} err={long_err}", flush=True)
+    if long_ok:
+      return long_token, int(long.get("expires_in", 5184000))
+
+  if short_ok:
+    return short_token, 3600
+
+  dbg = debug_user_token(short_token)
+  print(f"[IG OAuth] token debug: {dbg}", flush=True)
+  raise ValueError(format_token_error(dbg, short_err))
 
 
 def get_me_optional(access_token: str, ig_user_id: str = "") -> dict:

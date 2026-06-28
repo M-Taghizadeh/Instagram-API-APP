@@ -2,7 +2,6 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 
 from insta_agent.extensions import db
-from insta_agent.models import ActivityLog, CooldownEntry
 from insta_agent.db_init import get_settings
 from insta_agent.services.instagram_oauth import oauth_configured
 from insta_agent.services.app_settings_service import get_app_settings
@@ -18,7 +17,7 @@ def settings():
   app_cfg = get_app_settings()
 
   if request.method == "POST":
-    form_type = request.form.get("form_type", "user")
+    form_type = request.form.get("form_type", "")
 
     if form_type == "zarinpal":
       if not current_user.is_admin:
@@ -29,16 +28,17 @@ def settings():
       flash("تنظیمات زرین‌پال ذخیره شد.", "success")
       return redirect(url_for("settings.settings"))
 
-    s.access_token = request.form.get("access_token", "").strip()
-    s.verify_token = request.form.get("verify_token", "").strip()
-    s.cooldown_enabled = request.form.get("cooldown_enabled") == "1"
-    try:
-      s.cooldown_seconds = max(0, int(request.form.get("cooldown_seconds", 3600)))
-    except ValueError:
-      s.cooldown_seconds = 3600
-    db.session.commit()
-    flash("تنظیمات ذخیره شد.", "success")
-    return redirect(url_for("settings.settings"))
+    if form_type == "cooldown":
+      s.cooldown_enabled = request.form.get("cooldown_enabled") == "1"
+      try:
+        s.cooldown_seconds = max(0, int(request.form.get("cooldown_seconds", 3600)))
+      except ValueError:
+        s.cooldown_seconds = 3600
+      db.session.commit()
+      flash("تنظیمات Cooldown ذخیره شد.", "success")
+      return redirect(url_for("settings.settings"))
+
+    abort(403)
 
   return render_template(
     "settings.html",

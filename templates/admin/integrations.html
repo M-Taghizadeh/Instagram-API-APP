@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import icon, icon_box %}
+{% block title %}یکپارچه‌سازی Meta — ادمین{% endblock %}
+{% block topbar_title %}یکپارچه‌سازی Instagram / Meta{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ icon('plug', 22) }} تنظیمات پلتفرم</div>
+    <div class="page-sub">فقط مدیر سامانه — OAuth، Webhook و متغیرهای Render</div>
+  </div>
+</div>
+
+{% set active = 'integrations' %}
+{% include "admin/_nav.html" %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+  <div class="card" style="padding:20px 22px;">
+    <div style="font-weight:800;margin-bottom:14px;font-size:14px;">Instagram OAuth</div>
+    <div style="font-size:12.5px;color:var(--text-dim);line-height:2;margin-bottom:16px;">
+      <div>وضعیت: {% if oauth_ready %}<span class="badge ok">آماده</span>{% else %}<span class="badge danger">ناقص</span>{% endif %}</div>
+      <div>META_APP_ID: {% if oauth.app_id %}<span class="badge ok">تنظیم شده</span>{% else %}<span class="badge danger">خالی</span>{% endif %}
+        {% if meta_app_id %}<code dir="ltr" style="font-size:11px;margin-right:6px;">{{ meta_app_id }}</code>{% endif %}
+      </div>
+      <div>META_APP_SECRET: {% if oauth.app_secret %}<span class="badge ok">تنظیم شده</span>{% else %}<span class="badge danger">خالی</span>{% endif %}</div>
+      <div>OAUTH_REDIRECT_URI: {% if oauth.redirect_uri %}<span class="badge ok">تنظیم شده</span>{% else %}<span class="badge danger">خالی</span>{% endif %}</div>
+    </div>
+    {% if oauth_redirect %}
+    <div style="padding:10px 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;direction:ltr;word-break:break-all;font-family:monospace;margin-bottom:12px;">{{ oauth_redirect }}</div>
+    {% endif %}
+    <div class="hint" style="margin-bottom:12px;">
+      Instagram App ID و Secret را از
+      <strong>Meta Dashboard → Instagram → API setup with Instagram login</strong>
+      بگیر (معمولاً با App ID بالای داشبورد فرق دارد).
+    </div>
+    <a href="{{ oauth_status_url }}" class="btn secondary small" target="_blank" rel="noopener">تست سلامت توکن (JSON)</a>
+  </div>
+
+  <div class="card" style="padding:20px 22px;">
+    <div style="font-weight:800;margin-bottom:14px;font-size:14px;">Webhook</div>
+    <div class="field">
+      <label>Callback URL</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" value="{{ webhook_url }}" readonly id="webhookUrl" onclick="this.select()" dir="ltr" style="font-size:11px;font-family:monospace;">
+        <button type="button" class="btn secondary small" onclick="copyText('webhookUrl')">{{ icon('copy', 14) }}</button>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0;">
+      <label>Verify Token (VERIFY_TOKEN در Render)</label>
+      {% if verify_token %}
+      <input type="text" value="{{ verify_token }}" readonly onclick="this.select()" dir="ltr">
+      {% else %}
+      <div class="flash error" style="margin:0;font-size:12px;">VERIFY_TOKEN در Environment تنظیم نشده.</div>
+      {% endif %}
+      <div class="hint">همین مقدار را در Meta Developers → Webhooks → Verify Token وارد کن.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:20px 22px;margin-top:20px;">
+  <div style="font-weight:800;margin-bottom:12px;font-size:14px;">راهنمای راه‌اندازی Meta</div>
+  <ol style="font-size:12.5px;color:var(--text-dim);line-height:2;margin:0;padding-right:18px;">
+    <li>اپ Meta را Live کن و Business Verification را تکمیل کن</li>
+    <li>Instagram Login را فعال کن و Redirect URI را ثبت کن</li>
+    <li>App Review → Advanced Access برای instagram_business_basic و manage_messages/comments</li>
+    <li>Webhook را Subscribe کن (messages, comments)</li>
+    <li>متغیرهای Render: META_APP_ID, META_APP_SECRET, OAUTH_REDIRECT_URI, VERIFY_TOKEN</li>
+  </ol>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyText(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value);
+}
+</script>
+{% endblock %}

@@ -2,6 +2,7 @@
   <a href="{{ url_for('admin.dashboard') }}" class="btn ghost small {% if active == 'dashboard' %}active{% endif %}">داشبورد</a>
   <a href="{{ url_for('admin.accounting') }}" class="btn ghost small {% if active == 'accounting' %}active{% endif %}"><i data-lucide="bar-chart-3" style="width:14px;height:14px"></i> حسابداری</a>
   <a href="{{ url_for('admin.plans') }}" class="btn ghost small {% if active == 'plans' %}active{% endif %}">قیمت پلن‌ها</a>
+  <a href="{{ url_for('admin.integrations') }}" class="btn ghost small {% if active == 'integrations' %}active{% endif %}"><i data-lucide="plug" style="width:14px;height:14px"></i> یکپارچه‌سازی</a>
   <a href="{{ url_for('admin.users') }}" class="btn ghost small {% if active == 'users' %}active{% endif %}">کاربران</a>
 </div>
 <style>

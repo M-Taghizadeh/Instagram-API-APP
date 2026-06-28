@@ -69,31 +69,14 @@
     <i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج اینستاگرام
   </a>
   {% else %}
+  {% if current_user.is_admin %}
   <div class="flash error" style="text-align:right;line-height:1.8;">
     <strong>OAuth روی سرور تنظیم نشده</strong><br>
-    ادمین باید این متغیرها را در Render → Environment وارد کند:
-    <ul style="margin:10px 20px 0 0;padding:0;list-style:none;font-size:12px;font-weight:500;">
-      <li style="margin:4px 0;color:{{ 'var(--success)' if oauth.app_id else 'var(--danger)' }};display:flex;align-items:center;gap:6px;">
-        <i data-lucide="{% if oauth.app_id %}check{% else %}x{% endif %}" style="width:14px;height:14px"></i> META_APP_ID
-      </li>
-      <li style="margin:4px 0;color:{{ 'var(--success)' if oauth.app_secret else 'var(--danger)' }};display:flex;align-items:center;gap:6px;">
-        <i data-lucide="{% if oauth.app_secret %}check{% else %}x{% endif %}" style="width:14px;height:14px"></i> META_APP_SECRET
-      </li>
-      <li style="margin:4px 0;color:{{ 'var(--success)' if oauth.redirect_uri else 'var(--danger)' }};display:flex;align-items:center;gap:6px;">
-        <i data-lucide="{% if oauth.redirect_uri %}check{% else %}x{% endif %}" style="width:14px;height:14px"></i> OAUTH_REDIRECT_URI
-      </li>
-    </ul>
+    از پنل ادمین → یکپارچه‌سازی، متغیرهای Render را تنظیم کن.
   </div>
-  <div class="checklist" style="text-align:right;font-size:12px;line-height:1.9;">
-    <div><strong>مقدار OAUTH_REDIRECT_URI:</strong></div>
-    <div style="direction:ltr;text-align:left;font-family:monospace;font-size:11px;word-break:break-all;color:var(--primary);">
-      https://instaagentapp.onrender.com/auth/instagram/callback
-    </div>
-    <div style="margin-top:10px;">همین آدرس را در Meta Developers → Instagram Login → Redirect URI هم اضافه کن.</div>
-  </div>
-  <a href="{{ url_for('settings.settings') }}" style="display:inline-block;margin-top:12px;font-size:13px;color:var(--primary);font-weight:600;text-decoration:none;">
-    یا توکن را دستی در تنظیمات وارد کن
-  </a>
+  {% else %}
+  <div class="flash error">اتصال اینستاگرام موقتاً در دسترس نیست. لطفاً بعداً تلاش کن.</div>
+  {% endif %}
   {% endif %}
 
   <p class="note">بعد از اتصال، به داشبورد هدایت می‌شی و می‌تونی قوانین اتومیشن بسازی.</p>
