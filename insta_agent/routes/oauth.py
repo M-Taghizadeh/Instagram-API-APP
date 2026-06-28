@@ -9,7 +9,7 @@ from insta_agent.services.instagram_oauth import (
   build_authorize_url, exchange_code_for_token, exchange_long_lived_token,
   get_me_optional, is_professional_account, oauth_configured, oauth_status,
 )
-from insta_agent.services.instagram_profile import sync_ig_account_profile
+from insta_agent.services.instagram_profile import sync_ig_account_profile, fetch_ig_profile, apply_profile_to_account
 from insta_agent.services.subscription_service import maybe_start_trial
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
@@ -93,7 +93,9 @@ def callback():
       return redirect(url_for("auth.onboarding"))
 
     ig_id = str(profile.get("user_id") or ig_user_id)
-    ig_username = profile.get("username", "") or f"ig_{ig_id[:8]}"
+    ig_username = profile.get("username") or ""
+    if not ig_username:
+      ig_username = f"ig_{ig_id[:8]}" if ig_id else "instagram"
 
     existing = IgAccount.query.filter_by(ig_user_id=ig_id).first()
     if existing and existing.user_id != user.id:
@@ -123,6 +125,11 @@ def callback():
     acc.connected_at = datetime.datetime.utcnow()
 
     sync_ig_account_profile(acc, access_token)
+    if acc.username.startswith("ig_") and acc.access_token:
+      retry = fetch_ig_profile(acc.access_token, acc.ig_user_id)
+      if retry.get("username"):
+        apply_profile_to_account(acc, retry)
+        ig_username = acc.username
 
     s = Settings.query.filter_by(user_id=user.id).first()
     if not s:
@@ -151,10 +158,17 @@ def refresh_profiles():
   accounts = IgAccount.query.filter_by(user_id=current_user.id).all()
   updated = 0
   for acc in accounts:
-    if sync_ig_account_profile(acc):
+    before = acc.username
+    sync_ig_account_profile(acc)
+    if acc.username and not acc.username.startswith("ig_"):
+      updated += 1
+    elif acc.follower_count or acc.media_count or acc.username != before:
       updated += 1
   db.session.commit()
-  flash(f"اطلاعات {updated} از {len(accounts)} پیج به‌روز شد.", "success")
+  if updated:
+    flash(f"اطلاعات {updated} از {len(accounts)} پیج به‌روز شد.", "success")
+  else:
+    flash("پروفایل از API دریافت نشد — اتصال فعال است ولی متا هنوز اطلاعات پروفایل را برنمی‌گرداند (احتمالاً تا Live شدن اپ).", "error")
   return redirect(url_for("auth.pages"))
 
 
