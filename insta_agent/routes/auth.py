@@ -122,7 +122,7 @@ def onboarding():
 @login_required
 def pages():
   from insta_agent.models import IgAccount
-  from insta_agent.services.instagram_profile import sync_ig_account_profile
+  from insta_agent.services.instagram_profile import sync_ig_account_profile, probe_me
   from insta_agent.services.instagram_webhooks import get_webhook_subscription
 
   accounts = IgAccount.query.filter_by(user_id=current_user.id).order_by(
@@ -139,10 +139,14 @@ def pages():
     db.session.commit()
 
   webhook_subs = {}
+  token_health = {}
   for acc in accounts:
     if acc.access_token:
+      ok, err = probe_me(acc.access_token)
+      token_health[acc.id] = {"ok": ok, "error": err}
       webhook_subs[acc.id] = get_webhook_subscription(acc.ig_user_id, acc.access_token)
     else:
+      token_health[acc.id] = {"ok": False, "error": "no token"}
       webhook_subs[acc.id] = {"subscribed": False, "fields": [], "error": "no token"}
 
   return render_template(
@@ -150,6 +154,7 @@ def pages():
     accounts=accounts,
     oauth_ready=oauth_configured(),
     webhook_subs=webhook_subs,
+    token_health=token_health,
   )
 
 

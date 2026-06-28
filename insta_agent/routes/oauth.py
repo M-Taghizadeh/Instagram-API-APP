@@ -204,11 +204,32 @@ def refresh_profiles():
 @bp.route("/subscribe-webhooks/<int:account_id>", methods=["POST"])
 @login_required
 def subscribe_webhooks(account_id):
+  from insta_agent.services.instagram_profile import refresh_ig_access_token, probe_me
+
   acc = IgAccount.query.filter_by(id=account_id, user_id=current_user.id).first_or_404()
-  if not acc.access_token:
+  token = acc.access_token or ""
+  if not token:
     flash("توکن پیج موجود نیست — دوباره وصل کن.", "error")
     return redirect(url_for("auth.pages"))
-  ok, err = subscribe_instagram_webhooks(acc.ig_user_id, acc.access_token)
+
+  ok, err = probe_me(token)
+  if not ok:
+    refreshed = refresh_ig_access_token(token)
+    new_token = refreshed.get("access_token", "")
+    if new_token:
+      token = new_token
+      acc.access_token = new_token
+      s = Settings.query.filter_by(user_id=current_user.id).first()
+      if s:
+        s.access_token = new_token
+      db.session.commit()
+      ok, err = probe_me(token)
+
+  if not ok:
+    flash(f"توکن منقضی شده — ابتدا پیج را قطع کن و دوباره وصل کن. ({err})", "error")
+    return redirect(url_for("auth.pages"))
+
+  ok, err = subscribe_instagram_webhooks(acc.ig_user_id, token)
   if ok:
     flash(f"Webhook برای @{acc.username} فعال شد (messages, comments).", "success")
   else:

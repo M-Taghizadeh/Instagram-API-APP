@@ -108,19 +108,31 @@ from insta_agent.services.instagram_profile import fetch_ig_profile, probe_me, d
 
 
 def resolve_access_token(short_token: str) -> tuple[str, int]:
-  """Use short or long-lived token — whichever actually works on Graph API."""
+  """Pick short or long-lived token after OAuth code exchange.
+
+  Instagram Login tokens often fail /debug_token — do not treat that as bad env.
+  If code exchange returned a token, prefer long-lived exchange, then short fallback.
+  """
   short_ok, short_err = probe_me(short_token)
   print(f"[IG OAuth] short token probe: ok={short_ok} err={short_err}", flush=True)
 
   long = exchange_long_lived_token(short_token)
   long_token = long.get("access_token", short_token)
+  expires = int(long.get("expires_in", 5184000))
+
   if long_token != short_token:
     long_ok, long_err = probe_me(long_token)
     print(f"[IG OAuth] long token probe: ok={long_ok} err={long_err}", flush=True)
     if long_ok:
-      return long_token, int(long.get("expires_in", 5184000))
+      return long_token, expires
+    print(f"[IG OAuth] using long token despite /me probe: {long_err}", flush=True)
+    return long_token, expires
 
   if short_ok:
+    return short_token, 3600
+
+  if short_token:
+    print(f"[IG OAuth] using short token despite /me probe: {short_err}", flush=True)
     return short_token, 3600
 
   dbg = debug_user_token(short_token)

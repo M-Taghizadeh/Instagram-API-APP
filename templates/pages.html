@@ -64,10 +64,16 @@
     {% endif %}
 
     <div class="ig-page-foot">
+      {% set th = token_health.get(acc.id, {}) %}
+      {% set wh = webhook_subs.get(acc.id, {}) %}
       <span class="ig-page-sync">
+        {% if th.ok %}
         {{ icon('check', 12) }} توکن فعال
+        {% else %}
+        {{ icon('alert-circle', 12) }}
+        <span class="badge danger" style="font-size:10px;">توکن منقضی — دوباره وصل کن</span>
+        {% endif %}
         {% if acc.profile_synced_at %}· به‌روز {{ acc.profile_synced_at.strftime('%Y/%m/%d %H:%M') }}{% endif %}
-        {% set wh = webhook_subs.get(acc.id, {}) %}
         {% if wh.subscribed %}
         · <span class="badge ok" style="font-size:10px;">Webhook فعال</span>
         {% else %}
@@ -75,7 +81,9 @@
         {% endif %}
       </span>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        {% if not wh.subscribed %}
+        {% if not th.ok %}
+        <a href="{{ url_for('oauth.connect') }}" class="btn small">اتصال مجدد</a>
+        {% elif not wh.subscribed %}
         <form method="post" action="{{ url_for('oauth.subscribe_webhooks', account_id=acc.id) }}">
           <button type="submit" class="btn secondary small">{{ icon('radio', 14) }} فعال‌سازی Webhook</button>
         </form>

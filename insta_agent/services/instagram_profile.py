@@ -39,30 +39,36 @@ def _app_access_token() -> str:
 def debug_user_token(access_token: str) -> dict:
   if not access_token or not Config.META_APP_ID or not Config.META_APP_SECRET:
     return {}
-  try:
-    r = requests.get(
-      f"{GRAPH_BASE}/debug_token",
-      params={"input_token": access_token, "access_token": _app_access_token()},
-      timeout=15,
-    )
-    raw = r.json()
-    if isinstance(raw, dict) and raw.get("error"):
-      err = raw["error"]
-      msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
-      return {
-        "is_valid": False,
-        "debug_error": msg,
-        "configured_app_id": Config.META_APP_ID,
-      }
-    result = _unwrap_payload(raw)
-    if result:
-      result["configured_app_id"] = Config.META_APP_ID
-      if result.get("app_id"):
-        result["app_id_match"] = str(result["app_id"]) == str(Config.META_APP_ID)
-    return result
-  except Exception as e:
-    print(f"[IG PROFILE] debug_token error: {e}", flush=True)
-    return {"is_valid": False, "debug_error": str(e)}
+  app_tok = _app_access_token()
+  last_error = ""
+  for base in (FB_GRAPH, GRAPH_BASE):
+    try:
+      r = requests.get(
+        f"{base}/debug_token",
+        params={"input_token": access_token, "access_token": app_tok},
+        timeout=15,
+      )
+      raw = r.json()
+      if isinstance(raw, dict) and raw.get("error"):
+        err = raw["error"]
+        msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+        last_error = msg
+        continue
+      result = _unwrap_payload(raw)
+      if result:
+        result["configured_app_id"] = Config.META_APP_ID
+        if result.get("app_id"):
+          result["app_id_match"] = str(result["app_id"]) == str(Config.META_APP_ID)
+        return result
+    except Exception as e:
+      last_error = str(e)
+      print(f"[IG PROFILE] debug_token ({base}) error: {e}", flush=True)
+  return {
+    "is_valid": None,
+    "debug_unreliable": True,
+    "debug_error": last_error,
+    "configured_app_id": Config.META_APP_ID,
+  }
 
 
 def probe_me(access_token: str) -> tuple[bool, str]:
@@ -111,8 +117,14 @@ def format_token_error(debug: dict, me_err: str = "") -> str:
       "Meta Dashboard → Instagram → API setup with Instagram login باشد "
       "(نه App ID بالای صفحه اپ)."
     )
-  if debug.get("debug_error"):
-    return f"App ID یا Secret در Render اشتباه است: {debug['debug_error']}"
+  if debug.get("debug_unreliable") and me_err:
+    if "expired" in me_err.lower():
+      return "توکن منقضی شده — دوباره «اتصال پیج اینستاگرام» را بزن."
+    if "429" in me_err or "rate" in me_err.lower():
+      return "محدودیت موقت اینستاگرام — چند دقیقه بعد دوباره تلاش کن."
+    return f"Instagram API موقتاً پاسخ نداد: {me_err}"
+  if debug.get("debug_error") and not debug.get("debug_unreliable"):
+    return f"خطا در بررسی توکن: {debug['debug_error']}"
   if debug.get("is_valid") is False:
     return "توکن نامعتبر یا منقضی — قطع اتصال و دوباره Allow بزن."
   if me_err:
