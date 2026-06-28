@@ -48,10 +48,7 @@
 </div>
 
 {% macro plan_card(plan) %}
-<div class="pricing-card card{% if sub_info and sub_info.suggested_plan and sub_info.suggested_plan.slug == plan.slug %} pricing-card--suggested{% endif %}">
-  {% if sub_info and sub_info.suggested_plan and sub_info.suggested_plan.slug == plan.slug %}
-  <div class="pricing-suggested-ribbon">پیشنهاد برای پیج شما</div>
-  {% endif %}
+<div class="pricing-card card">
   <div class="pricing-card-head">
     <div class="pricing-plan-name">{{ plan.name }}</div>
     <div class="pricing-follower-range">{{ plan.follower_label() }} فالوور</div>
@@ -227,27 +224,12 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  min-height: 620px;
-  overflow: hidden;
   transition: transform .2s, border-color .2s, box-shadow .2s;
 }
 .pricing-card:hover {
   transform: translateY(-4px);
   border-color: var(--primary-border);
   box-shadow: var(--shadow-md);
-}
-.pricing-card--suggested {
-  border-color: var(--success-border) !important;
-  box-shadow: 0 0 0 1px var(--success-border), var(--shadow-md);
-}
-.pricing-suggested-ribbon {
-  background: var(--success-muted);
-  color: var(--success);
-  font-size: 11px;
-  font-weight: 800;
-  text-align: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--success-border);
 }
 .pricing-card-head {
   padding: 24px 22px 20px;
@@ -302,10 +284,8 @@
   list-style: none;
   padding: 16px 20px;
   margin: 0;
-  flex: 1;
-  overflow-y: auto;
-  max-height: 340px;
-  scrollbar-width: thin;
+  flex: 0 0 auto;
+  overflow: visible;
 }
 .pricing-features li {
   display: flex;
@@ -337,6 +317,10 @@
   padding: 16px 20px 22px;
   margin-top: auto;
   border-top: 1px solid var(--border-soft);
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  background: var(--surface);
 }
 .pricing-buy-btn {
   width: 100%;
@@ -357,8 +341,6 @@
 }
 @media (max-width: 640px) {
   .pricing-row { grid-template-columns: 1fr; }
-  .pricing-card { min-height: auto; }
-  .pricing-features { max-height: none; }
   .pricing-period-btn { min-width: 72px; padding: 8px 14px; }
   .pricing-period-num { font-size: 15px; }
 }
