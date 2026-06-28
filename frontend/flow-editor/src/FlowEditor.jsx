@@ -13,6 +13,7 @@ import '@xyflow/react/dist/style.css';
 
 import FlowNode from './FlowNode';
 import NodePanel from './NodePanel';
+import useTheme from './useTheme';
 import { NODE_TYPES } from './nodeMeta';
 import { defaultDataForType, fromReactFlow, newNodeId, toReactFlow } from './serialize';
 
@@ -99,6 +100,8 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ initialNodes, onCh
   );
 
   const selectedNode = nodes.find((n) => n.id === selectedId) || null;
+  const theme = useTheme();
+  const isLight = theme === 'light';
 
   return (
     <div className="fe-layout">
@@ -130,12 +133,12 @@ const FlowEditorInner = forwardRef(function FlowEditorInner({ initialNodes, onCh
           deleteKeyCode={['Backspace', 'Delete']}
           onNodesDelete={onNodesDelete}
         >
-          <Background gap={18} size={1} color="#2a2548" />
+          <Background gap={18} size={1} color={isLight ? '#e4e4e7' : '#2a2548'} />
           <Controls showInteractive={false} />
           <MiniMap
-            nodeColor={() => '#6c4fff'}
-            maskColor="rgba(7,6,14,.75)"
-            style={{ background: '#110f1e' }}
+            nodeColor={() => (isLight ? '#7c3aed' : '#6c4fff')}
+            maskColor={isLight ? 'rgba(248,250,252,.85)' : 'rgba(7,6,14,.75)'}
+            style={{ background: isLight ? '#ffffff' : '#110f1e' }}
           />
         </ReactFlow>
       </div>
