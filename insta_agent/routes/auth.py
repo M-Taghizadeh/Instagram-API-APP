@@ -123,6 +123,7 @@ def onboarding():
 def pages():
   from insta_agent.models import IgAccount
   from insta_agent.services.instagram_profile import sync_ig_account_profile
+  from insta_agent.services.instagram_webhooks import get_webhook_subscription
 
   accounts = IgAccount.query.filter_by(user_id=current_user.id).order_by(
     IgAccount.is_primary.desc(), IgAccount.connected_at.desc()
@@ -137,7 +138,19 @@ def pages():
   if needs_sync:
     db.session.commit()
 
-  return render_template("pages.html", accounts=accounts, oauth_ready=oauth_configured())
+  webhook_subs = {}
+  for acc in accounts:
+    if acc.access_token:
+      webhook_subs[acc.id] = get_webhook_subscription(acc.ig_user_id, acc.access_token)
+    else:
+      webhook_subs[acc.id] = {"subscribed": False, "fields": [], "error": "no token"}
+
+  return render_template(
+    "pages.html",
+    accounts=accounts,
+    oauth_ready=oauth_configured(),
+    webhook_subs=webhook_subs,
+  )
 
 
 @bp.route("/logout")

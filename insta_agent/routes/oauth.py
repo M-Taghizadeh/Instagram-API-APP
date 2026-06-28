@@ -16,6 +16,7 @@ from insta_agent.services.instagram_profile import (
   token_health_report,
 )
 from insta_agent.services.subscription_service import maybe_start_trial
+from insta_agent.services.instagram_webhooks import subscribe_instagram_webhooks
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
 OAUTH_FLOW_VERSION = "2025-06-28d"
@@ -157,11 +158,18 @@ def callback():
     db.session.commit()
 
     trial = maybe_start_trial(user.id, ig_id)
+    wh_ok, wh_err = subscribe_instagram_webhooks(ig_id, access_token)
     login_user(user, remember=True)
     if trial:
       flash(f"پیج @{ig_username} وصل شد — ۷ روز تریال رایگان فعال شد!", "success")
     else:
       flash(f"پیج @{ig_username} وصل شد و توکن به‌صورت خودکار ذخیره شد!", "success")
+    if not wh_ok:
+      flash(
+        f"ثبت Webhook برای @{ig_username} ناموفق بود: {wh_err} — "
+        "از صفحه «اتصال به اینستاگرام» دوباره «فعال‌سازی Webhook» را بزن.",
+        "error",
+      )
     return redirect(url_for("dashboard.dashboard"))
 
   except Exception as e:
@@ -190,6 +198,21 @@ def refresh_profiles():
     flash(f"اطلاعات {updated} از {len(accounts)} پیج به‌روز شد.", "success")
   else:
     flash(explain_profile_failure(last_err, debug_user_token(accounts[0].access_token if accounts else "")), "error")
+  return redirect(url_for("auth.pages"))
+
+
+@bp.route("/subscribe-webhooks/<int:account_id>", methods=["POST"])
+@login_required
+def subscribe_webhooks(account_id):
+  acc = IgAccount.query.filter_by(id=account_id, user_id=current_user.id).first_or_404()
+  if not acc.access_token:
+    flash("توکن پیج موجود نیست — دوباره وصل کن.", "error")
+    return redirect(url_for("auth.pages"))
+  ok, err = subscribe_instagram_webhooks(acc.ig_user_id, acc.access_token)
+  if ok:
+    flash(f"Webhook برای @{acc.username} فعال شد (messages, comments).", "success")
+  else:
+    flash(f"فعال‌سازی Webhook ناموفق: {err}", "error")
   return redirect(url_for("auth.pages"))
 
 

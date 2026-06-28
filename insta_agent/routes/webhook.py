@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify, abort
 from flask_login import login_required, current_user
 
 from insta_agent.extensions import db
-from insta_agent.models import User, DmRule, CommentRule, Settings
+from insta_agent.models import User, IgAccount, DmRule, CommentRule, Settings
 from insta_agent.db_init import get_settings_for, get_access_token, is_on_cooldown, update_cooldown, log_activity
 from insta_agent.services.match import match_text
 from insta_agent.services import messaging, instagram_api, flow_engine
@@ -53,28 +53,41 @@ def webhook():
     if len(_last_webhook_payload) > 5:
       _last_webhook_payload.pop(0)
 
-    for user in User.query.all():
-      if not has_automation_access(user.id):
+    entries = data.get("entry", [])
+    print(f"WEBHOOK object={data.get('object', '')} entries={len(entries)}", flush=True)
+
+    for entry in entries:
+      entry_id = str(entry.get("id", ""))
+      ig = IgAccount.query.filter_by(ig_user_id=entry_id).first() if entry_id else None
+      if not ig:
+        print(f"WEBHOOK skip: unknown entry.id={entry_id}", flush=True)
         continue
-      token = get_access_token(user.id)
-      dm_rules = DmRule.query.filter_by(user_id=user.id, is_active=True).all()
-      com_rules = CommentRule.query.filter_by(user_id=user.id, is_active=True).all()
+      if not has_automation_access(ig.user_id):
+        print(f"WEBHOOK skip: user={ig.user_id} (@{ig.username}) no subscription/trial", flush=True)
+        continue
+      token = ig.access_token or get_access_token(ig.user_id)
+      if not token:
+        print(f"WEBHOOK skip: user={ig.user_id} (@{ig.username}) no token", flush=True)
+        continue
 
-      for entry in data.get("entry", []):
-        for event in entry.get("messaging", []):
-          _handle_messaging(event, dm_rules, token, user.id)
+      print(f"WEBHOOK route → user={ig.user_id} @{ig.username} entry={entry_id}", flush=True)
+      dm_rules = DmRule.query.filter_by(user_id=ig.user_id, is_active=True).all()
+      com_rules = CommentRule.query.filter_by(user_id=ig.user_id, is_active=True).all()
 
-        for change in entry.get("changes", []):
-          field = change.get("field", "")
-          value = change.get("value", {})
-          if field == "comments":
-            _handle_comment(value, com_rules, token, user.id)
-          elif field in ("messages", "messaging"):
-            fake_event = {
-              "sender": value.get("sender", {}),
-              "message": value.get("message", {}),
-            }
-            _handle_messaging(fake_event, dm_rules, token, user.id)
+      for event in entry.get("messaging", []):
+        _handle_messaging(event, dm_rules, token, ig.user_id)
+
+      for change in entry.get("changes", []):
+        field = change.get("field", "")
+        value = change.get("value", {})
+        if field == "comments":
+          _handle_comment(value, com_rules, token, ig.user_id)
+        elif field in ("messages", "messaging"):
+          fake_event = {
+            "sender": value.get("sender", {}),
+            "message": value.get("message", {}),
+          }
+          _handle_messaging(fake_event, dm_rules, token, ig.user_id)
 
     return jsonify(ok=True), 200
   except Exception as e:
@@ -87,9 +100,15 @@ def webhook():
 def _handle_messaging(event, dm_rules, token, owner_id):
   if "message" not in event:
     return
+  message = event.get("message") or {}
+  if message.get("is_echo") or message.get("is_self"):
+    return
   sender_id = (event.get("sender") or {}).get("id")
-  text = (event.get("message") or {}).get("text", "")
+  text = message.get("text", "")
   if not sender_id:
+    return
+  page_id = instagram_api.get_page_ig_id(token)
+  if page_id and sender_id == page_id:
     return
 
   # اول فلوهای پیشرفته

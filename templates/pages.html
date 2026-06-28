@@ -67,10 +67,23 @@
       <span class="ig-page-sync">
         {{ icon('check', 12) }} توکن فعال
         {% if acc.profile_synced_at %}· به‌روز {{ acc.profile_synced_at.strftime('%Y/%m/%d %H:%M') }}{% endif %}
+        {% set wh = webhook_subs.get(acc.id, {}) %}
+        {% if wh.subscribed %}
+        · <span class="badge ok" style="font-size:10px;">Webhook فعال</span>
+        {% else %}
+        · <span class="badge danger" style="font-size:10px;">Webhook غیرفعال</span>
+        {% endif %}
       </span>
-      <form method="post" action="{{ url_for('oauth.disconnect', account_id=acc.id) }}" onsubmit="return confirm('این پیج قطع شود؟')">
-        <button type="submit" class="btn ghost small" style="color:var(--danger);">قطع اتصال</button>
-      </form>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        {% if not wh.subscribed %}
+        <form method="post" action="{{ url_for('oauth.subscribe_webhooks', account_id=acc.id) }}">
+          <button type="submit" class="btn secondary small">{{ icon('radio', 14) }} فعال‌سازی Webhook</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('oauth.disconnect', account_id=acc.id) }}" onsubmit="return confirm('این پیج قطع شود؟')">
+          <button type="submit" class="btn ghost small" style="color:var(--danger);">قطع اتصال</button>
+        </form>
+      </div>
     </div>
   </div>
   {% endfor %}
