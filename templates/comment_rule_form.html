@@ -25,6 +25,9 @@
         <input type="url" name="post_link" id="postLinkInput"
                value="{{ rule.post_link if rule else '' }}"
                placeholder="https://www.instagram.com/p/xxxxxxx/" required>
+        <input type="hidden" name="post_id" id="postIdInput" value="{{ rule.post_id if rule else '' }}">
+        <input type="hidden" name="post_thumb" id="postThumbInput" value="{{ rule.post_thumb if rule else '' }}">
+        <input type="hidden" name="post_caption" id="postCaptionInput" value="{{ rule.post_caption if rule else '' }}">
         <div class="hint" id="postLinkHint">
           لینک پست یا ریل را بچسبان — سیستم خودش ID واقعی پست را پیدا می‌کند.
         </div>
@@ -239,6 +242,10 @@ const previewCaption   = document.getElementById('previewCaption');
 const previewTypeBadge = document.getElementById('previewTypeBadge');
 const previewLink      = document.getElementById('previewLink');
 const previewStatic    = document.getElementById('postPreviewStatic');
+const postIdInput      = document.getElementById('postIdInput');
+const postThumbInput   = document.getElementById('postThumbInput');
+const postCaptionInput = document.getElementById('postCaptionInput');
+const ruleForm         = document.getElementById('ruleForm');
 
 let previewTimer = null;
 
@@ -255,17 +262,29 @@ function typeLabel(t) {
   return t === 'VIDEO' ? 'ویدیو' : t === 'CAROUSEL_ALBUM' ? 'آلبوم' : 'تصویر';
 }
 
+function applyPreviewData(d) {
+  if (postIdInput) postIdInput.value = d.id || '';
+  if (postThumbInput) postThumbInput.value = d.image || '';
+  if (postCaptionInput) postCaptionInput.value = d.caption || '';
+}
+
 function fetchPostPreview(link) {
-  if (!link || !link.includes('instagram.com')) { showState(null); return; }
+  if (!link || !link.includes('instagram.com')) {
+    applyPreviewData({});
+    showState(null);
+    return;
+  }
   showState('loading');
   fetch('/api/post-preview?link=' + encodeURIComponent(link))
     .then(r => r.json())
     .then(d => {
       if (d.error) {
+        applyPreviewData({});
         previewError.textContent = '✕ ' + d.error;
         showState('error');
         return;
       }
+      applyPreviewData(d);
       if (d.image) {
         previewThumb.src = d.image;
         previewThumb.style.display = 'block';
@@ -280,9 +299,27 @@ function fetchPostPreview(link) {
       showState('success');
     })
     .catch(() => {
+      applyPreviewData({});
       previewError.textContent = '✕ خطا در دریافت اطلاعات پست';
       showState('error');
     });
+}
+
+if (ruleForm) {
+  ruleForm.addEventListener('submit', function(e) {
+    const link = postLinkInput ? postLinkInput.value.trim() : '';
+    if (!link.includes('instagram.com')) return;
+    if (postThumbInput && postThumbInput.value && postIdInput && postIdInput.value) return;
+
+    e.preventDefault();
+    fetch('/api/post-preview?link=' + encodeURIComponent(link))
+      .then(r => r.json())
+      .then(d => {
+        if (!d.error) applyPreviewData(d);
+        ruleForm.submit();
+      })
+      .catch(() => ruleForm.submit());
+  });
 }
 
 if (postLinkInput) {

@@ -5,6 +5,11 @@ from insta_agent.config import Config
 
 GRAPH_API = Config.GRAPH_API
 
+_MEDIA_FIELDS = (
+  "id,shortcode,caption,thumbnail_url,media_url,media_type,permalink,timestamp,"
+  "children{thumbnail_url,media_url,media_type}"
+)
+
 
 def get_ig_username(ig_user_id: str, access_token: str) -> str:
   if not ig_user_id or not access_token:
@@ -61,10 +66,15 @@ def resolve_post_id(post_link: str, access_token: str) -> str:
 
 
 def _media_item_to_preview(item: dict) -> dict:
+  image = item.get("thumbnail_url") or item.get("media_url", "")
+  if not image and item.get("media_type") == "CAROUSEL_ALBUM":
+    children = (item.get("children") or {}).get("data", [])
+    if children:
+      image = children[0].get("thumbnail_url") or children[0].get("media_url", "")
   return {
     "id": item.get("id", ""),
     "caption": (item.get("caption") or "")[:120],
-    "image": item.get("thumbnail_url") or item.get("media_url", ""),
+    "image": image,
     "type": item.get("media_type", ""),
     "permalink": item.get("permalink", ""),
     "timestamp": item.get("timestamp", ""),
@@ -77,10 +87,7 @@ def get_media_by_id(media_id: str, access_token: str) -> dict:
   try:
     resp = requests.get(
       f"{GRAPH_API}/{media_id}",
-      params={
-        "fields": "id,shortcode,caption,thumbnail_url,media_url,media_type,permalink,timestamp",
-        "access_token": access_token,
-      },
+      params={"fields": _MEDIA_FIELDS, "access_token": access_token},
       timeout=10,
     )
     data = resp.json()
@@ -105,7 +112,7 @@ def get_post_preview(post_link: str, access_token: str, media_id: str = "") -> d
     shortcode = m.group(1)
     url = f"{GRAPH_API}/me/media"
     params = {
-      "fields": "id,shortcode,caption,thumbnail_url,media_url,media_type,permalink,timestamp",
+      "fields": _MEDIA_FIELDS,
       "access_token": access_token,
       "limit": 100,
     }

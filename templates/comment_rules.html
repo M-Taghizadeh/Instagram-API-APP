@@ -45,8 +45,9 @@
 
       <div class="post-card-media">
         {% if rule.post_thumb %}
-        <div class="post-card-media-bg" style="background-image:url('{{ rule.post_thumb }}');"></div>
+        <div class="post-card-media-bg" data-thumb-url="{{ rule.post_thumb }}"></div>
         <img src="{{ rule.post_thumb }}" alt="پست" class="post-card-media-img"
+             referrerpolicy="no-referrer" crossorigin="anonymous"
              onerror="refreshPostThumb(this)">
         <div class="post-card-media-overlay"></div>
         {% else %}
@@ -171,6 +172,13 @@
 
 {% block extra_js %}
 <script>
+function setPostCardBackgrounds() {
+  document.querySelectorAll('.post-card-media-bg[data-thumb-url]').forEach((el) => {
+    const url = el.getAttribute('data-thumb-url');
+    if (url) el.style.backgroundImage = 'url("' + url.replace(/"/g, '\\"') + '")';
+  });
+}
+
 function refreshPostThumb(img) {
   const card = img.closest('[data-rule-id]');
   if (!card || card.dataset.thumbRetry === '1') return;
@@ -198,6 +206,8 @@ function refreshPostThumb(img) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  setPostCardBackgrounds();
+
   const missingThumbs = document.querySelectorAll('[data-needs-thumb="1"]');
   if (!missingThumbs.length) return;
 
