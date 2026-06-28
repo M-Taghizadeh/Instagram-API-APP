@@ -8,10 +8,9 @@ export default defineConfig({
     outDir: path.resolve(__dirname, '../../static/flow-editor'),
     emptyOutDir: true,
     rollupOptions: {
-      input: path.resolve(__dirname, 'index.html'),
+      input: path.resolve(__dirname, 'src/main.jsx'),
       output: {
         entryFileNames: 'flow-editor.js',
-        chunkFileNames: 'chunk-[name].js',
         assetFileNames: 'flow-editor.[ext]',
       },
     },

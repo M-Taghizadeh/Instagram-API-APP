@@ -3,6 +3,8 @@
 
 # Database
 *.db
+*.db-wal
+*.db-shm
 # Python
 __pycache__/
 *.pyc
@@ -32,6 +34,8 @@ uploads/
 # Frontend build
 frontend/flow-editor/node_modules/
 
-# Test files (may contain tokens)
+# Test / scratch scripts (may contain tokens)
 test.py
+test_*.py
 lookup_user.py
+*.rar
