@@ -37,14 +37,24 @@ def exchange_code_for_token(code: str) -> dict:
 
 
 def exchange_long_lived_token(short_token: str) -> dict:
-  r = requests.get(f"{Config.GRAPH_API.replace('/v25.0', '')}/access_token", params={
+  base = Config.GRAPH_API.replace("/v25.0", "")
+  payload = {
     "grant_type": "ig_exchange_token",
     "client_secret": Config.META_APP_SECRET,
     "access_token": short_token,
-  }, timeout=15)
+  }
+  # Meta now requires POST for ig_exchange_token (GET returns code 100).
+  r = requests.post(f"{base}/access_token", data=payload, timeout=15)
   data = r.json()
   if r.status_code != 200:
-    raise ValueError(data.get("error", {}).get("message", r.text))
+    msg = data.get("error", {}).get("message", r.text)
+    if "method type: post" in msg.lower():
+      r = requests.get(f"{base}/access_token", params=payload, timeout=15)
+      data = r.json()
+      if r.status_code != 200:
+        raise ValueError(data.get("error", {}).get("message", r.text))
+      return data
+    raise ValueError(msg)
   return data
 
 
