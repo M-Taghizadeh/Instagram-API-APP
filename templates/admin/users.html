@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}کاربران — ادمین{% endblock %}
+{% block topbar_title %}مدیریت کاربران{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-title">👥 کاربران</div>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn secondary small">بازگشت</a>
+</div>
+
+<form class="toolbar" method="get">
+  <div class="search-bar" style="flex:1;">
+    <span class="si">🔍</span>
+    <input type="text" name="q" value="{{ q }}" placeholder="جستجو نام کاربری...">
+  </div>
+  <button type="submit" class="btn secondary small">جستجو</button>
+</form>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <tr style="background:var(--panel-2);color:var(--text-faint);">
+      <th style="padding:10px;text-align:right;">کاربر</th>
+      <th>ایمیل</th>
+      <th>پیج</th>
+      <th>فالوور</th>
+      <th>اشتراک</th>
+      <th>انقضا</th>
+      <th>ادمین</th>
+    </tr>
+    {% for row in rows %}
+    <tr style="border-top:1px solid var(--border-soft);">
+      <td style="padding:10px;font-weight:700;">{{ row.user.username }}</td>
+      <td style="color:var(--text-faint);">{{ row.user.email or '—' }}</td>
+      <td>@{{ row.ig.username if row.ig else '—' }}</td>
+      <td>{{ "{:,}".format(row.ig.follower_count) if row.ig and row.ig.follower_count else '—' }}</td>
+      <td>
+        {% if row.sub %}
+        <span class="badge {% if row.sub.is_trial %}pink{% else %}ok{% endif %}">{{ row.sub.plan_slug }}</span>
+        {% else %}—{% endif %}
+      </td>
+      <td style="color:var(--text-faint);">{{ row.sub.expires_at.strftime('%Y/%m/%d') if row.sub else '—' }}</td>
+      <td>{% if row.user.is_admin %}✓{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

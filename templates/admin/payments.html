@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}پرداخت‌ها — ادمین{% endblock %}
+{% block topbar_title %}تاریخچه پرداخت{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div class="page-title">💳 پرداخت‌ها</div>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn secondary small">بازگشت</a>
+</div>
+
+<div style="display:flex;gap:8px;margin-bottom:16px;">
+  <a href="{{ url_for('admin.payments') }}" class="btn ghost small {% if not status %}active{% endif %}">همه</a>
+  <a href="{{ url_for('admin.payments', status='paid') }}" class="btn ghost small">موفق</a>
+  <a href="{{ url_for('admin.payments', status='pending') }}" class="btn ghost small">در انتظار</a>
+  <a href="{{ url_for('admin.payments', status='failed') }}" class="btn ghost small">ناموفق</a>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <tr style="background:var(--panel-2);color:var(--text-faint);">
+      <th style="padding:10px;">#</th>
+      <th>کاربر</th>
+      <th>پلن</th>
+      <th>دوره</th>
+      <th>مبلغ</th>
+      <th>وضعیت</th>
+      <th>کد پیگیری</th>
+      <th>تاریخ</th>
+    </tr>
+    {% for p in payments %}
+    <tr style="border-top:1px solid var(--border-soft);">
+      <td style="padding:10px;">{{ p.id }}</td>
+      <td>{{ p.user.username if p.user else p.user_id }}</td>
+      <td>{{ p.plan_slug }}</td>
+      <td>{{ p.period_months }} ماه</td>
+      <td>{{ "{:,}".format(p.amount_toman) }}</td>
+      <td><span class="badge {% if p.status == 'paid' %}ok{% elif p.status == 'failed' %}danger{% else %}pink{% endif %}">{{ p.status }}</span></td>
+      <td style="font-family:monospace;">{{ p.ref_id or '—' }}</td>
+      <td style="color:var(--text-faint);">{{ p.created_at.strftime('%Y/%m/%d %H:%M') if p.created_at else '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--text-faint);">پرداختی یافت نشد</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

@@ -28,4 +28,17 @@ def create_app():
 
   init_db(app)
   start_scheduler(app)
+
+  @app.context_processor
+  def inject_globals():
+    from flask_login import current_user
+    from insta_agent.services.subscription_service import subscription_status
+    sub_info = None
+    if current_user.is_authenticated:
+      try:
+        sub_info = subscription_status(current_user.id)
+      except Exception:
+        pass
+    return dict(sub_info=sub_info)
+
   return app

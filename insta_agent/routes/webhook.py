@@ -9,6 +9,7 @@ from insta_agent.models import User, DmRule, CommentRule, Settings
 from insta_agent.db_init import get_settings_for, get_access_token, is_on_cooldown, update_cooldown, log_activity
 from insta_agent.services.match import match_text
 from insta_agent.services import messaging, instagram_api, flow_engine
+from insta_agent.services.subscription_service import has_automation_access
 from insta_agent.config import Config
 
 bp = Blueprint("webhook", __name__)
@@ -51,6 +52,8 @@ def webhook():
       _last_webhook_payload.pop(0)
 
     for user in User.query.all():
+      if not has_automation_access(user.id):
+        continue
       token = get_access_token(user.id)
       dm_rules = DmRule.query.filter_by(user_id=user.id, is_active=True).all()
       com_rules = CommentRule.query.filter_by(user_id=user.id, is_active=True).all()

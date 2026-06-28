@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}پنل ادمین — Insta Agent{% endblock %}
+{% block topbar_title %}مدیریت سامانه{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">🛡️ پنل ادمین</div>
+    <div class="page-sub">گزارش جامع و مدیریت سامانه</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <a href="{{ url_for('admin.plans') }}" class="btn secondary small">قیمت پلن‌ها</a>
+    <a href="{{ url_for('admin.users') }}" class="btn secondary small">کاربران</a>
+    <a href="{{ url_for('admin.payments') }}" class="btn secondary small">پرداخت‌ها</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-icon purple">👥</div>
+    <div class="stat-label">کاربران</div>
+    <div class="stat-value">{{ total_users }}</div>
+    <div class="stat-sub">{{ total_pages }} پیج متصل</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon green">✓</div>
+    <div class="stat-label">اشتراک فعال</div>
+    <div class="stat-value">{{ active_subs }}</div>
+    <div class="stat-sub">{{ paid_subs }} پولی · {{ trial_subs }} تریال</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon pink">💰</div>
+    <div class="stat-label">درآمد کل</div>
+    <div class="stat-value" style="font-size:22px;">{{ "{:,}".format(revenue_total) }}</div>
+    <div class="stat-sub">این ماه: {{ "{:,}".format(revenue_month) }} تومان</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon cyan">📊</div>
+    <div class="stat-label">فعالیت ۷ روز</div>
+    <div class="stat-value">{{ activity_7d }}</div>
+    <div class="stat-sub">{{ total_flows }} فلو · {{ total_contacts }} مخاطب</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="dash-rules-row">
+  <div class="card" style="padding:20px;">
+    <div style="font-weight:800;margin-bottom:14px;">توزیع پلن‌های فعال</div>
+    {% if plan_stats %}
+    <div class="grid" style="gap:8px;">
+      {% for slug, cnt in plan_stats %}
+      <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span class="badge purple">{{ slug }}</span>
+        <span>{{ cnt }} کاربر</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty" style="padding:30px;">هنوز اشتراک پولی فعالی نیست</div>
+    {% endif %}
+  </div>
+  <div class="card" style="padding:20px;">
+    <div style="font-weight:800;margin-bottom:14px;">آخرین پرداخت‌ها</div>
+    {% for p in recent_payments %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:12px;">
+      <span>{{ p.user.username if p.user else p.user_id }} — {{ p.plan_slug }}</span>
+      <span class="badge {% if p.status == 'paid' %}ok{% elif p.status == 'pending' %}pink{% else %}danger{% endif %}">{{ p.status }} · {{ "{:,}".format(p.amount_toman) }}</span>
+    </div>
+    {% else %}
+    <div class="empty" style="padding:30px;">پرداختی ثبت نشده</div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card" style="padding:20px;margin-top:16px;">
+  <div style="font-weight:800;margin-bottom:14px;">کاربران اخیر</div>
+  <div style="overflow-x:auto;">
+    <table style="width:100%;font-size:12px;border-collapse:collapse;">
+      <tr style="color:var(--text-faint);text-align:right;">
+        <th style="padding:8px;">کاربر</th>
+        <th>پیج</th>
+        <th>فالوور</th>
+        <th>اشتراک</th>
+        <th>ادمین</th>
+      </tr>
+      {% for row in recent_user_rows %}
+      <tr style="border-top:1px solid var(--border-soft);">
+        <td style="padding:8px;">{{ row.user.username }}</td>
+        <td>@{{ row.ig.username if row.ig else '—' }}</td>
+        <td>{{ "{:,}".format(row.ig.follower_count) if row.ig and row.ig.follower_count else '—' }}</td>
+        <td>{% if row.sub %}{{ row.sub.plan_slug }}{% else %}—{% endif %}</td>
+        <td>{% if row.user.is_admin %}✓{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+{% endblock %}

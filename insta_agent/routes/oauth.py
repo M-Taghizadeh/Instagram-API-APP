@@ -9,6 +9,7 @@ from insta_agent.services.instagram_oauth import (
   build_authorize_url, exchange_code_for_token, exchange_long_lived_token,
   get_me, is_professional_account, oauth_configured,
 )
+from insta_agent.services.subscription_service import maybe_start_trial
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
 
@@ -19,6 +20,9 @@ def connect():
   if not oauth_configured():
     flash("OAuth تنظیم نشده — META_APP_ID، META_APP_SECRET و OAUTH_REDIRECT_URI را در Render تنظیم کن.", "error")
     return redirect(url_for("auth.onboarding"))
+  if IgAccount.query.filter_by(user_id=current_user.id).count() >= 1:
+    flash("هر اشتراک فقط یک پیج دارد. برای تعویض، ابتدا پیج فعلی را قطع کن.", "error")
+    return redirect(url_for("auth.pages"))
   state = str(current_user.id)
   session["oauth_state"] = state
   return redirect(build_authorize_url(state=state))
@@ -71,10 +75,19 @@ def callback():
 
     ig_id = str(profile.get("user_id") or ig_user_id)
     ig_username = profile.get("username", "") or f"ig_{ig_id[:8]}"
+    follower_count = int(profile.get("followers_count") or 0)
 
     existing = IgAccount.query.filter_by(ig_user_id=ig_id).first()
     if existing and existing.user_id != user.id:
       flash("این پیج قبلاً به حساب دیگری متصل شده.", "error")
+      return redirect(url_for("auth.pages"))
+
+    has_other_page = IgAccount.query.filter(
+      IgAccount.user_id == user.id,
+      IgAccount.ig_user_id != ig_id,
+    ).first()
+    if has_other_page:
+      flash("هر اشتراک فقط یک پیج دارد. ابتدا پیج فعلی را قطع کن.", "error")
       return redirect(url_for("auth.pages"))
 
     IgAccount.query.filter_by(user_id=user.id).update({"is_primary": False})
@@ -89,6 +102,7 @@ def callback():
     acc.name = profile.get("name", "")
     acc.account_type = account_type
     acc.profile_picture = profile.get("profile_picture_url", "")
+    acc.follower_count = follower_count
     acc.access_token = access_token
     acc.token_expires_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
     acc.is_primary = True
@@ -102,8 +116,12 @@ def callback():
 
     db.session.commit()
 
+    trial = maybe_start_trial(user.id, ig_id)
     login_user(user, remember=True)
-    flash(f"پیج @{ig_username} وصل شد و توکن به‌صورت خودکار ذخیره شد!", "success")
+    if trial:
+      flash(f"پیج @{ig_username} وصل شد — ۷ روز تریال رایگان فعال شد!", "success")
+    else:
+      flash(f"پیج @{ig_username} وصل شد و توکن به‌صورت خودکار ذخیره شد!", "success")
     return redirect(url_for("dashboard.dashboard"))
 
   except Exception as e:

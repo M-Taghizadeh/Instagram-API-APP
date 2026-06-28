@@ -6,6 +6,20 @@
 {% endblock %}
 {% block content %}
 
+{% if sub_info %}
+<div class="card" style="padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+  <div style="font-size:13px;">
+    {% if sub_info.active %}
+      <span class="badge {% if sub_info.is_trial %}pink{% else %}ok{% endif %}">{{ sub_info.label }}</span>
+    {% else %}
+      <span class="badge danger">{{ sub_info.label }}</span>
+      {% if not token_set %}<span style="color:var(--text-faint);margin-right:8px;">ابتدا پیج را وصل کن</span>{% endif %}
+    {% endif %}
+  </div>
+  <a href="{{ url_for('billing.pricing') }}" class="btn small secondary">{% if sub_info.active and not sub_info.is_trial %}تمدید{% else %}خرید اشتراک{% endif %}</a>
+</div>
+{% endif %}
+
 <!-- ══ Stats ══ -->
 <div class="stats-grid">
   <div class="stat-card">

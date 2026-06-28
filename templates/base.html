@@ -514,12 +514,25 @@ select {
 
       <div class="nav-section">
         <div class="nav-section-title">حساب</div>
+        <a href="{{ url_for('billing.pricing') }}" class="nav-item {% if request.path.startswith('/billing') %}active{% endif %}">
+          <span class="ni-icon">💎</span> اشتراک و تعرفه
+          {% if sub_info and sub_info.active and sub_info.is_trial %}
+          <span class="ni-badge new">تریال</span>
+          {% elif sub_info and not sub_info.active %}
+          <span class="ni-badge">!</span>
+          {% endif %}
+        </a>
         <a href="{{ url_for('auth.pages') }}" class="nav-item {% if request.path.startswith('/pages') %}active{% endif %}">
           <span class="ni-icon">📸</span> پیج‌های من
         </a>
         <a href="{{ url_for('settings.settings') }}" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
           <span class="ni-icon">⚙️</span> تنظیمات
         </a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.path.startswith('/admin') %}active{% endif %}">
+          <span class="ni-icon">🛡️</span> پنل ادمین
+        </a>
+        {% endif %}
       </div>
     </nav>
 

@@ -46,3 +46,8 @@ class Config:
 
   MIGRATION_TOKEN = os.getenv("MIGRATION_TOKEN", "")
   VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "")
+
+  # Zarinpal
+  ZARINPAL_MERCHANT_ID = os.getenv("ZARINPAL_MERCHANT_ID", "")
+  ZARINPAL_SANDBOX = os.getenv("ZARINPAL_SANDBOX", "true").lower() in ("1", "true", "yes")
+  TRIAL_DAYS = int(os.getenv("TRIAL_DAYS", "7"))

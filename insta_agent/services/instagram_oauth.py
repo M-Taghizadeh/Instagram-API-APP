@@ -50,7 +50,7 @@ def exchange_long_lived_token(short_token: str) -> dict:
 
 def get_me(access_token: str) -> dict:
   r = requests.get(f"{Config.GRAPH_API}/me", params={
-    "fields": "user_id,username,name,account_type,profile_picture_url",
+    "fields": "user_id,username,name,account_type,profile_picture_url,followers_count",
     "access_token": access_token,
   }, timeout=15)
   data = r.json()

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}مدیریت قیمت‌ها — ادمین{% endblock %}
+{% block topbar_title %}ویرایش قیمت پلن‌ها{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">💰 قیمت پلن‌ها</div>
+    <div class="page-sub">فقط ادمین اصلی — تغییرات بلافاصله در صفحه تعرفه اعمال می‌شود</div>
+  </div>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn secondary small">بازگشت</a>
+</div>
+
+<form method="post">
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:var(--panel-2);color:var(--text-faint);font-size:11px;">
+          <th style="padding:12px;text-align:right;">پلن</th>
+          <th style="padding:12px;">فالوور</th>
+          <th style="padding:12px;">۱ ماه (تومان)</th>
+          <th style="padding:12px;">۶ ماه</th>
+          <th style="padding:12px;">۱۲ ماه</th>
+          <th style="padding:12px;">فعال</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in plans %}
+        <tr style="border-top:1px solid var(--border-soft);">
+          <td style="padding:12px;font-weight:800;">{{ plan.name }}</td>
+          <td style="padding:12px;color:var(--text-dim);">{{ plan.follower_label() }}</td>
+          <td style="padding:8px;"><input type="number" name="price_1m_{{ plan.slug }}" value="{{ plan.price_1m }}" style="width:110px;"></td>
+          <td style="padding:8px;"><input type="number" name="price_6m_{{ plan.slug }}" value="{{ plan.price_6m }}" style="width:110px;"></td>
+          <td style="padding:8px;"><input type="number" name="price_12m_{{ plan.slug }}" value="{{ plan.price_12m }}" style="width:110px;"></td>
+          <td style="padding:12px;text-align:center;"><input type="checkbox" name="active_{{ plan.slug }}" {% if plan.is_active %}checked{% endif %}></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn">💾 ذخیره قیمت‌ها</button>
+  </div>
+</form>
+
+{% endblock %}

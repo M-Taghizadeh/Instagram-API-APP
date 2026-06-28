@@ -1,6 +1,7 @@
 from insta_agent.routes import (
   main, auth, oauth, dashboard, webhook, rules,
   settings_routes, activity, flows, contacts, followup, sms_routes, media_routes,
+  billing, admin,
 )
 
 ALL_BLUEPRINTS = [
@@ -17,4 +18,6 @@ ALL_BLUEPRINTS = [
   followup.bp,
   sms_routes.bp,
   media_routes.bp,
+  billing.bp,
+  admin.bp,
 ]

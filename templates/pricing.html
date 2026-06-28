@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}تعرفه‌ها — Insta Agent{% endblock %}
+{% block topbar_title %}تعرفه و اشتراک{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">💎 تعرفه‌ها</div>
+    <div class="page-sub">دسترسی کامل به تمام امکانات — قیمت بر اساس فالوور پیج شما</div>
+  </div>
+</div>
+
+{% if sub_info %}
+<div class="card" style="padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+  <div>
+  {% if sub_info.active %}
+    <span class="badge ok">● {{ sub_info.label }}</span>
+    {% if sub_info.followers %}
+    <span style="font-size:12px;color:var(--text-faint);margin-right:10px;">فالوور پیج: {{ "{:,}".format(sub_info.followers) }}</span>
+    {% endif %}
+  {% else %}
+    <span class="badge danger">○ {{ sub_info.label }}</span>
+    {% if sub_info.suggested_plan %}
+    <span style="font-size:12px;color:var(--text-dim);margin-right:10px;">پلن پیشنهادی: <b>{{ sub_info.suggested_plan.name }}</b></span>
+    {% endif %}
+    {% if sub_info.trial_available %}
+    <span style="font-size:12px;color:var(--ok);">— با وصل پیج، ۷ روز تریال رایگان</span>
+    {% endif %}
+  {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div style="display:flex;justify-content:center;margin-bottom:24px;gap:8px;" id="periodToggle">
+  <button type="button" class="btn secondary small period-btn active" data-period="1">۱ ماهه</button>
+  <button type="button" class="btn secondary small period-btn" data-period="6">۶ ماهه</button>
+  <button type="button" class="btn secondary small period-btn" data-period="12">۱۲ ماهه</button>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;">
+  {% for plan in plans %}
+  <div class="card" style="padding:20px;display:flex;flex-direction:column;{% if sub_info and sub_info.suggested_plan and sub_info.suggested_plan.slug == plan.slug %}border-color:rgba(34,211,160,.4);{% endif %}">
+    <div style="font-size:22px;font-weight:900;margin-bottom:4px;">{{ plan.name }}</div>
+    <div style="font-size:12px;color:var(--text-faint);margin-bottom:16px;">{{ plan.follower_label() }} فالوور</div>
+    <div style="font-size:28px;font-weight:900;margin-bottom:4px;" class="plan-price"
+         data-p1="{{ plan.price_1m }}" data-p6="{{ plan.price_6m }}" data-p12="{{ plan.price_12m }}">
+      {{ "{:,}".format(plan.price_1m) }}
+    </div>
+    <div style="font-size:11px;color:var(--text-faint);margin-bottom:16px;">تومان / دوره</div>
+    <ul style="font-size:12px;color:var(--text-dim);line-height:2;margin-bottom:16px;flex:1;list-style:none;">
+      <li>✓ همه امکانات نامحدود</li>
+      <li>✓ ۱ پیج اینستاگرام</li>
+      <li>✓ فلو، CRM، پیامک</li>
+    </ul>
+  {% if sub_info and sub_info.suggested_plan and sub_info.suggested_plan.slug == plan.slug %}
+    <span class="badge ok" style="margin-bottom:10px;justify-content:center;">پیشنهاد برای پیج شما</span>
+  {% endif %}
+    <form method="post" action="{{ url_for('billing.checkout') }}">
+      <input type="hidden" name="plan_slug" value="{{ plan.slug }}">
+      <input type="hidden" name="period" value="1" class="period-input">
+      <button type="submit" class="btn" style="width:100%;" {% if not zarinpal_ready %}disabled title="درگاه پرداخت تنظیم نشده"{% endif %}>
+        خرید اشتراک
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+
+{% if not zarinpal_ready %}
+<p style="text-align:center;margin-top:20px;font-size:12px;color:var(--warn);">درگاه زرین‌پال هنوز توسط ادمین تنظیم نشده (ZARINPAL_MERCHANT_ID)</p>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  let period = 1;
+  const btns = document.querySelectorAll('.period-btn');
+  const prices = document.querySelectorAll('.plan-price');
+  const inputs = document.querySelectorAll('.period-input');
+
+  function fmt(n) { return Number(n).toLocaleString('fa-IR'); }
+
+  function update() {
+    prices.forEach(el => {
+      const key = 'p' + period;
+      const val = el.dataset[key] || el.dataset.p1;
+      el.textContent = fmt(val);
+    });
+    inputs.forEach(i => { i.value = period; });
+    btns.forEach(b => b.classList.toggle('active', Number(b.dataset.period) === period));
+  }
+
+  btns.forEach(b => b.addEventListener('click', () => {
+    period = Number(b.dataset.period);
+    update();
+  }));
+})();
+</script>
+{% endblock %}

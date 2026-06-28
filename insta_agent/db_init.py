@@ -118,6 +118,10 @@ def _run_migrations():
                   "ALTER TABLE users ADD COLUMN email VARCHAR(120) DEFAULT ''")
       _add_column(conn, "users", "created_at",
                   f"ALTER TABLE users ADD COLUMN created_at {ts_type}")
+      _add_column(conn, "users", "is_admin",
+                  "ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
+      _add_column(conn, "ig_accounts", "follower_count",
+                  "ALTER TABLE ig_accounts ADD COLUMN follower_count INTEGER DEFAULT 0")
 
       # backfill nulls on existing rows
       for stmt in [
@@ -137,18 +141,49 @@ def _run_migrations():
     print(f"[MIGRATE] ERROR: {e}", flush=True)
 
 
+DEFAULT_PLANS = [
+  ("10k", "10K", 0, 10000, 179000, 890000, 1610000, 1),
+  ("30k", "30K", 10001, 30000, 349000, 1740000, 3140000, 2),
+  ("50k", "50K", 30001, 50000, 429000, 2140000, 3870000, 3),
+  ("100k", "100K", 50001, 100000, 529000, 2645000, 4765000, 4),
+  ("500k", "500K", 100001, 500000, 879000, 4385000, 7915000, 5),
+  ("1m", "1M", 500001, 1000000, 1299000, 6485000, 11695000, 6),
+  ("1m_plus", "1M+", 1000001, 999999999, 2199000, 10995000, 19795000, 7),
+]
+
+
+def _seed_plans():
+  from insta_agent.models import Plan
+  if Plan.query.first():
+    return
+  for slug, name, fmin, fmax, p1, p6, p12, order in DEFAULT_PLANS:
+    db.session.add(Plan(
+      slug=slug, name=name, follower_min=fmin, follower_max=fmax,
+      price_1m=p1, price_6m=p6, price_12m=p12, sort_order=order,
+    ))
+  db.session.commit()
+  print("[INIT] Plans seeded", flush=True)
+
+
 def init_db(app):
   with app.app_context():
     db.create_all()
     _run_migrations()
+    _seed_plans()
     if not User.query.first():
       admin_user = os.getenv("ADMIN_USERNAME", "admin")
       admin_pass = os.getenv("ADMIN_PASSWORD", "admin123")
-      u = User(username=admin_user)
+      u = User(username=admin_user, is_admin=True)
       u.set_password(admin_pass)
       db.session.add(u)
       db.session.commit()
-      print(f"[INIT] Admin created → {admin_user}", flush=True)
+      print(f"[INIT] Admin created -> {admin_user}", flush=True)
+    else:
+      first = User.query.order_by(User.id).first()
+      if first and not User.query.filter_by(is_admin=True).first():
+        first.is_admin = True
+        db.session.commit()
+        print(f"[INIT] Admin flag set -> {first.username}", flush=True)
 
     upload_dir = app.config.get("UPLOAD_DIR")
     if upload_dir:
