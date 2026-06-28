@@ -200,9 +200,9 @@ def explain_meta_api_error(msg: str) -> str:
   low = (msg or "").lower()
   if "method type" in low:
     return (
-      "متا این درخواست را رد کرد — معمولاً یعنی پیج در Meta به‌عنوان Instagram Tester اضافه نشده "
-      "یا اپ هنوز Live / Advanced Access ندارد. "
-      "Meta Dashboard → Roles → Instagram Testers → اکانت را اضافه کن."
+      "دسترسی «View profile and access media» (instagram_business_basic) داده نشده — "
+      "در صفحه Allow اینستاگرام هر ۳ toggle باید روشن باشد. "
+      "اکانت هم باید Business یا Creator باشد."
     )
   if "expired" in low:
     return "توکن منقضی شده — دوباره اتصال پیج را بزن."

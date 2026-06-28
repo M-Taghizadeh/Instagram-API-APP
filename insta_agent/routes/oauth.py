@@ -15,7 +15,7 @@ from insta_agent.services.instagram_oauth import (
 from insta_agent.services.instagram_profile import (
   sync_ig_account_profile, fetch_ig_profile_fast, apply_profile_to_account,
   fetch_ig_profile_with_debug, debug_user_token, explain_profile_failure,
-  token_health_report, explain_meta_api_error,
+  token_health_report, explain_meta_api_error, probe_me,
 )
 from insta_agent.services.subscription_service import maybe_start_trial
 from insta_agent.services.instagram_webhooks import subscribe_instagram_webhooks
@@ -143,6 +143,18 @@ def callback():
     if expires_in < 86400:
       print(f"[IG OAuth] WARNING: short-lived token only expires_in={expires_in}", flush=True)
 
+    token_ok, probe_err = probe_me(access_token)
+    if not token_ok or ig_username.startswith("ig_") or not profile.get("username"):
+      detail = explain_meta_api_error(profile_err or probe_err or token_err)
+      raise ValueError(
+        "اتصال کامل نشد — در صفحه Allow اینستاگرام هر ۳ دسترسی را روشن کن "
+        "(View profile and access media + comments + messages). "
+        f"{detail}"
+      )
+
+  except ValueError as e:
+    flash(str(e), "error")
+    return redirect(url_for("auth.onboarding"))
   except Exception as e:
     if isinstance(e, (OperationalError, DBAPIError)) and is_disconnect_error(e):
       db.session.rollback()
@@ -207,11 +219,6 @@ def callback():
       flash(f"پیج @{ig_username} وصل شد و توکن به‌صورت خودکار ذخیره شد!", "success")
     if not wh_ok:
       flash(f"ثبت Webhook ناموفق: {wh_err}", "error")
-    if ig_username.startswith("ig_"):
-      detail = explain_meta_api_error(profile_err or token_err)
-      flash(f"یوزرنیم واقعی نیامد — {detail}", "error")
-    elif expires_in < 86400 and token_err:
-      flash(f"توکن بلندمدت نشد: {explain_meta_api_error(token_err)}", "error")
     return redirect(url_for("dashboard.dashboard"))
 
   except ValueError as e:
