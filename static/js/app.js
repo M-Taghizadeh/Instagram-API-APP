@@ -21,6 +21,10 @@
     if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
+  window.refreshIcons = function () {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  };
+
   window.toggleTheme = function () {
     const current = document.documentElement.getAttribute('data-theme') || 'dark';
     applyTheme(current === 'dark' ? 'light' : 'dark');
@@ -83,12 +87,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     applyTheme(getPreferredTheme());
-
-    if (typeof lucide !== 'undefined') {
-      lucide.createIcons();
-      const observer = new MutationObserver(() => lucide.createIcons());
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
+    window.refreshIcons();
 
     document.querySelectorAll('select').forEach((sel) => {
       if (sel.closest('.select-wrap')) return;

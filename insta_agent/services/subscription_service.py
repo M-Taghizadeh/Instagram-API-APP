@@ -64,7 +64,6 @@ def _days_left(expires_at) -> int:
 
 
 def subscription_status(user_id: int) -> dict:
-  expire_due_subscriptions()
   sub = get_active_subscription(user_id)
   ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
   followers = ig.follower_count if ig else 0

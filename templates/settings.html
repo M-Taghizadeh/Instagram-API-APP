@@ -360,10 +360,10 @@ function copyWebhook() {
   navigator.clipboard.writeText(document.getElementById('webhookUrl').value).then(() => {
     const btn = document.getElementById('copyBtn');
     btn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px"></i> کپی شد!';
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    if (typeof refreshIcons === 'function') refreshIcons();
     setTimeout(() => {
       btn.innerHTML = '<i data-lucide="copy" style="width:14px;height:14px"></i> کپی';
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+      if (typeof refreshIcons === 'function') refreshIcons();
     }, 2000);
   });
 }
