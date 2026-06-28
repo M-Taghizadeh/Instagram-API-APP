@@ -15,16 +15,25 @@ PUBLIC_ENDPOINTS = {
 
 
 def user_has_connection(user: User) -> bool:
-  if user.primary_ig_account:
-    return True
-  s = Settings.query.filter_by(user_id=user.id).first()
-  return bool(s and s.access_token)
+  try:
+    if user.primary_ig_account:
+      return True
+    s = Settings.query.filter_by(user_id=user.id).first()
+    return bool(s and s.access_token)
+  except Exception:
+    db.session.rollback()
+    return False
 
 
 def after_login_redirect():
-  if user_has_connection(current_user):
-    return redirect(url_for("dashboard.dashboard"))
-  return redirect(url_for("auth.onboarding"))
+  try:
+    if user_has_connection(current_user):
+      return redirect(url_for("dashboard.dashboard"))
+    return redirect(url_for("auth.onboarding"))
+  except Exception:
+    db.session.rollback()
+    flash("خطای موقت سرور — لطفاً دوباره تلاش کن.", "error")
+    return render_template("login.html"), 503
 
 
 @bp.before_app_request
@@ -37,7 +46,11 @@ def require_ig_connection_for_panel():
     return
   if ep in ("auth.logout", "auth.onboarding", "auth.pages", "oauth.connect", "oauth.disconnect", "settings.settings"):
     return
-  if user_has_connection(current_user):
+  try:
+    if user_has_connection(current_user):
+      return
+  except Exception:
+    db.session.rollback()
     return
   if ep != "auth.onboarding":
     return redirect(url_for("auth.onboarding"))
@@ -45,12 +58,12 @@ def require_ig_connection_for_panel():
 
 @bp.route("/login", methods=["GET", "POST"])
 def login():
-  if current_user.is_authenticated:
-    return after_login_redirect()
-  if request.method == "POST":
-    username = request.form.get("username", "").strip()
-    password = request.form.get("password", "")
-    try:
+  try:
+    if current_user.is_authenticated:
+      return after_login_redirect()
+    if request.method == "POST":
+      username = request.form.get("username", "").strip()
+      password = request.form.get("password", "")
       user = User.query.filter_by(username=username).first()
       if user and user.check_password(password):
         login_user(user, remember=bool(request.form.get("remember")))
@@ -58,11 +71,11 @@ def login():
         if nxt:
           return redirect(nxt)
         return after_login_redirect()
-    except Exception:
-      db.session.rollback()
-      flash("خطای موقت سرور — لطفاً دوباره تلاش کن.", "error")
-      return render_template("login.html"), 503
-    flash("نام کاربری یا رمز عبور اشتباه است.", "error")
+      flash("نام کاربری یا رمز عبور اشتباه است.", "error")
+  except Exception:
+    db.session.rollback()
+    flash("خطای موقت سرور — چند ثانیه صبر کن و دوباره تلاش کن.", "error")
+    return render_template("login.html"), 503
   return render_template("login.html")
 
 

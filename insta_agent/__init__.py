@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, render_template
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -9,6 +9,7 @@ from insta_agent.extensions import db, login_manager
 from insta_agent.models import User
 from insta_agent.routes import ALL_BLUEPRINTS
 from insta_agent.db_init import init_db
+from insta_agent.db_sqlite import configure_sqlite
 from insta_agent.services.scheduler_service import start_scheduler
 
 
@@ -19,6 +20,7 @@ def create_app():
   app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
   db.init_app(app)
+  configure_sqlite(app)
   login_manager.init_app(app)
 
   @app.teardown_appcontext
@@ -38,6 +40,35 @@ def create_app():
 
   init_db(app)
   start_scheduler(app)
+
+  @app.errorhandler(500)
+  def internal_error(err):
+    db.session.rollback()
+    app.logger.exception("Internal server error: %s", err)
+    return (
+      render_template(
+        "error.html",
+        code=500,
+        title="خطای سرور",
+        message="مشکلی موقت پیش آمد. چند ثانیه صبر کن و دوباره تلاش کن. اگر ادامه داشت، بعداً امتحان کن.",
+        show_login=True,
+      ),
+      500,
+    )
+
+  @app.errorhandler(503)
+  def service_unavailable(err):
+    db.session.rollback()
+    return (
+      render_template(
+        "error.html",
+        code=503,
+        title="سرور شلوغ است",
+        message="الان نتوانستیم درخواست را کامل کنیم. لطفاً چند ثانیه بعد دوباره تلاش کن.",
+        show_login=True,
+      ),
+      503,
+    )
 
   @app.context_processor
   def inject_globals():
