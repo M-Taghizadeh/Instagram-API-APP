@@ -3,6 +3,7 @@ import datetime
 from flask import Blueprint, redirect, url_for, request, flash, session
 from flask_login import login_required, current_user, login_user
 
+from insta_agent.config import Config
 from insta_agent.extensions import db
 from insta_agent.models import User, IgAccount, Settings
 from insta_agent.services.instagram_oauth import (
@@ -11,12 +12,12 @@ from insta_agent.services.instagram_oauth import (
 )
 from insta_agent.services.instagram_profile import (
   sync_ig_account_profile, fetch_ig_profile, apply_profile_to_account,
-  fetch_ig_profile_with_debug,
+  fetch_ig_profile_with_debug, debug_user_token, explain_profile_failure,
 )
 from insta_agent.services.subscription_service import maybe_start_trial
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
-OAUTH_FLOW_VERSION = "2025-06-28b"
+OAUTH_FLOW_VERSION = "2025-06-28c"
 
 
 @bp.route("/status")
@@ -29,7 +30,16 @@ def oauth_debug_status():
   debug = {}
   if ig and ig.access_token:
     profile, err = fetch_ig_profile_with_debug(ig.access_token, ig.ig_user_id)
-    debug = {"profile_ok": bool(profile), "api_error": err, "username": profile.get("username", "")}
+    token_dbg = debug_user_token(ig.access_token)
+    debug = {
+      "profile_ok": bool(profile),
+      "api_error": err,
+      "username": profile.get("username", ""),
+      "token_valid": token_dbg.get("is_valid"),
+      "token_scopes": token_dbg.get("scopes"),
+      "token_app_id": token_dbg.get("app_id"),
+      "configured_app_id": Config.META_APP_ID,
+    }
   return {
     "flow_version": OAUTH_FLOW_VERSION,
     "configured": st["ready"],
@@ -181,8 +191,7 @@ def refresh_profiles():
   if updated:
     flash(f"اطلاعات {updated} از {len(accounts)} پیج به‌روز شد.", "success")
   else:
-    detail = f" ({last_err})" if last_err and current_user.is_admin else ""
-    flash(f"پروفایل از API دریافت نشد{detail}.", "error")
+    flash(explain_profile_failure(last_err, debug_user_token(accounts[0].access_token if accounts else "")), "error")
   return redirect(url_for("auth.pages"))
 
 

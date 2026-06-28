@@ -5,13 +5,13 @@ from insta_agent.utils import now_tehran
 
 GRAPH_BASE = "https://graph.instagram.com"
 GRAPH_API = Config.GRAPH_API.rstrip("/")
+FB_GRAPH = "https://graph.facebook.com/v25.0"
 
 PROFILE_FIELDS = (
   "id,user_id,username,name,account_type,profile_picture_url,biography,"
   "followers_count,follows_count,media_count"
 )
-BASIC_FIELDS = "id,user_id,username,name,account_type,profile_picture_url,biography"
-MIN_FIELDS = "id,user_id,username,account_type"
+MIN_FIELDS = "id,user_id,username"
 
 
 def _unwrap_payload(data) -> dict:
@@ -32,19 +32,67 @@ def _normalize_profile(data: dict) -> dict:
   return data
 
 
-def _graph_get(url: str, access_token: str, fields: str) -> tuple[dict, str]:
-  """Instagram Login tokens work reliably with Bearer auth (see instagram_api.py)."""
+def _app_access_token() -> str:
+  return f"{Config.META_APP_ID}|{Config.META_APP_SECRET}"
+
+
+def debug_user_token(access_token: str) -> dict:
+  if not access_token or not Config.META_APP_ID or not Config.META_APP_SECRET:
+    return {}
+  try:
+    r = requests.get(
+      f"{GRAPH_BASE}/debug_token",
+      params={"input_token": access_token, "access_token": _app_access_token()},
+      timeout=15,
+    )
+    data = r.json()
+    return _unwrap_payload(data) if isinstance(data, dict) else {}
+  except Exception as e:
+    print(f"[IG PROFILE] debug_token error: {e}", flush=True)
+    return {}
+
+
+def refresh_ig_access_token(access_token: str) -> dict:
+  if not access_token:
+    return {}
+  try:
+    r = requests.get(
+      f"{GRAPH_BASE}/refresh_access_token",
+      params={"grant_type": "ig_refresh_token", "access_token": access_token},
+      timeout=15,
+    )
+    data = r.json()
+    if r.status_code == 200 and data.get("access_token"):
+      return data
+    err = data.get("error", {})
+    msg = err.get("message", r.text) if isinstance(err, dict) else r.text
+    print(f"[IG PROFILE] refresh_token -> {msg}", flush=True)
+  except Exception as e:
+    print(f"[IG PROFILE] refresh_token error: {e}", flush=True)
+  return {}
+
+
+def _graph_read(url: str, access_token: str, fields: str) -> tuple[dict, str]:
   if not access_token:
     return {}, "no token"
 
-  last_error = ""
   attempts = (
-    ("bearer", {"Authorization": f"Bearer {access_token}"}, {"fields": fields}),
-    ("query", {}, {"fields": fields, "access_token": access_token}),
+    ("bearer-get", "GET", {"Authorization": f"Bearer {access_token}"}, {"fields": fields}),
+    ("query-get", "GET", {}, {"fields": fields, "access_token": access_token}),
+    ("form-post", "POST", {}, None),
   )
-  for mode, headers, params in attempts:
+  last_error = ""
+  for mode, method, headers, params in attempts:
     try:
-      r = requests.get(url, headers=headers, params=params, timeout=15)
+      if method == "GET":
+        r = requests.get(url, headers=headers, params=params, timeout=15)
+      else:
+        r = requests.post(
+          url,
+          headers=headers,
+          data={"fields": fields, "access_token": access_token},
+          timeout=15,
+        )
       raw = r.json()
       data = _normalize_profile(_unwrap_payload(raw))
       if r.status_code == 200 and data and "error" not in raw:
@@ -56,12 +104,26 @@ def _graph_get(url: str, access_token: str, fields: str) -> tuple[dict, str]:
       print(f"[IG PROFILE] {url} ({mode}) -> {msg}", flush=True)
     except Exception as e:
       last_error = f"{mode}: {e}"
-      print(f"[IG PROFILE] GET {url} ({mode}) error: {e}", flush=True)
+      print(f"[IG PROFILE] {url} ({mode}) error: {e}", flush=True)
   return {}, last_error
 
 
+def explain_profile_failure(api_error: str, token_debug: dict) -> str:
+  if token_debug and token_debug.get("is_valid") is False:
+    return "توکن منقضی یا نامعتبر است — یک‌بار قطع اتصال و دوباره وصل کن."
+  scopes = token_debug.get("scopes") or []
+  if scopes and "instagram_business_basic" not in scopes:
+    return "دسترسی instagram_business_basic داده نشده — در Allow همه دسترسی‌ها را بپذیر."
+
+  if "method type: get" in (api_error or "").lower():
+    return (
+      "متا endpoint پروفایل (/me) را رد می‌کند. در Meta Developer → App Review → Permissions "
+      "برای instagram_business_basic حالت Advanced Access بگیر. Live بودن اپ کافی نیست."
+    )
+  return api_error or "پروفایل از API دریافت نشد."
+
+
 def fetch_ig_profile(access_token: str, ig_user_id: str = "") -> dict:
-  """Fetch Instagram professional account profile from Graph API."""
   profile, _ = fetch_ig_profile_with_debug(access_token, ig_user_id)
   return profile
 
@@ -70,31 +132,44 @@ def fetch_ig_profile_with_debug(access_token: str, ig_user_id: str = "") -> tupl
   if not access_token:
     return {}, "توکن خالی است"
 
-  paths = ["/me"]
+  token_debug = debug_user_token(access_token)
+  urls = [f"{GRAPH_API}/me", f"{GRAPH_BASE}/me", f"{FB_GRAPH}/me"]
   if ig_user_id:
-    paths.append(f"/{ig_user_id}")
+    urls.extend([f"{GRAPH_API}/{ig_user_id}", f"{GRAPH_BASE}/{ig_user_id}"])
 
-  bases = [GRAPH_API, GRAPH_BASE]
-  field_sets = [MIN_FIELDS, BASIC_FIELDS, PROFILE_FIELDS]
-  last_error = "هیچ پاسخی از API دریافت نشد"
+  last_error = ""
+  for url in urls:
+    profile, err = _graph_read(url, access_token, MIN_FIELDS)
+    if profile:
+      full, err2 = _graph_read(url, access_token, PROFILE_FIELDS)
+      return full or profile, ""
+    last_error = err or last_error
 
-  for base in bases:
-    for path in paths:
-      for fields in field_sets:
-        profile, err = _graph_get(f"{base}{path}", access_token, fields)
-        if profile:
-          return profile, ""
-        if err:
-          last_error = err
-  return {}, last_error
+  refreshed = refresh_ig_access_token(access_token)
+  new_token = refreshed.get("access_token", "")
+  if new_token and new_token != access_token:
+    for url in urls[:2]:
+      profile, err = _graph_read(url, new_token, MIN_FIELDS)
+      if profile:
+        full, _ = _graph_read(url, new_token, PROFILE_FIELDS)
+        merged = full or profile
+        merged["_refreshed_access_token"] = new_token
+        merged["_expires_in"] = refreshed.get("expires_in")
+        return merged, ""
+      last_error = err or last_error
+
+  return {}, explain_profile_failure(last_error, token_debug)
 
 
 def apply_profile_to_account(account, profile: dict) -> bool:
-  """Write profile fields onto IgAccount. Returns True if anything changed."""
   if not profile:
     return False
 
   changed = False
+  if profile.get("_refreshed_access_token"):
+    account.access_token = profile["_refreshed_access_token"]
+    changed = True
+
   mapping = {
     "username": profile.get("username") or "",
     "name": profile.get("name") or "",
@@ -133,6 +208,6 @@ def apply_profile_to_account(account, profile: dict) -> bool:
 
 def sync_ig_account_profile(account, access_token: str = "") -> dict:
   token = access_token or account.access_token or ""
-  profile = fetch_ig_profile(token, account.ig_user_id)
+  profile, _ = fetch_ig_profile_with_debug(token, account.ig_user_id)
   apply_profile_to_account(account, profile)
   return profile
