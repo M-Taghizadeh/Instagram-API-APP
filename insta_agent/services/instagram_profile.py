@@ -4,14 +4,14 @@ from insta_agent.config import Config
 from insta_agent.utils import now_tehran
 
 GRAPH_BASE = "https://graph.instagram.com"
-GRAPH_API = Config.GRAPH_API
+GRAPH_API = Config.GRAPH_API.rstrip("/")
 
 PROFILE_FIELDS = (
-  "user_id,username,name,account_type,profile_picture_url,biography,"
+  "id,user_id,username,name,account_type,profile_picture_url,biography,"
   "followers_count,follows_count,media_count"
 )
-BASIC_FIELDS = "user_id,username,name,account_type,profile_picture_url,biography"
-MIN_FIELDS = "user_id,username,account_type"
+BASIC_FIELDS = "id,user_id,username,name,account_type,profile_picture_url,biography"
+MIN_FIELDS = "id,user_id,username,account_type"
 
 
 def _unwrap_payload(data) -> dict:
@@ -22,48 +22,71 @@ def _unwrap_payload(data) -> dict:
   return data if isinstance(data, dict) else {}
 
 
-def _graph_get(url: str, params: dict) -> dict:
-  if not params.get("access_token"):
+def _normalize_profile(data: dict) -> dict:
+  if not data:
     return {}
-  try:
-    r = requests.get(url, params=params, timeout=15, allow_redirects=False)
-    if r.status_code in (301, 302, 303, 307, 308):
-      loc = r.headers.get("Location")
-      if loc:
-        r = requests.get(loc, params=params, timeout=15, allow_redirects=False)
-    data = _unwrap_payload(r.json())
-    if r.status_code == 200 and data and "error" not in data:
-      if not data.get("user_id") and data.get("id"):
-        data["user_id"] = data["id"]
-      return data
-    if isinstance(data, dict) and data.get("error"):
-      err = data["error"]
-      msg = err.get("message", err) if isinstance(err, dict) else err
-      print(f"[IG PROFILE] {url} -> {msg}", flush=True)
-  except Exception as e:
-    print(f"[IG PROFILE] GET {url} error: {e}", flush=True)
-  return {}
+  if not data.get("user_id") and data.get("id"):
+    data["user_id"] = str(data["id"])
+  if data.get("user_id"):
+    data["user_id"] = str(data["user_id"])
+  return data
+
+
+def _graph_get(url: str, access_token: str, fields: str) -> tuple[dict, str]:
+  """Instagram Login tokens work reliably with Bearer auth (see instagram_api.py)."""
+  if not access_token:
+    return {}, "no token"
+
+  last_error = ""
+  attempts = (
+    ("bearer", {"Authorization": f"Bearer {access_token}"}, {"fields": fields}),
+    ("query", {}, {"fields": fields, "access_token": access_token}),
+  )
+  for mode, headers, params in attempts:
+    try:
+      r = requests.get(url, headers=headers, params=params, timeout=15)
+      raw = r.json()
+      data = _normalize_profile(_unwrap_payload(raw))
+      if r.status_code == 200 and data and "error" not in raw:
+        if data.get("user_id") or data.get("username"):
+          return data, ""
+      err = raw.get("error", {}) if isinstance(raw, dict) else {}
+      msg = err.get("message", r.text) if isinstance(err, dict) else str(raw)
+      last_error = f"{mode}: {msg}"
+      print(f"[IG PROFILE] {url} ({mode}) -> {msg}", flush=True)
+    except Exception as e:
+      last_error = f"{mode}: {e}"
+      print(f"[IG PROFILE] GET {url} ({mode}) error: {e}", flush=True)
+  return {}, last_error
 
 
 def fetch_ig_profile(access_token: str, ig_user_id: str = "") -> dict:
   """Fetch Instagram professional account profile from Graph API."""
+  profile, _ = fetch_ig_profile_with_debug(access_token, ig_user_id)
+  return profile
+
+
+def fetch_ig_profile_with_debug(access_token: str, ig_user_id: str = "") -> tuple[dict, str]:
   if not access_token:
-    return {}
+    return {}, "توکن خالی است"
 
   paths = ["/me"]
   if ig_user_id:
     paths.append(f"/{ig_user_id}")
 
-  bases = [GRAPH_BASE, GRAPH_API.rstrip("/")]
+  bases = [GRAPH_API, GRAPH_BASE]
   field_sets = [MIN_FIELDS, BASIC_FIELDS, PROFILE_FIELDS]
+  last_error = "هیچ پاسخی از API دریافت نشد"
 
   for base in bases:
     for path in paths:
       for fields in field_sets:
-        profile = _graph_get(f"{base}{path}", {"fields": fields, "access_token": access_token})
-        if profile.get("user_id") or profile.get("username"):
-          return profile
-  return {}
+        profile, err = _graph_get(f"{base}{path}", access_token, fields)
+        if profile:
+          return profile, ""
+        if err:
+          last_error = err
+  return {}, last_error
 
 
 def apply_profile_to_account(account, profile: dict) -> bool:

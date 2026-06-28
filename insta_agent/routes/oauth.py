@@ -9,7 +9,10 @@ from insta_agent.services.instagram_oauth import (
   build_authorize_url, exchange_code_for_token, exchange_long_lived_token,
   get_me_optional, is_professional_account, oauth_configured, oauth_status,
 )
-from insta_agent.services.instagram_profile import sync_ig_account_profile, fetch_ig_profile, apply_profile_to_account
+from insta_agent.services.instagram_profile import (
+  sync_ig_account_profile, fetch_ig_profile, apply_profile_to_account,
+  fetch_ig_profile_with_debug,
+)
 from insta_agent.services.subscription_service import maybe_start_trial
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
@@ -22,12 +25,18 @@ def oauth_debug_status():
   if not current_user.is_admin:
     return {"error": "forbidden"}, 403
   st = oauth_status()
+  ig = IgAccount.query.filter_by(user_id=current_user.id, is_primary=True).first()
+  debug = {}
+  if ig and ig.access_token:
+    profile, err = fetch_ig_profile_with_debug(ig.access_token, ig.ig_user_id)
+    debug = {"profile_ok": bool(profile), "api_error": err, "username": profile.get("username", "")}
   return {
     "flow_version": OAUTH_FLOW_VERSION,
     "configured": st["ready"],
     "app_id_set": st["app_id"],
     "secret_set": st["app_secret"],
     "redirect_uri": st["redirect_value"],
+    "profile_test": debug,
   }
 
 
@@ -157,18 +166,23 @@ def callback():
 def refresh_profiles():
   accounts = IgAccount.query.filter_by(user_id=current_user.id).all()
   updated = 0
+  last_err = ""
   for acc in accounts:
-    before = acc.username
-    sync_ig_account_profile(acc)
-    if acc.username and not acc.username.startswith("ig_"):
-      updated += 1
-    elif acc.follower_count or acc.media_count or acc.username != before:
+    before = (acc.username, acc.follower_count, acc.media_count)
+    profile, err = fetch_ig_profile_with_debug(acc.access_token or "", acc.ig_user_id)
+    if profile:
+      apply_profile_to_account(acc, profile)
+    if err:
+      last_err = err
+    after = (acc.username, acc.follower_count, acc.media_count)
+    if after != before or (acc.username and not acc.username.startswith("ig_")):
       updated += 1
   db.session.commit()
   if updated:
     flash(f"اطلاعات {updated} از {len(accounts)} پیج به‌روز شد.", "success")
   else:
-    flash("پروفایل از API دریافت نشد — اتصال فعال است ولی متا هنوز اطلاعات پروفایل را برنمی‌گرداند (احتمالاً تا Live شدن اپ).", "error")
+    detail = f" ({last_err})" if last_err and current_user.is_admin else ""
+    flash(f"پروفایل از API دریافت نشد{detail}.", "error")
   return redirect(url_for("auth.pages"))
 
 
