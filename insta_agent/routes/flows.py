@@ -120,7 +120,13 @@ def new_flow():
     db.session.commit()
     flash("فلو ساخته شد.", "success")
     return redirect(url_for("flows.edit_flow", flow_id=flow.id))
-  return render_template("flow_form.html", flow=None, flow_kinds=FLOW_KINDS, channels=CHANNELS)
+  return render_template(
+    "flow_form.html",
+    flow=None,
+    flow_kinds=FLOW_KINDS,
+    channels=CHANNELS,
+    nodes_for_editor=[],
+  )
 
 
 @bp.route("/<flow_id>/edit", methods=["GET", "POST"])
@@ -141,12 +147,24 @@ def edit_flow(flow_id):
       flow.nodes_json = nodes_raw
     except json.JSONDecodeError:
       flash("فرمت JSON نودها نامعتبر است.", "error")
-      return render_template("flow_form.html", flow=flow, flow_kinds=FLOW_KINDS, channels=CHANNELS)
+      return render_template(
+        "flow_form.html",
+        flow=flow,
+        flow_kinds=FLOW_KINDS,
+        channels=CHANNELS,
+        nodes_for_editor=parse_nodes(flow),
+      )
     db.session.commit()
     flash("فلو ذخیره شد.", "success")
     return redirect(url_for("flows.flow_list"))
   nodes = parse_nodes(flow)
-  return render_template("flow_form.html", flow=flow, flow_kinds=FLOW_KINDS, channels=CHANNELS, nodes=nodes)
+  return render_template(
+    "flow_form.html",
+    flow=flow,
+    flow_kinds=FLOW_KINDS,
+    channels=CHANNELS,
+    nodes_for_editor=nodes,
+  )
 
 
 @bp.route("/<flow_id>/toggle", methods=["POST"])

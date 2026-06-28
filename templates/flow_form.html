@@ -6,12 +6,12 @@
 <div class="page-header">
   <div>
     <div class="page-title">🔀 {{ 'ویرایش فلو' if flow else 'ساخت فلو جدید' }}</div>
-    <div class="page-sub">متن، ویدیو، ویس، دکمه، ویترین، فرم، نظرسنجی و فالوآپ</div>
+    <div class="page-sub">متن، ویدیو، ویس، دکمه، ویترین، فرم، نظرسنجی و فالوآپ — با ویرایشگر بصری</div>
   </div>
 </div>
 
 <form method="post">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start;">
     <div class="card" style="padding:20px;">
       <div class="field">
         <label>نام فلو</label>
@@ -52,17 +52,22 @@
         <label>شناسه پست (فقط کامنت)</label>
         <input type="text" name="post_id" value="{{ flow.post_id if flow else '' }}" placeholder="خالی = همه پست‌ها">
       </div>
+      <p style="font-size:11px;color:var(--text-faint);line-height:1.7;margin-top:8px;">
+        نودها را از پالت اضافه کنید، با درگ به هم وصل کنید و روی هر نود کلیک کنید تا تنظیماتش را ویرایش کنید.
+      </p>
     </div>
 
-    <div class="card" style="padding:20px;">
-      <div style="font-weight:800;margin-bottom:10px;">نودهای فلو (JSON)</div>
-      <p style="font-size:12px;color:var(--text-faint);margin-bottom:12px;">
-        انواع: text, image, video, audio, carousel, buttons, quick_replies, collect_phone, collect_text, poll, quiz, delay, save_contact
-      </p>
-      <textarea name="nodes_json" rows="18" style="font-family:monospace;font-size:12px;direction:ltr;">{{ flow.nodes_json if flow else '[]' }}</textarea>
-      <div style="margin-top:12px;font-size:11px;color:var(--text-faint);">
-        برای آپلود مدیا: POST /media/upload
-      </div>
+    <div class="card" style="padding:16px;">
+      <div style="font-weight:800;margin-bottom:12px;">ویرایشگر فلو</div>
+      <div
+        id="flow-editor-root"
+        data-nodes="{{ nodes_for_editor | tojson }}"
+      ></div>
+      <textarea id="nodes_json" name="nodes_json" style="display:none">{{ flow.nodes_json if flow else '[]' }}</textarea>
+      <details style="margin-top:12px;">
+        <summary style="font-size:11px;color:var(--text-faint);cursor:pointer;">نمایش JSON (پیشرفته)</summary>
+        <pre id="nodes_json_preview" style="margin-top:8px;font-size:11px;direction:ltr;overflow:auto;max-height:180px;color:var(--text-faint);"></pre>
+      </details>
     </div>
   </div>
 
@@ -72,4 +77,16 @@
   </div>
 </form>
 
+{% endblock %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="{{ url_for('static', filename='flow-editor/flow-editor.css') }}">
+<script type="module" src="{{ url_for('static', filename='flow-editor/flow-editor.js') }}"></script>
+<script>
+document.getElementById('nodes_json').addEventListener('input', function() {
+  const pre = document.getElementById('nodes_json_preview');
+  if (pre) pre.textContent = this.value;
+});
+document.getElementById('nodes_json').dispatchEvent(new Event('input'));
+</script>
 {% endblock %}

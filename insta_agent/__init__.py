@@ -13,7 +13,7 @@ from insta_agent.services.scheduler_service import start_scheduler
 
 def create_app():
   load_dotenv()
-  app = Flask(__name__, template_folder="../templates")
+  app = Flask(__name__, template_folder="../templates", static_folder="../static")
   app.config.from_object(Config)
 
   db.init_app(app)

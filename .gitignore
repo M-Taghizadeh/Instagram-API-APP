@@ -32,6 +32,9 @@ Thumbs.db
 
 uploads/
 
+# Frontend build
+frontend/flow-editor/node_modules/
+
 # Test files (may contain tokens)
 test.py
 lookup_user.py

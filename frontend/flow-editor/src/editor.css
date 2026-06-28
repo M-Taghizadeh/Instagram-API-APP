@@ -1,0 +1,268 @@
+#flow-editor-root {
+  width: 100%;
+  min-height: 560px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #262340;
+  background: #0d0b18;
+  direction: ltr;
+}
+
+.fe-layout {
+  display: grid;
+  grid-template-columns: 180px 1fr 260px;
+  height: 560px;
+  font-family: 'Vazirmatn', sans-serif;
+}
+
+.fe-palette {
+  background: #110f1e;
+  border-left: 1px solid #262340;
+  padding: 12px 10px;
+  overflow-y: auto;
+  direction: rtl;
+}
+
+.fe-palette-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #7a7299;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fe-palette-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border: 1px solid #262340;
+  border-radius: 8px;
+  background: #17142a;
+  color: #b8b0d4;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.fe-palette-btn:hover {
+  border-color: rgba(108, 79, 255, 0.4);
+  background: #1e1b32;
+  color: #f0ecff;
+}
+
+.fe-canvas-wrap {
+  position: relative;
+  background: #0d0b18;
+}
+
+.fe-canvas-wrap .react-flow__controls button {
+  background: #17142a;
+  border-color: #262340;
+  color: #b8b0d4;
+  fill: #b8b0d4;
+}
+
+.fe-canvas-wrap .react-flow__controls button:hover {
+  background: #1e1b32;
+}
+
+.fe-panel {
+  background: #110f1e;
+  border-right: 1px solid #262340;
+  padding: 14px 12px;
+  overflow-y: auto;
+  direction: rtl;
+}
+
+.fe-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7a7299;
+  font-size: 12px;
+  text-align: center;
+  padding: 20px;
+}
+
+.fe-panel-title {
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 14px;
+  color: #f0ecff;
+}
+
+.fe-field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.fe-field span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7a7299;
+  margin-bottom: 5px;
+}
+
+.fe-field input,
+.fe-field textarea {
+  width: 100%;
+  background: #17142a;
+  border: 1px solid #262340;
+  border-radius: 8px;
+  color: #f0ecff;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+.fe-field input:focus,
+.fe-field textarea:focus {
+  border-color: #6c4fff;
+}
+
+.fe-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #b8b0d4;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
+.fe-hint {
+  font-size: 11px;
+  color: #7a7299;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.fe-btn-danger {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  background: rgba(248, 113, 113, 0.08);
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.fe-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.15);
+}
+
+.fe-node {
+  min-width: 190px;
+  max-width: 240px;
+  background: #17142a;
+  border: 1px solid #262340;
+  border-radius: 12px;
+  padding: 10px 12px 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.fe-node.selected {
+  border-color: #6c4fff;
+  box-shadow: 0 0 0 2px rgba(108, 79, 255, 0.25);
+}
+
+.fe-node.is-start {
+  border-color: rgba(34, 211, 160, 0.45);
+}
+
+.fe-node-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.fe-node-icon {
+  font-size: 14px;
+}
+
+.fe-node-type {
+  font-size: 11px;
+  font-weight: 800;
+  color: #a78bfa;
+}
+
+.fe-start-badge {
+  margin-right: auto;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(34, 211, 160, 0.12);
+  color: #22d3a0;
+  border: 1px solid rgba(34, 211, 160, 0.25);
+}
+
+.fe-node-preview {
+  font-size: 11px;
+  color: #b8b0d4;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: right;
+}
+
+.fe-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: #6c4fff !important;
+  border: 2px solid #110f1e !important;
+}
+
+.react-flow__edge-path {
+  stroke: #6c4fff;
+  stroke-width: 2;
+}
+
+@media (max-width: 1100px) {
+  .fe-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 400px auto;
+    height: auto;
+  }
+
+  .fe-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-left: none;
+    border-bottom: 1px solid #262340;
+  }
+
+  .fe-palette-title {
+    width: 100%;
+  }
+
+  .fe-palette-btn {
+    width: auto;
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .fe-panel {
+    border-right: none;
+    border-top: 1px solid #262340;
+    max-height: 280px;
+  }
+
+  #flow-editor-root {
+    min-height: auto;
+  }
+}
