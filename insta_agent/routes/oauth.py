@@ -10,7 +10,7 @@ from insta_agent.db_retry import db_retry, is_disconnect_error
 from insta_agent.models import User, IgAccount, Settings
 from insta_agent.services.instagram_oauth import (
   build_authorize_url, exchange_code_for_token, resolve_access_token,
-  get_me_optional, is_professional_account, oauth_configured, oauth_status,
+  is_professional_account, oauth_configured, oauth_status,
 )
 from insta_agent.services.instagram_profile import (
   sync_ig_account_profile, fetch_ig_profile, apply_profile_to_account,
@@ -103,9 +103,13 @@ def callback():
     if not short_token or not ig_user_id:
       raise ValueError("پاسخ اینستاگرام ناقص بود — توکن یا شناسه کاربر دریافت نشد.")
 
-    access_token, expires_in = resolve_access_token(short_token)
+    # پروفایل را با توکن تازه بگیر (قبل از هر تأخیر)
+    profile = fetch_ig_profile(short_token, ig_user_id) or {"user_id": ig_user_id, "username": ""}
 
-    profile = get_me_optional(access_token, ig_user_id=ig_user_id)
+    access_token, expires_in = resolve_access_token(short_token)
+    if not profile.get("username"):
+      profile = fetch_ig_profile(access_token, ig_user_id) or profile
+
     account_type = profile.get("account_type", "")
 
     if account_type and not is_professional_account(account_type):
@@ -127,6 +131,9 @@ def callback():
       if retry_profile.get("username"):
         stored_profile = retry_profile
         ig_username = retry_profile["username"]
+
+    if expires_in < 86400:
+      print(f"[IG OAuth] WARNING: short-lived token only expires_in={expires_in}", flush=True)
 
   except Exception as e:
     if isinstance(e, (OperationalError, DBAPIError)) and is_disconnect_error(e):
@@ -198,10 +205,12 @@ def callback():
       )
     if ig_username.startswith("ig_"):
       flash(
-        "یوزرنیم واقعی پیج هنوز دریافت نشده — احتمالاً توکن کوتاه‌مدت بود. "
-        "از صفحه «اتصال به اینستاگرام» دوباره «اتصال مجدد» بزن.",
+        "یوزرنیم واقعی پیج دریافت نشد — در Meta دسترسی instagram_business_basic را چک کن "
+        "و دوباره «اتصال مجدد» بزن.",
         "error",
       )
+    elif expires_in < 86400:
+      flash("توکن کوتاه‌مدت ذخیره شد — حتماً Webhook را فعال کن و اگر قطع شد دوباره وصل کن.", "error")
     return redirect(url_for("dashboard.dashboard"))
 
   except ValueError as e:

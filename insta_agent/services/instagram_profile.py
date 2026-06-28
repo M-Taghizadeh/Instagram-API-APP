@@ -1,10 +1,10 @@
 import requests
 
 from insta_agent.config import Config
+from insta_agent.services.instagram_http import GRAPH_API, get_no_redirect, post_no_redirect
 from insta_agent.utils import now_tehran
 
 GRAPH_BASE = "https://graph.instagram.com"
-GRAPH_API = Config.GRAPH_API.rstrip("/")
 FB_GRAPH = "https://graph.facebook.com/v25.0"
 
 PROFILE_FIELDS = (
@@ -75,11 +75,10 @@ def probe_me(access_token: str) -> tuple[bool, str]:
   if not access_token:
     return False, "no token"
   try:
-    r = requests.get(
+    r = get_no_redirect(
       f"{GRAPH_API}/me",
       headers={"Authorization": f"Bearer {access_token}"},
       params={"fields": "user_id,username"},
-      timeout=12,
     )
     raw = r.json()
     if r.status_code == 200 and "error" not in raw:
@@ -171,13 +170,12 @@ def _graph_read(url: str, access_token: str, fields: str) -> tuple[dict, str]:
   for mode, method, headers, params in attempts:
     try:
       if method == "GET":
-        r = requests.get(url, headers=headers, params=params, timeout=15)
+        r = get_no_redirect(url, headers=headers, params=params)
       else:
-        r = requests.post(
+        r = post_no_redirect(
           url,
           headers=headers,
           data={"fields": fields, "access_token": access_token},
-          timeout=15,
         )
       raw = r.json()
       data = _normalize_profile(_unwrap_payload(raw))

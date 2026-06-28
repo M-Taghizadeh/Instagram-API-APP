@@ -1,13 +1,13 @@
-import os
 import requests
 from urllib.parse import urlencode
 
 from insta_agent.config import Config
+from insta_agent.services.instagram_http import GRAPH_API, api_message, get_no_redirect, post_no_redirect
 
 AUTH_URL = "https://www.instagram.com/oauth/authorize"
 TOKEN_URL = "https://api.instagram.com/oauth/access_token"
-GRAPH_BASE = "https://graph.instagram.com"
 ALLOWED_ACCOUNT_TYPES = {"BUSINESS", "MEDIA_CREATOR", "CREATOR"}
+LONG_LIVED_MIN_EXPIRES = 86400  # > 1 day => long-lived exchange worked
 
 
 def _unwrap_payload(data) -> dict:
@@ -16,34 +16,6 @@ def _unwrap_payload(data) -> dict:
     if isinstance(first, dict):
       return first
   return data if isinstance(data, dict) else {}
-
-
-def _api_error(data, fallback: str = "") -> str:
-  if not isinstance(data, dict):
-    return fallback or "خطای ناشناخته"
-  err = data.get("error")
-  if isinstance(err, dict):
-    return err.get("message") or fallback or str(err)
-  return data.get("error_message") or fallback or str(data)
-
-
-def _post_form(url: str, payload: dict) -> requests.Response:
-  """POST form without redirect-to-GET (causes Meta 'method type: get' errors)."""
-  r = requests.post(url, data=payload, timeout=15, allow_redirects=False)
-  if r.status_code in (301, 302, 303, 307, 308):
-    loc = r.headers.get("Location")
-    if loc:
-      r = requests.post(loc, data=payload, timeout=15, allow_redirects=False)
-  return r
-
-
-def _get_json(url: str, params: dict) -> requests.Response:
-  r = requests.get(url, params=params, timeout=15, allow_redirects=False)
-  if r.status_code in (301, 302, 303, 307, 308):
-    loc = r.headers.get("Location")
-    if loc:
-      r = requests.get(loc, params=params, timeout=15, allow_redirects=False)
-  return r
 
 
 def build_authorize_url(state: str = "") -> str:
@@ -67,40 +39,45 @@ def exchange_code_for_token(code: str) -> dict:
     "redirect_uri": Config.OAUTH_REDIRECT_URI,
     "code": code,
   }
-  r = _post_form(TOKEN_URL, payload)
+  r = post_no_redirect(TOKEN_URL, data=payload)
   data = _unwrap_payload(r.json())
   if r.status_code != 200:
-    raise ValueError(_api_error(data, r.text))
+    raise ValueError(api_message(data) or r.text)
   if not data.get("access_token"):
     raise ValueError("توکن کوتاه‌مدت از اینستاگرام دریافت نشد.")
   return data
 
 
 def exchange_long_lived_token(short_token: str) -> dict:
+  """Exchange short-lived token for ~60-day token (Instagram Login API)."""
   if not short_token:
     raise ValueError("توکن کوتاه‌مدت خالی است.")
 
-  payload = {
+  base_params = {
     "grant_type": "ig_exchange_token",
     "client_secret": Config.META_APP_SECRET,
     "access_token": short_token,
   }
+  url = f"{GRAPH_API}/access_token"
   errors: list[str] = []
 
-  for method in ("post", "get"):
+  for label, fn in (
+    ("GET", lambda: get_no_redirect(url, params=base_params)),
+    ("POST", lambda: post_no_redirect(url, data=base_params)),
+  ):
     try:
-      if method == "post":
-        r = _post_form(f"{GRAPH_BASE}/access_token", payload)
-      else:
-        r = _get_json(f"{GRAPH_BASE}/access_token", payload)
+      r = fn()
       data = r.json()
-      if r.status_code == 200 and data.get("access_token"):
-        return data
-      errors.append(f"{method.upper()}: {_api_error(data, r.text)}")
+      token = data.get("access_token", "")
+      expires = int(data.get("expires_in") or 0)
+      if r.status_code == 200 and token:
+        print(f"[IG OAuth] long-lived via {label} expires_in={expires}", flush=True)
+        return {"access_token": token, "expires_in": expires or 5184000}
+      errors.append(f"{label}: {api_message(data) or r.text}")
     except Exception as e:
-      errors.append(f"{method.upper()}: {e}")
+      errors.append(f"{label}: {e}")
 
-  print(f"[IG OAuth] long-lived token fallback to short-lived: {' | '.join(errors)}", flush=True)
+  print(f"[IG OAuth] long-lived exchange failed: {' | '.join(errors)}", flush=True)
   return {"access_token": short_token, "expires_in": 3600}
 
 
@@ -108,36 +85,23 @@ from insta_agent.services.instagram_profile import fetch_ig_profile, probe_me, d
 
 
 def resolve_access_token(short_token: str) -> tuple[str, int]:
-  """Pick short or long-lived token after OAuth code exchange.
-
-  Instagram Login tokens often fail /debug_token — do not treat that as bad env.
-  If code exchange returned a token, prefer long-lived exchange, then short fallback.
-  """
-  short_ok, short_err = probe_me(short_token)
-  print(f"[IG OAuth] short token probe: ok={short_ok} err={short_err}", flush=True)
-
+  """Prefer 60-day token; short-lived only if exchange fails."""
   long = exchange_long_lived_token(short_token)
-  long_token = long.get("access_token", short_token)
-  expires = int(long.get("expires_in", 5184000))
+  token = long.get("access_token", short_token)
+  expires = int(long.get("expires_in", 0))
 
-  if long_token != short_token:
-    long_ok, long_err = probe_me(long_token)
-    print(f"[IG OAuth] long token probe: ok={long_ok} err={long_err}", flush=True)
-    if long_ok:
-      return long_token, expires
-    print(f"[IG OAuth] using long token despite /me probe: {long_err}", flush=True)
-    return long_token, expires
+  if expires >= LONG_LIVED_MIN_EXPIRES:
+    ok, err = probe_me(token)
+    print(f"[IG OAuth] long token probe ok={ok} expires_in={expires} err={err}", flush=True)
+    return token, expires
 
-  if short_ok:
-    return short_token, 3600
-
+  ok, err = probe_me(short_token)
+  print(f"[IG OAuth] short token only ok={ok} err={err}", flush=True)
   if short_token:
-    print(f"[IG OAuth] using short token despite /me probe: {short_err}", flush=True)
     return short_token, 3600
 
   dbg = debug_user_token(short_token)
-  print(f"[IG OAuth] token debug: {dbg}", flush=True)
-  raise ValueError(format_token_error(dbg, short_err))
+  raise ValueError(format_token_error(dbg, err))
 
 
 def get_me_optional(access_token: str, ig_user_id: str = "") -> dict:
@@ -157,7 +121,6 @@ def oauth_configured() -> bool:
 
 
 def oauth_status() -> dict:
-  """وضعیت تنظیمات OAuth — برای نمایش در onboarding"""
   return {
     "ready": oauth_configured(),
     "app_id": bool(Config.META_APP_ID),
