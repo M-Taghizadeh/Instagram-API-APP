@@ -91,9 +91,6 @@ def log_activity(user_id, rule_type, rule_id, rule_name, ig_user_id, action,
 def _run_migrations():
   from sqlalchemy import text, inspect
 
-  is_pg = db.engine.dialect.name == "postgresql"
-  ts_type = "TIMESTAMP" if is_pg else "DATETIME"
-
   def _add_column(conn, table: str, col: str, ddl: str):
     inspector = inspect(db.engine)
     if table not in inspector.get_table_names():
@@ -128,7 +125,7 @@ def _run_migrations():
       _add_column(conn, "users", "email",
                   "ALTER TABLE users ADD COLUMN email VARCHAR(120) DEFAULT ''")
       _add_column(conn, "users", "created_at",
-                  f"ALTER TABLE users ADD COLUMN created_at {ts_type}")
+                  "ALTER TABLE users ADD COLUMN created_at TIMESTAMP")
       _add_column(conn, "users", "is_admin",
                   "ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
       _add_column(conn, "ig_accounts", "follower_count",
@@ -181,6 +178,7 @@ def _seed_plans():
 
 def init_db(app):
   with app.app_context():
+    print(f"[DB] {db.engine.dialect.name}", flush=True)
     db.create_all()
     _run_migrations()
     _seed_plans()

@@ -7,24 +7,22 @@ _BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class Config:
   SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
 
-  _DATABASE_URL = os.getenv("DATABASE_URL", "")
+  _DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip()
   if _DATABASE_URL.startswith("postgres://"):
     _DATABASE_URL = _DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-  if _DATABASE_URL:
-    SQLALCHEMY_DATABASE_URI = _DATABASE_URL
-  else:
-    _DATA_DIR = os.getenv("DATA_DIR", _BASE)
-    DB_PATH = os.path.join(_DATA_DIR, "app.db")
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{DB_PATH}"
+  if not _DATABASE_URL:
+    raise RuntimeError(
+      "DATABASE_URL is required (PostgreSQL). "
+      "Set it in Render environment variables or in your local .env file."
+    )
 
+  SQLALCHEMY_DATABASE_URI = _DATABASE_URL
   SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-  if "sqlite" in SQLALCHEMY_DATABASE_URI:
-    SQLALCHEMY_ENGINE_OPTIONS = {
-      "connect_args": {"check_same_thread": False, "timeout": 30},
-      "pool_pre_ping": True,
-    }
+  SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+  }
 
   GRAPH_API = os.getenv("GRAPH_API", "https://graph.instagram.com/v25.0")
   PER_PAGE = 10

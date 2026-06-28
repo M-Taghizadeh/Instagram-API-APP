@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
-[![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://sqlite.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?style=flat-square&logo=render&logoColor=white)](https://render.com)
 
 </div>
@@ -23,7 +23,7 @@
 - 😊 **Emoji Picker کامل** — انتخاب ایموجی از ۷ دسته‌بندی
 - 🎨 **UI حرفه‌ای** — فونت وزیرماتن، تم تاریک، کاملاً RTL
 - 📱 **Responsive** — سازگار با موبایل و دسکتاپ
-- 🗄️ **دیتابیس SQLite** — بدون نیاز به سرویس خارجی
+- 🗄️ **PostgreSQL** — دیتابیس production روی Render
 - 🚀 **آماده Deploy روی Render**
 
 ---
@@ -31,6 +31,7 @@
 ## 🖥️ پیش‌نیازها
 
 - Python 3.10+
+- PostgreSQL (لوکال یا Render)
 - حساب [Meta for Developers](https://developers.facebook.com/)
 - اپلیکیشن اینستاگرام با دسترسی Instagram Messaging API
 
@@ -73,6 +74,7 @@ cp .env.example .env
 
 ```env
 SECRET_KEY=a_very_long_random_secret_key
+DATABASE_URL=postgresql://user:password@localhost:5432/mohtavam
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your_secure_password
 ```
@@ -117,6 +119,7 @@ git push origin main
 
 | کلید | توضیح |
 |------|-------|
+| `DATABASE_URL` | Connection string دیتابیس PostgreSQL (از Render Postgres) |
 | `SECRET_KEY` | یک رشته تصادفی طولانی |
 | `ADMIN_USERNAME` | نام کاربری ادمین |
 | `ADMIN_PASSWORD` | رمز عبور ادمین |
@@ -192,7 +195,7 @@ Instagram → Meta Webhook
 | Flask | فریم‌ورک وب |
 | Flask-SQLAlchemy | ORM دیتابیس |
 | Flask-Login | مدیریت احراز هویت |
-| SQLite | دیتابیس |
+| PostgreSQL | دیتابیس |
 | Gunicorn | سرور production |
 | Vazirmatn | فونت فارسی |
 | Meta Graph API v21 | ارتباط با اینستاگرام |

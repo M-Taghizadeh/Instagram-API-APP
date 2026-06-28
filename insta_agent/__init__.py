@@ -9,7 +9,6 @@ from insta_agent.extensions import db, login_manager
 from insta_agent.models import User
 from insta_agent.routes import ALL_BLUEPRINTS
 from insta_agent.db_init import init_db
-from insta_agent.db_sqlite import configure_sqlite
 from insta_agent.services.scheduler_service import start_scheduler
 
 
@@ -20,7 +19,6 @@ def create_app():
   app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
   db.init_app(app)
-  configure_sqlite(app)
   login_manager.init_app(app)
 
   @app.teardown_appcontext
