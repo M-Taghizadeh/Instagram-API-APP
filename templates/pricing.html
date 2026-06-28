@@ -84,7 +84,7 @@
   <form method="post" action="{{ url_for('billing.checkout') }}" class="pricing-card-form">
     <input type="hidden" name="plan_slug" value="{{ plan.slug }}">
     <input type="hidden" name="period" value="1" class="period-input">
-    <button type="submit" class="btn pricing-buy-btn" {% if not zarinpal_ready %}disabled title="درگاه پرداخت تنظیم نشده"{% endif %}>
+    <button type="submit" class="btn pricing-buy-btn" {% if not zarinpal_ready %}disabled{% if current_user.is_admin %} title="درگاه پرداخت تنظیم نشده"{% else %} title="فعلاً امکان پرداخت آنلاین وجود ندارد"{% endif %}{% endif %}>
       خرید اشتراک
     </button>
   </form>
@@ -109,8 +109,8 @@
   {% endfor %}
 </div>
 
-{% if not zarinpal_ready %}
-<p class="pricing-gateway-warn">درگاه زرین‌پال هنوز تنظیم نشده — ادمین از بخش تنظیمات Merchant ID را وارد کند</p>
+{% if not zarinpal_ready and current_user.is_admin %}
+<p class="pricing-gateway-warn">درگاه زرین‌پال هنوز تنظیم نشده — از بخش تنظیمات Merchant ID را وارد کن</p>
 {% endif %}
 
 {% endblock %}
