@@ -2,9 +2,11 @@ import datetime
 
 from flask import Blueprint, redirect, url_for, request, flash, session
 from flask_login import login_required, current_user, login_user
+from sqlalchemy.exc import DBAPIError, OperationalError
 
 from insta_agent.config import Config
 from insta_agent.extensions import db
+from insta_agent.db_retry import db_retry, is_disconnect_error
 from insta_agent.models import User, IgAccount, Settings
 from insta_agent.services.instagram_oauth import (
   build_authorize_url, exchange_code_for_token, resolve_access_token,
@@ -90,6 +92,10 @@ def callback():
     flash("ابتدا ثبت‌نام کن یا وارد شو، بعد پیج اینستاگرام را وصل کن.", "error")
     return redirect(url_for("auth.register"))
 
+  user_id = user.id
+  user_is_admin = bool(user.is_admin)
+  db.session.remove()
+
   try:
     short = exchange_code_for_token(code)
     short_token = short.get("access_token", "")
@@ -115,49 +121,69 @@ def callback():
     if not ig_username:
       ig_username = f"ig_{ig_id[:8]}" if ig_id else "instagram"
 
-    existing = IgAccount.query.filter_by(ig_user_id=ig_id).first()
-    if existing and existing.user_id != user.id:
-      flash("این پیج قبلاً به حساب دیگری متصل شده.", "error")
-      return redirect(url_for("auth.pages"))
+    stored_profile = profile
+    if ig_username.startswith("ig_"):
+      retry_profile = fetch_ig_profile(access_token, ig_id)
+      if retry_profile.get("username"):
+        stored_profile = retry_profile
+        ig_username = retry_profile["username"]
 
-    has_other_page = IgAccount.query.filter(
-      IgAccount.user_id == user.id,
-      IgAccount.ig_user_id != ig_id,
-    ).first()
-    if has_other_page and not user.is_admin:
-      flash("هر اشتراک فقط یک پیج دارد. ابتدا پیج فعلی را قطع کن.", "error")
-      return redirect(url_for("auth.pages"))
-
-    IgAccount.query.filter_by(user_id=user.id).update({"is_primary": False})
-
-    if existing and existing.user_id == user.id:
-      acc = existing
+  except Exception as e:
+    if isinstance(e, (OperationalError, DBAPIError)) and is_disconnect_error(e):
+      db.session.rollback()
+      db.session.remove()
+      flash("اتصال به دیتابیس موقتاً قطع شد — دوباره «اتصال پیج اینستاگرام» را بزن.", "error")
     else:
-      acc = IgAccount(user_id=user.id, ig_user_id=ig_id)
-      db.session.add(acc)
+      flash(f"خطا در اتصال اینستاگرام: {e}", "error")
+    return redirect(url_for("auth.onboarding"))
 
-    acc.username = ig_username
-    acc.access_token = access_token
-    acc.token_expires_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
-    acc.is_primary = True
-    acc.connected_at = datetime.datetime.utcnow()
+  try:
+    def _persist_connection():
+      user = db.session.get(User, user_id)
+      if not user:
+        raise ValueError("کاربر یافت نشد — دوباره وارد شو و اتصال را تکرار کن.")
 
-    sync_ig_account_profile(acc, access_token)
-    if acc.username.startswith("ig_") and acc.access_token:
-      retry = fetch_ig_profile(acc.access_token, acc.ig_user_id)
-      if retry.get("username"):
-        apply_profile_to_account(acc, retry)
-        ig_username = acc.username
+      existing = IgAccount.query.filter_by(ig_user_id=ig_id).first()
+      if existing and existing.user_id != user.id:
+        raise ValueError("این پیج قبلاً به حساب دیگری متصل شده.")
 
-    s = Settings.query.filter_by(user_id=user.id).first()
-    if not s:
-      s = Settings(user_id=user.id, verify_token=f"verify_{user.id}")
-      db.session.add(s)
-    s.access_token = access_token
+      has_other_page = IgAccount.query.filter(
+        IgAccount.user_id == user.id,
+        IgAccount.ig_user_id != ig_id,
+      ).first()
+      if has_other_page and not user_is_admin:
+        raise ValueError("هر اشتراک فقط یک پیج دارد. ابتدا پیج فعلی را قطع کن.")
 
-    db.session.commit()
+      IgAccount.query.filter_by(user_id=user.id).update({"is_primary": False})
 
-    trial = maybe_start_trial(user.id, ig_id)
+      if existing and existing.user_id == user.id:
+        acc = existing
+      else:
+        acc = IgAccount(user_id=user.id, ig_user_id=ig_id)
+        db.session.add(acc)
+
+      acc.username = ig_username
+      acc.access_token = access_token
+      acc.token_expires_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
+      acc.is_primary = True
+      acc.connected_at = datetime.datetime.utcnow()
+
+      apply_profile_to_account(acc, stored_profile)
+
+      s = Settings.query.filter_by(user_id=user.id).first()
+      if not s:
+        s = Settings(user_id=user.id, verify_token=f"verify_{user.id}")
+        db.session.add(s)
+      s.access_token = access_token
+
+      db.session.commit()
+      trial = maybe_start_trial(user.id, ig_id)
+      return user, acc, trial
+
+    user, acc, trial = db_retry(_persist_connection)
+    if acc.username and not acc.username.startswith("ig_"):
+      ig_username = acc.username
+
     wh_ok, wh_err = subscribe_instagram_webhooks(ig_id, access_token)
     login_user(user, remember=True)
     if trial:
@@ -172,9 +198,22 @@ def callback():
       )
     return redirect(url_for("dashboard.dashboard"))
 
+  except ValueError as e:
+    flash(str(e), "error")
+    dest = url_for("auth.pages") if "پیج" in str(e) else url_for("auth.onboarding")
+    return redirect(dest)
+  except (OperationalError, DBAPIError) as e:
+    db.session.rollback()
+    db.session.remove()
+    if is_disconnect_error(e):
+      flash("اتصال به دیتابیس موقتاً قطع شد — دوباره «اتصال پیج اینستاگرام» را بزن.", "error")
+    else:
+      flash(f"خطای دیتابیس: {e}", "error")
+    return redirect(url_for("auth.onboarding"))
   except Exception as e:
+    db.session.rollback()
     flash(f"خطا در اتصال اینستاگرام: {e}", "error")
-    return redirect(url_for("auth.onboarding") if user else url_for("auth.login"))
+    return redirect(url_for("auth.onboarding"))
 
 
 @bp.route("/refresh-profiles", methods=["POST"])

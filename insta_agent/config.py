@@ -21,7 +21,16 @@ class Config:
   SQLALCHEMY_TRACK_MODIFICATIONS = False
   SQLALCHEMY_ENGINE_OPTIONS = {
     "pool_pre_ping": True,
-    "pool_recycle": 300,
+    "pool_recycle": 180,
+    "pool_size": 5,
+    "max_overflow": 10,
+    "connect_args": {
+      "connect_timeout": 10,
+      "keepalives": 1,
+      "keepalives_idle": 30,
+      "keepalives_interval": 10,
+      "keepalives_count": 5,
+    },
   }
 
   GRAPH_API = os.getenv("GRAPH_API", "https://graph.instagram.com/v25.0")
