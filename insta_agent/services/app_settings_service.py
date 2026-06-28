@@ -1,3 +1,5 @@
+from sqlalchemy.exc import IntegrityError
+
 from insta_agent.config import Config
 from insta_agent.extensions import db
 from insta_agent.models.app_settings import AppSettings
@@ -5,13 +7,18 @@ from insta_agent.models.app_settings import AppSettings
 
 def get_app_settings() -> AppSettings:
   s = db.session.get(AppSettings, 1)
-  if not s:
-    s = AppSettings(id=1)
-    if Config.ZARINPAL_MERCHANT_ID:
-      s.zarinpal_merchant_id = Config.ZARINPAL_MERCHANT_ID
-      s.zarinpal_sandbox = Config.ZARINPAL_SANDBOX
-    db.session.add(s)
+  if s:
+    return s
+  s = AppSettings(id=1)
+  if Config.ZARINPAL_MERCHANT_ID:
+    s.zarinpal_merchant_id = Config.ZARINPAL_MERCHANT_ID
+    s.zarinpal_sandbox = Config.ZARINPAL_SANDBOX
+  db.session.add(s)
+  try:
     db.session.commit()
+  except IntegrityError:
+    db.session.rollback()
+    s = db.session.get(AppSettings, 1)
   return s
 
 

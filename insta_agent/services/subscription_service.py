@@ -34,9 +34,12 @@ def get_active_subscription(user_id: int) -> Subscription | None:
   ).first()
   if not sub:
     return None
-  if sub.expires_at <= now:
+  if not sub.expires_at or sub.expires_at <= now:
     sub.status = "expired"
-    db.session.commit()
+    try:
+      db.session.commit()
+    except Exception:
+      db.session.rollback()
     return None
   return sub
 

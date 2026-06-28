@@ -50,13 +50,18 @@ def login():
   if request.method == "POST":
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
-      login_user(user, remember=bool(request.form.get("remember")))
-      nxt = request.args.get("next")
-      if nxt:
-        return redirect(nxt)
-      return after_login_redirect()
+    try:
+      user = User.query.filter_by(username=username).first()
+      if user and user.check_password(password):
+        login_user(user, remember=bool(request.form.get("remember")))
+        nxt = request.args.get("next")
+        if nxt:
+          return redirect(nxt)
+        return after_login_redirect()
+    except Exception:
+      db.session.rollback()
+      flash("خطای موقت سرور — لطفاً دوباره تلاش کن.", "error")
+      return render_template("login.html"), 503
     flash("نام کاربری یا رمز عبور اشتباه است.", "error")
   return render_template("login.html")
 

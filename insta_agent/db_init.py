@@ -2,6 +2,7 @@ import os
 import datetime
 
 from flask_login import current_user
+from sqlalchemy.exc import IntegrityError
 
 from insta_agent.config import Config
 from insta_agent.extensions import db
@@ -15,20 +16,30 @@ def get_settings():
   if not current_user.is_authenticated:
     return Settings()
   s = Settings.query.filter_by(user_id=current_user.id).first()
-  if not s:
-    s = Settings(user_id=current_user.id, access_token="", verify_token="mysecret123")
-    db.session.add(s)
+  if s:
+    return s
+  s = Settings(user_id=current_user.id, access_token="", verify_token="mysecret123")
+  db.session.add(s)
+  try:
     db.session.commit()
-  return s
+  except IntegrityError:
+    db.session.rollback()
+    s = Settings.query.filter_by(user_id=current_user.id).first()
+  return s or Settings()
 
 
 def get_settings_for(user_id: int):
   s = Settings.query.filter_by(user_id=user_id).first()
-  if not s:
-    s = Settings(user_id=user_id, access_token="", verify_token="mysecret123")
-    db.session.add(s)
+  if s:
+    return s
+  s = Settings(user_id=user_id, access_token="", verify_token="mysecret123")
+  db.session.add(s)
+  try:
     db.session.commit()
-  return s
+  except IntegrityError:
+    db.session.rollback()
+    s = Settings.query.filter_by(user_id=user_id).first()
+  return s or Settings(user_id=user_id, access_token="", verify_token="mysecret123")
 
 
 def get_access_token(user_id: int) -> str:
@@ -161,8 +172,11 @@ def _seed_plans():
       slug=slug, name=name, follower_min=fmin, follower_max=fmax,
       price_1m=p1, price_6m=p6, price_12m=p12, sort_order=order,
     ))
-  db.session.commit()
-  print("[INIT] Plans seeded", flush=True)
+  try:
+    db.session.commit()
+    print("[INIT] Plans seeded", flush=True)
+  except IntegrityError:
+    db.session.rollback()
 
 
 def init_db(app):

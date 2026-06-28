@@ -20,6 +20,12 @@ class Config:
 
   SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+  if "sqlite" in SQLALCHEMY_DATABASE_URI:
+    SQLALCHEMY_ENGINE_OPTIONS = {
+      "connect_args": {"check_same_thread": False, "timeout": 30},
+      "pool_pre_ping": True,
+    }
+
   GRAPH_API = os.getenv("GRAPH_API", "https://graph.instagram.com/v25.0")
   PER_PAGE = 10
   COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", "3600"))
