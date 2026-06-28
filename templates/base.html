@@ -66,11 +66,6 @@
         <div class="nav-section-title">حساب</div>
         <a href="{{ url_for('billing.pricing') }}" class="nav-item {% if request.path.startswith('/billing') %}active{% endif %}">
           <i data-lucide="credit-card" class="nav-icon"></i> اشتراک و تعرفه
-          {% if sub_info and sub_info.active and sub_info.is_trial %}
-          <span class="nav-badge accent">تریال</span>
-          {% elif sub_info and not sub_info.active %}
-          <span class="nav-badge warn">!</span>
-          {% endif %}
         </a>
         <a href="{{ url_for('auth.pages') }}" class="nav-item {% if request.path.startswith('/pages') %}active{% endif %}">
           <i data-lucide="instagram" class="nav-icon"></i> اتصال به اینستاگرام
@@ -104,7 +99,18 @@
 
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-  <div class="main-area">
+  <div class="main-area{% if sub_banner %} has-sub-ticker{% endif %}">
+    {% if sub_banner %}
+    <a href="{{ url_for('billing.pricing') }}" class="sub-ticker sub-ticker--{{ sub_banner.tone }}" aria-label="{{ sub_banner.message }}">
+      <div class="sub-ticker__viewport">
+        <div class="sub-ticker__track">
+          {% for _ in range(4) %}
+          <span class="sub-ticker__item">{{ sub_banner.message }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </a>
+    {% endif %}
     <div class="topbar">
       <button type="button" class="topbar-mobile-menu" onclick="openSidebar()" aria-label="منو">
         <i data-lucide="menu" style="width:22px;height:22px"></i>
