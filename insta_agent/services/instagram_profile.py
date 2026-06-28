@@ -208,21 +208,28 @@ def fetch_ig_profile_with_debug(access_token: str, ig_user_id: str = "") -> tupl
     return {}, "توکن خالی است"
 
   token_debug = debug_user_token(access_token)
-  profile, err = _graph_read(f"{GRAPH_API}/me", access_token, MIN_FIELDS)
-  if profile:
-    full, _ = _graph_read(f"{GRAPH_API}/me", access_token, PROFILE_FIELDS)
-    return full or profile, ""
+  urls = [f"{GRAPH_API}/me"]
+  if ig_user_id:
+    urls.append(f"{GRAPH_API}/{ig_user_id}")
+
+  err = ""
+  for url in urls:
+    profile, err = _graph_read(url, access_token, MIN_FIELDS)
+    if profile:
+      full, _ = _graph_read(url, access_token, PROFILE_FIELDS)
+      return full or profile, ""
 
   refreshed = refresh_ig_access_token(access_token)
   new_token = refreshed.get("access_token", "")
   if new_token and new_token != access_token:
-    profile, err = _graph_read(f"{GRAPH_API}/me", new_token, MIN_FIELDS)
-    if profile:
-      full, _ = _graph_read(f"{GRAPH_API}/me", new_token, PROFILE_FIELDS)
-      merged = full or profile
-      merged["_refreshed_access_token"] = new_token
-      merged["_expires_in"] = refreshed.get("expires_in")
-      return merged, ""
+    for url in urls:
+      profile, err = _graph_read(url, new_token, MIN_FIELDS)
+      if profile:
+        full, _ = _graph_read(url, new_token, PROFILE_FIELDS)
+        merged = full or profile
+        merged["_refreshed_access_token"] = new_token
+        merged["_expires_in"] = refreshed.get("expires_in")
+        return merged, ""
 
   return {}, format_token_error(token_debug, err)
 

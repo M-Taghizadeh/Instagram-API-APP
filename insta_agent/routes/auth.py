@@ -131,7 +131,9 @@ def pages():
 
   needs_sync = [
     a for a in accounts
-    if not a.profile_synced_at or (not a.profile_picture and not a.follower_count)
+    if not a.profile_synced_at
+    or (a.username or "").startswith("ig_")
+    or (not a.profile_picture and not a.follower_count)
   ]
   for acc in needs_sync:
     sync_ig_account_profile(acc)

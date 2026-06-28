@@ -196,6 +196,12 @@ def callback():
         "از صفحه «اتصال به اینستاگرام» دوباره «فعال‌سازی Webhook» را بزن.",
         "error",
       )
+    if ig_username.startswith("ig_"):
+      flash(
+        "یوزرنیم واقعی پیج هنوز دریافت نشده — احتمالاً توکن کوتاه‌مدت بود. "
+        "از صفحه «اتصال به اینستاگرام» دوباره «اتصال مجدد» بزن.",
+        "error",
+      )
     return redirect(url_for("dashboard.dashboard"))
 
   except ValueError as e:
