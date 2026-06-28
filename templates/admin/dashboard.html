@@ -9,11 +9,14 @@
     <div class="page-sub">گزارش جامع و مدیریت سامانه</div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <a href="{{ url_for('admin.accounting') }}" class="btn secondary small">📊 حسابداری</a>
     <a href="{{ url_for('admin.plans') }}" class="btn secondary small">قیمت پلن‌ها</a>
     <a href="{{ url_for('admin.users') }}" class="btn secondary small">کاربران</a>
-    <a href="{{ url_for('admin.payments') }}" class="btn secondary small">پرداخت‌ها</a>
   </div>
 </div>
+
+{% set active = 'dashboard' %}
+{% include "admin/_nav.html" %}
 
 <div class="stats-grid">
   <div class="stat-card">

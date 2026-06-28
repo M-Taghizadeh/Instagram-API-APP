@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, forwardRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -18,35 +18,39 @@ import { defaultDataForType, fromReactFlow, newNodeId, toReactFlow } from './ser
 
 const nodeTypes = { flowNode: FlowNode };
 
-function FlowEditorInner({ initialNodes, onChange }) {
-  const initial = useMemo(() => toReactFlow(initialNodes), [initialNodes]);
+const FlowEditorInner = forwardRef(function FlowEditorInner({ initialNodes, onChange }, ref) {
+  const initial = useRef(toReactFlow(initialNodes)).current;
   const [nodes, setNodes, onNodesChange] = useNodesState(initial.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges);
   const [selectedId, setSelectedId] = useState(null);
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
 
-  const selectedNode = nodes.find((n) => n.id === selectedId) || null;
+  nodesRef.current = nodes;
+  edgesRef.current = edges;
 
-  const emit = useCallback(
-    (nextNodes, nextEdges) => {
-      onChange?.(fromReactFlow(nextNodes, nextEdges));
-    },
-    [onChange]
-  );
+  const serialize = useCallback(() => {
+    return fromReactFlow(nodesRef.current, edgesRef.current);
+  }, []);
+
+  const emit = useCallback(() => {
+    onChange?.(serialize());
+  }, [onChange, serialize]);
+
+  useImperativeHandle(ref, () => ({
+    getNodes: serialize,
+  }), [serialize]);
+
+  useEffect(() => {
+    emit();
+  }, [nodes, edges, emit]);
 
   const onConnect = useCallback(
     (connection) => {
-      setEdges((eds) => {
-        const next = addEdge({ ...connection, type: 'smoothstep', animated: true }, eds);
-        emit(nodes, next);
-        return next;
-      });
+      setEdges((eds) => addEdge({ ...connection, type: 'smoothstep', animated: true }, eds));
     },
-    [nodes, emit, setEdges]
+    [setEdges]
   );
-
-  const onNodeDragStop = useCallback(() => {
-    emit(nodes, edges);
-  }, [nodes, edges, emit]);
 
   const addNode = (type) => {
     const id = newNodeId();
@@ -61,50 +65,40 @@ function FlowEditorInner({ initialNodes, onChange }) {
         ...defaultDataForType(type),
       },
     };
-    const nextNodes = [...nodes, newNode];
-    setNodes(nextNodes);
+    setNodes((nds) => [...nds, newNode]);
     setSelectedId(id);
-    emit(nextNodes, edges);
   };
 
   const updateNodeData = (id, data) => {
-    const nextNodes = nodes.map((n) => (n.id === id ? { ...n, data } : n));
-    setNodes(nextNodes);
-    emit(nextNodes, edges);
+    setNodes((nds) => nds.map((n) => (n.id === id ? { ...n, data } : n)));
   };
 
   const setStartNode = (id, isStart) => {
-    const nextNodes = nodes.map((n) => ({
+    setNodes((nds) => nds.map((n) => ({
       ...n,
       data: {
         ...n.data,
         isStart: n.id === id ? isStart : isStart ? false : n.data.isStart,
       },
-    }));
-    setNodes(nextNodes);
-    emit(nextNodes, edges);
+    })));
   };
 
   const deleteNode = (id) => {
-    const nextNodes = nodes.filter((n) => n.id !== id);
-    const nextEdges = edges.filter((e) => e.source !== id && e.target !== id);
-    setNodes(nextNodes);
-    setEdges(nextEdges);
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+    setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
     setSelectedId(null);
-    emit(nextNodes, nextEdges);
   };
 
   const onNodesDelete = useCallback(
     (deleted) => {
       const ids = new Set(deleted.map((n) => n.id));
-      const nextNodes = nodes.filter((n) => !ids.has(n.id));
-      const nextEdges = edges.filter((e) => !ids.has(e.source) && !ids.has(e.target));
-      setNodes(nextNodes);
-      setEdges(nextEdges);
-      emit(nextNodes, nextEdges);
+      setNodes((nds) => nds.filter((n) => !ids.has(n.id)));
+      setEdges((eds) => eds.filter((e) => !ids.has(e.source) && !ids.has(e.target)));
     },
-    [nodes, edges, setNodes, setEdges, emit]
+    [setNodes, setEdges]
   );
+
+  const selectedNode = nodes.find((n) => n.id === selectedId) || null;
 
   return (
     <div className="fe-layout">
@@ -129,7 +123,6 @@ function FlowEditorInner({ initialNodes, onChange }) {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           fitView
           onNodeClick={(_, node) => setSelectedId(node.id)}
@@ -155,12 +148,12 @@ function FlowEditorInner({ initialNodes, onChange }) {
       />
     </div>
   );
-}
+});
 
-export default function FlowEditor(props) {
+export default function FlowEditor({ editorRef, ...props }) {
   return (
     <ReactFlowProvider>
-      <FlowEditorInner {...props} />
+      <FlowEditorInner ref={editorRef} {...props} />
     </ReactFlowProvider>
   );
 }

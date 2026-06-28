@@ -1,10 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
 from flask_login import login_required, current_user
 
 from insta_agent.extensions import db
 from insta_agent.models import ActivityLog, CooldownEntry
 from insta_agent.db_init import get_settings
 from insta_agent.services.instagram_oauth import oauth_configured
+from insta_agent.services.app_settings_service import get_app_settings
 
 bp = Blueprint("settings", __name__)
 
@@ -14,7 +15,20 @@ bp = Blueprint("settings", __name__)
 def settings():
   s = get_settings()
   ig = current_user.primary_ig_account
+  app_cfg = get_app_settings()
+
   if request.method == "POST":
+    form_type = request.form.get("form_type", "user")
+
+    if form_type == "zarinpal":
+      if not current_user.is_admin:
+        abort(403)
+      app_cfg.zarinpal_merchant_id = request.form.get("zarinpal_merchant_id", "").strip()
+      app_cfg.zarinpal_sandbox = request.form.get("zarinpal_sandbox") == "1"
+      db.session.commit()
+      flash("تنظیمات زرین‌پال ذخیره شد.", "success")
+      return redirect(url_for("settings.settings"))
+
     s.access_token = request.form.get("access_token", "").strip()
     s.verify_token = request.form.get("verify_token", "").strip()
     s.cooldown_enabled = request.form.get("cooldown_enabled") == "1"
@@ -25,7 +39,14 @@ def settings():
     db.session.commit()
     flash("تنظیمات ذخیره شد.", "success")
     return redirect(url_for("settings.settings"))
-  return render_template("settings.html", s=s, ig_account=ig, oauth_ready=oauth_configured())
+
+  return render_template(
+    "settings.html",
+    s=s,
+    ig_account=ig,
+    oauth_ready=oauth_configured(),
+    app_cfg=app_cfg,
+  )
 
 
 @bp.route("/change-password", methods=["GET", "POST"])

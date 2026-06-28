@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import FlowEditor from './FlowEditor';
 import './editor.css';
@@ -16,7 +17,9 @@ function mount() {
   }
 
   let latest = initialNodes;
-  const onChange = (nodes) => {
+  const editorRef = createRef();
+
+  const syncHidden = (nodes) => {
     latest = nodes;
     const json = JSON.stringify(nodes, null, 2);
     hiddenInput.value = json;
@@ -24,17 +27,21 @@ function mount() {
     if (pre) pre.textContent = json;
   };
 
+  const onChange = (nodes) => syncHidden(nodes);
+
   hiddenInput.value = JSON.stringify(initialNodes, null, 2);
 
   const form = rootEl.closest('form');
   if (form) {
     form.addEventListener('submit', () => {
+      const fresh = editorRef.current?.getNodes?.();
+      if (fresh) syncHidden(fresh);
       hiddenInput.value = JSON.stringify(latest, null, 2);
-    });
+    }, true);
   }
 
   createRoot(rootEl).render(
-    <FlowEditor initialNodes={initialNodes} onChange={onChange} />
+    <FlowEditor editorRef={editorRef} initialNodes={initialNodes} onChange={onChange} />
   );
 }
 

@@ -47,6 +47,44 @@
   {% endif %}
 </div>
 
+{% if current_user.is_admin %}
+<!-- ══ Zarinpal (admin only) ══ -->
+<div class="card" style="padding:20px 22px;margin-bottom:20px;border-color:rgba(34,211,160,.2);">
+  <div class="settings-section-head">
+    <div class="settings-icon green">💳</div>
+    <div>
+      <div class="settings-title">درگاه پرداخت زرین‌پال</div>
+      <div class="settings-sub">فقط ادمین — Merchant ID و حالت تست/واقعی</div>
+    </div>
+    {% if app_cfg.zarinpal_merchant_id %}
+    <span class="badge ok" style="margin-right:auto;">● پیکربندی شده</span>
+    {% else %}
+    <span class="badge danger" style="margin-right:auto;">○ تنظیم نشده</span>
+    {% endif %}
+  </div>
+  <form method="post">
+    <input type="hidden" name="form_type" value="zarinpal">
+    <div class="field">
+      <label>Merchant ID</label>
+      <input type="text" name="zarinpal_merchant_id" value="{{ app_cfg.zarinpal_merchant_id }}"
+             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" dir="ltr" autocomplete="off">
+      <div class="hint">از پنل زرین‌پال → درگاه پرداخت → اطلاعات درگاه</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:16px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;">حالت Sandbox (تست)</div>
+        <div style="font-size:11px;color:var(--text-faint);margin-top:2px;">برای تست پرداخت فعال کن — در production خاموش کن</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" name="zarinpal_sandbox" value="1" {{ 'checked' if app_cfg.zarinpal_sandbox else '' }}>
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <button type="submit" class="btn" style="width:100%;max-width:320px;">💾 ذخیره تنظیمات زرین‌پال</button>
+  </form>
+</div>
+{% endif %}
+
 <!-- ══ Row 0: Connection status banner ══ -->
 <div class="card" style="padding:14px 20px;margin-bottom:20px;
      display:flex;align-items:center;gap:14px;flex-wrap:wrap;">

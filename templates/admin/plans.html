@@ -11,6 +11,9 @@
   <a href="{{ url_for('admin.dashboard') }}" class="btn secondary small">بازگشت</a>
 </div>
 
+{% set active = 'plans' %}
+{% include "admin/_nav.html" %}
+
 <form method="post">
   <div class="card" style="padding:0;overflow:hidden;">
     <table style="width:100%;border-collapse:collapse;font-size:13px;">

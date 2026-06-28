@@ -170,6 +170,8 @@ def init_db(app):
     db.create_all()
     _run_migrations()
     _seed_plans()
+    from insta_agent.services.app_settings_service import get_app_settings
+    get_app_settings()
     if not User.query.first():
       admin_user = os.getenv("ADMIN_USERNAME", "admin")
       admin_pass = os.getenv("ADMIN_PASSWORD", "admin123")

@@ -1,0 +1,9 @@
+<div class="admin-nav" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+  <a href="{{ url_for('admin.dashboard') }}" class="btn ghost small {% if active == 'dashboard' %}active{% endif %}">داشبورد</a>
+  <a href="{{ url_for('admin.accounting') }}" class="btn ghost small {% if active == 'accounting' %}active{% endif %}">📊 حسابداری</a>
+  <a href="{{ url_for('admin.plans') }}" class="btn ghost small {% if active == 'plans' %}active{% endif %}">قیمت پلن‌ها</a>
+  <a href="{{ url_for('admin.users') }}" class="btn ghost small {% if active == 'users' %}active{% endif %}">کاربران</a>
+</div>
+<style>
+.admin-nav .btn.ghost.active { border-color:var(--accent-2); color:var(--text); background:rgba(108,79,255,.12); }
+</style>

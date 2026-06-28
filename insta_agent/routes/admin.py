@@ -10,6 +10,7 @@ from insta_agent.models import (
   User, Plan, Subscription, Payment, IgAccount, Flow, Contact, ActivityLog,
 )
 from insta_agent.utils import now_tehran
+from insta_agent.services.accounting_service import build_report, export_csv, MONTH_NAMES
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -127,9 +128,49 @@ def users():
 @login_required
 @admin_required
 def payments():
-  status = request.args.get("status", "")
-  query = Payment.query
-  if status:
-    query = query.filter_by(status=status)
-  items = query.order_by(Payment.created_at.desc()).limit(200).all()
-  return render_template("admin/payments.html", payments=items, status=status)
+  return redirect(url_for("admin.accounting", **dict(request.args)))
+
+
+@bp.route("/accounting")
+@login_required
+@admin_required
+def accounting():
+  period = request.args.get("period", "month")
+  date_from = request.args.get("date_from", "")
+  date_to = request.args.get("date_to", "")
+  year = request.args.get("year", type=int)
+  month = request.args.get("month", type=int)
+  status_filter = request.args.get("status", "")
+
+  report = build_report(period, date_from, date_to, year, month, status_filter)
+  years = list(range(now_tehran().year, now_tehran().year - 5, -1))
+
+  return render_template(
+    "admin/accounting.html",
+    report=report,
+    years=years,
+    month_names=MONTH_NAMES,
+  )
+
+
+@bp.route("/accounting/export")
+@login_required
+@admin_required
+def accounting_export():
+  from flask import Response
+
+  period = request.args.get("period", "month")
+  date_from = request.args.get("date_from", "")
+  date_to = request.args.get("date_to", "")
+  year = request.args.get("year", type=int)
+  month = request.args.get("month", type=int)
+  status_filter = request.args.get("status", "")
+
+  report = build_report(period, date_from, date_to, year, month, status_filter)
+  csv_data = export_csv(report)
+  filename = f"accounting_{report['period']}_{now_tehran().strftime('%Y%m%d')}.csv"
+  return Response(
+    "\ufeff" + csv_data,
+    mimetype="text/csv; charset=utf-8",
+    headers={"Content-Disposition": f"attachment; filename={filename}"},
+  )

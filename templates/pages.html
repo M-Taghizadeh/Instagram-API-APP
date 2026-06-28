@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}پیج‌های من — Insta Agent{% endblock %}
-{% block topbar_title %}پیج‌های اینستاگرام{% endblock %}
+{% block title %}اتصال به اینستاگرام — Insta Agent{% endblock %}
+{% block topbar_title %}اتصال به اینستاگرام{% endblock %}
 {% block topbar_right %}
   {% if oauth_ready and not accounts %}
   <a href="{{ url_for('oauth.connect') }}" class="btn small">+ اتصال پیج</a>
@@ -10,8 +10,8 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">📸 پیج‌های من</div>
-    <div class="page-sub">پیج‌های متصل‌شده — توکن به‌صورت خودکار از Instagram OAuth دریافت می‌شود</div>
+    <div class="page-title">📸 اتصال به اینستاگرام</div>
+    <div class="page-sub">پیج متصل‌شده — توکن به‌صورت خودکار از Instagram OAuth دریافت می‌شود</div>
   </div>
 </div>
 

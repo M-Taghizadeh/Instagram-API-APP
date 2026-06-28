@@ -11,68 +11,279 @@
 </div>
 
 {% if sub_info %}
-<div class="card" style="padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+<div class="card pricing-status-bar">
   <div>
   {% if sub_info.active %}
     <span class="badge ok">● {{ sub_info.label }}</span>
     {% if sub_info.followers %}
-    <span style="font-size:12px;color:var(--text-faint);margin-right:10px;">فالوور پیج: {{ "{:,}".format(sub_info.followers) }}</span>
+    <span class="pricing-status-meta">فالوور پیج: <span class="fa-num">{{ sub_info.followers }}</span></span>
     {% endif %}
   {% else %}
     <span class="badge danger">○ {{ sub_info.label }}</span>
     {% if sub_info.suggested_plan %}
-    <span style="font-size:12px;color:var(--text-dim);margin-right:10px;">پلن پیشنهادی: <b>{{ sub_info.suggested_plan.name }}</b></span>
+    <span class="pricing-status-meta">پلن پیشنهادی: <b>{{ sub_info.suggested_plan.name }}</b></span>
     {% endif %}
     {% if sub_info.trial_available %}
-    <span style="font-size:12px;color:var(--ok);">— با وصل پیج، ۷ روز تریال رایگان</span>
+    <span class="pricing-status-meta pricing-trial-hint">— با وصل پیج، ۷ روز تریال رایگان</span>
     {% endif %}
   {% endif %}
   </div>
 </div>
 {% endif %}
 
-<div style="display:flex;justify-content:center;margin-bottom:24px;gap:8px;" id="periodToggle">
-  <button type="button" class="btn secondary small period-btn active" data-period="1">۱ ماهه</button>
-  <button type="button" class="btn secondary small period-btn" data-period="6">۶ ماهه</button>
-  <button type="button" class="btn secondary small period-btn" data-period="12">۱۲ ماهه</button>
+<div class="pricing-period-toggle" id="periodToggle">
+  <button type="button" class="pricing-period-btn period-btn active" data-period="1">۱ ماهه</button>
+  <button type="button" class="pricing-period-btn period-btn" data-period="6">۶ ماهه</button>
+  <button type="button" class="pricing-period-btn period-btn" data-period="12">۱۲ ماهه</button>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;">
-  {% for plan in plans %}
-  <div class="card" style="padding:20px;display:flex;flex-direction:column;{% if sub_info and sub_info.suggested_plan and sub_info.suggested_plan.slug == plan.slug %}border-color:rgba(34,211,160,.4);{% endif %}">
-    <div style="font-size:22px;font-weight:900;margin-bottom:4px;">{{ plan.name }}</div>
-    <div style="font-size:12px;color:var(--text-faint);margin-bottom:16px;">{{ plan.follower_label() }} فالوور</div>
-    <div style="font-size:28px;font-weight:900;margin-bottom:4px;" class="plan-price"
-         data-p1="{{ plan.price_1m }}" data-p6="{{ plan.price_6m }}" data-p12="{{ plan.price_12m }}">
-      {{ "{:,}".format(plan.price_1m) }}
-    </div>
-    <div style="font-size:11px;color:var(--text-faint);margin-bottom:16px;">تومان / دوره</div>
-    <ul style="font-size:12px;color:var(--text-dim);line-height:2;margin-bottom:16px;flex:1;list-style:none;">
-      <li>✓ همه امکانات نامحدود</li>
-      <li>✓ ۱ پیج اینستاگرام</li>
-      <li>✓ فلو، CRM، پیامک</li>
-    </ul>
+{% macro plan_card(plan) %}
+<div class="pricing-card card{% if sub_info and sub_info.suggested_plan and sub_info.suggested_plan.slug == plan.slug %} pricing-card--suggested{% endif %}">
   {% if sub_info and sub_info.suggested_plan and sub_info.suggested_plan.slug == plan.slug %}
-    <span class="badge ok" style="margin-bottom:10px;justify-content:center;">پیشنهاد برای پیج شما</span>
+  <div class="pricing-suggested-ribbon">پیشنهاد برای پیج شما</div>
   {% endif %}
-    <form method="post" action="{{ url_for('billing.checkout') }}">
-      <input type="hidden" name="plan_slug" value="{{ plan.slug }}">
-      <input type="hidden" name="period" value="1" class="period-input">
-      <button type="submit" class="btn" style="width:100%;" {% if not zarinpal_ready %}disabled title="درگاه پرداخت تنظیم نشده"{% endif %}>
-        خرید اشتراک
-      </button>
-    </form>
+  <div class="pricing-card-head">
+    <div class="pricing-plan-name">{{ plan.name }}</div>
+    <div class="pricing-follower-range">{{ plan.follower_label() }} فالوور</div>
   </div>
+  <div class="pricing-price-block">
+    <div class="plan-price pricing-price"
+         data-p1="{{ plan.price_1m }}" data-p6="{{ plan.price_6m }}" data-p12="{{ plan.price_12m }}">
+      {{ plan.price_1m }}
+    </div>
+    <div class="pricing-price-unit">تومان / دوره</div>
+  </div>
+  <ul class="pricing-features">
+    <li><span class="pricing-check">✓</span> پاسخ اتوماتیک به کامنت <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> کامنت اتوماتیک <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> دایرکت هوشمند <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> دایرکت هوشمند (فلو چارت) <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> ارسال ویس در دایرکت <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> ارسال ویدیو در دایرکت <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> فضای ذخیره‌سازی <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> پیام پیگیری <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> پاسخ به ریپلای استوری <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> کمپین پاسخ اتوماتیک <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> کمپین کامنت اتوماتیک <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> پاسخ به منشن استوری <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> تعداد دستور <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> دایرکت دکمه‌دار <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> دایرکت چرخ‌وفلک <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> پیام خوش‌آمدگویی <b>نامحدود</b></li>
+    <li><span class="pricing-check">✓</span> CRM مخاطبین و پیامک</li>
+    <li><span class="pricing-check">✓</span> اتصال به <b>۱</b> اکانت اینستاگرام</li>
+  </ul>
+  <form method="post" action="{{ url_for('billing.checkout') }}" class="pricing-card-form">
+    <input type="hidden" name="plan_slug" value="{{ plan.slug }}">
+    <input type="hidden" name="period" value="1" class="period-input">
+    <button type="submit" class="btn pricing-buy-btn" {% if not zarinpal_ready %}disabled title="درگاه پرداخت تنظیم نشده"{% endif %}>
+      خرید اشتراک
+    </button>
+  </form>
+</div>
+{% endmacro %}
+
+<div class="pricing-row">
+  {% for plan in plans[:3] %}
+  {{ plan_card(plan) }}
+  {% endfor %}
+</div>
+
+<div class="pricing-row">
+  {% for plan in plans[3:6] %}
+  {{ plan_card(plan) }}
+  {% endfor %}
+</div>
+
+<div class="pricing-row pricing-row--last">
+  {% for plan in plans[6:] %}
+  {{ plan_card(plan) }}
   {% endfor %}
 </div>
 
 {% if not zarinpal_ready %}
-<p style="text-align:center;margin-top:20px;font-size:12px;color:var(--warn);">درگاه زرین‌پال هنوز توسط ادمین تنظیم نشده (ZARINPAL_MERCHANT_ID)</p>
+<p class="pricing-gateway-warn">درگاه زرین‌پال هنوز تنظیم نشده — ادمین از بخش تنظیمات Merchant ID را وارد کند</p>
 {% endif %}
 
 {% endblock %}
 
 {% block extra_js %}
+<style>
+.pricing-status-bar {
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pricing-status-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-right: 10px;
+}
+.pricing-trial-hint { color: var(--ok); }
+
+.pricing-period-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.pricing-period-btn {
+  padding: 10px 28px !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  min-width: 100px;
+}
+.pricing-period-btn.active {
+  background: linear-gradient(135deg, rgba(108,79,255,.35), rgba(224,65,127,.25)) !important;
+  border-color: rgba(108,79,255,.5) !important;
+  color: var(--text) !important;
+  box-shadow: 0 0 20px rgba(108,79,255,.2);
+}
+
+.pricing-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.pricing-row--last {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0;
+}
+.pricing-row--last .pricing-card {
+  max-width: 380px;
+  width: 100%;
+}
+
+.pricing-card {
+  position: relative;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+  overflow: hidden;
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+.pricing-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(108,79,255,.35);
+  box-shadow: 0 12px 40px rgba(108,79,255,.12);
+}
+.pricing-card--suggested {
+  border-color: rgba(34,211,160,.45) !important;
+  box-shadow: 0 0 0 1px rgba(34,211,160,.15), 0 8px 32px rgba(34,211,160,.08);
+}
+.pricing-suggested-ribbon {
+  background: linear-gradient(90deg, rgba(34,211,160,.2), rgba(34,211,160,.08));
+  color: var(--ok);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(34,211,160,.2);
+}
+.pricing-card-head {
+  padding: 24px 22px 0;
+  text-align: center;
+}
+.pricing-plan-name {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -.5px;
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.pricing-follower-range {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 6px;
+}
+.pricing-price-block {
+  text-align: center;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  margin: 0 16px;
+}
+.pricing-price {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -.5px;
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+.pricing-price-unit {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 6px;
+}
+.pricing-features {
+  list-style: none;
+  padding: 16px 20px;
+  margin: 0;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 340px;
+  scrollbar-width: thin;
+}
+.pricing-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.85;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.pricing-features li:last-child { border-bottom: none; }
+.pricing-features b {
+  color: var(--text);
+  font-weight: 700;
+}
+.pricing-check {
+  color: var(--ok);
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.pricing-card-form {
+  padding: 16px 20px 22px;
+  margin-top: auto;
+  border-top: 1px solid var(--border-soft);
+}
+.pricing-buy-btn {
+  width: 100%;
+  padding: 13px !important;
+  font-size: 14px !important;
+}
+.pricing-gateway-warn {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--warn);
+}
+
+@media (max-width: 1000px) {
+  .pricing-row { grid-template-columns: 1fr 1fr; }
+  .pricing-row--last { display: grid; grid-template-columns: 1fr; }
+  .pricing-row--last .pricing-card { max-width: none; }
+}
+@media (max-width: 640px) {
+  .pricing-row { grid-template-columns: 1fr; }
+  .pricing-card { min-height: auto; }
+  .pricing-features { max-height: none; }
+}
+</style>
 <script>
 (function() {
   let period = 1;
@@ -80,7 +291,9 @@
   const prices = document.querySelectorAll('.plan-price');
   const inputs = document.querySelectorAll('.period-input');
 
-  function fmt(n) { return Number(n).toLocaleString('fa-IR'); }
+  function fmt(n) {
+    return Number(n).toLocaleString('fa-IR');
+  }
 
   function update() {
     prices.forEach(el => {
@@ -90,12 +303,18 @@
     });
     inputs.forEach(i => { i.value = period; });
     btns.forEach(b => b.classList.toggle('active', Number(b.dataset.period) === period));
+    document.querySelectorAll('.fa-num').forEach(el => {
+      const n = parseInt(el.textContent.replace(/\D/g, ''), 10);
+      if (!isNaN(n)) el.textContent = fmt(n);
+    });
   }
 
   btns.forEach(b => b.addEventListener('click', () => {
     period = Number(b.dataset.period);
     update();
   }));
+
+  update();
 })();
 </script>
 {% endblock %}

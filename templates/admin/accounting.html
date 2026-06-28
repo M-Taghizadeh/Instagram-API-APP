@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}حسابداری — ادمین{% endblock %}
+{% block topbar_title %}پنل حسابداری و مالی{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">📊 حسابداری و مالی</div>
+    <div class="page-sub">گزارش درآمد سامانه — {{ report.period_label }}</div>
+  </div>
+  <a href="{{ url_for('admin.accounting_export', period=report.period, date_from=report.date_from, date_to=report.date_to, year=report.year, month=report.month, status=report.status_filter) }}"
+     class="btn secondary small">⬇ خروجی CSV</a>
+</div>
+
+{% set active = 'accounting' %}
+{% include "admin/_nav.html" %}
+
+<!-- فیلترها -->
+<div class="card" style="padding:18px 20px;margin-bottom:20px;">
+  <div style="font-weight:800;margin-bottom:14px;font-size:13px;">فیلتر گزارش</div>
+  <form method="get" id="filterForm">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+      {% for key, label in [('today','امروز'),('month','این ماه'),('year','امسال'),('all','کل دوره'),('month_pick','ماه خاص'),('custom','بازه تاریخ')] %}
+      <button type="submit" name="period" value="{{ key }}"
+        class="btn ghost small {% if report.period == key %}active{% endif %}"
+        style="{% if report.period == key %}border-color:var(--accent-2);background:rgba(108,79,255,.1);{% endif %}">
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <div id="monthPick" style="display:{% if report.period == 'month_pick' %}flex{% else %}none{% endif %};gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:end;">
+      <div class="field" style="margin:0;">
+        <label>سال</label>
+        <select name="year" style="width:100px;">
+          {% for y in years %}
+          <option value="{{ y }}" {{ 'selected' if report.year == y }}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" style="margin:0;">
+        <label>ماه</label>
+        <select name="month" style="width:120px;">
+          {% for m in range(1, 13) %}
+          <option value="{{ m }}" {{ 'selected' if report.month == m }}>{{ month_names[m] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <input type="hidden" name="period" value="month_pick">
+      <button type="submit" class="btn small">اعمال</button>
+    </div>
+
+    <div id="customRange" style="display:{% if report.period == 'custom' %}flex{% else %}none{% endif %};gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:end;">
+      <div class="field" style="margin:0;">
+        <label>از تاریخ</label>
+        <input type="date" name="date_from" value="{{ report.date_from }}" dir="ltr">
+      </div>
+      <div class="field" style="margin:0;">
+        <label>تا تاریخ</label>
+        <input type="date" name="date_to" value="{{ report.date_to }}" dir="ltr">
+      </div>
+      <input type="hidden" name="period" value="custom">
+      <button type="submit" class="btn small">اعمال</button>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:12px;color:var(--text-faint);">وضعیت:</span>
+      <a href="{{ url_for('admin.accounting', period=report.period, date_from=report.date_from, date_to=report.date_to, year=report.year, month=report.month) }}" class="btn ghost small {% if not report.status_filter %}active{% endif %}">همه</a>
+      <a href="{{ url_for('admin.accounting', period=report.period, date_from=report.date_from, date_to=report.date_to, year=report.year, month=report.month, status='paid') }}" class="btn ghost small">موفق</a>
+      <a href="{{ url_for('admin.accounting', period=report.period, date_from=report.date_from, date_to=report.date_to, year=report.year, month=report.month, status='pending') }}" class="btn ghost small">در انتظار</a>
+      <a href="{{ url_for('admin.accounting', period=report.period, date_from=report.date_from, date_to=report.date_to, year=report.year, month=report.month, status='failed') }}" class="btn ghost small">ناموفق</a>
+    </div>
+  </form>
+</div>
+
+<!-- خلاصه مالی -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-icon green">💰</div>
+    <div class="stat-label">درآمد دوره</div>
+    <div class="stat-value" style="font-size:26px;">{{ "{:,}".format(report.revenue) }}</div>
+    <div class="stat-sub">تومان · {{ report.count_paid }} تراکنش موفق</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon purple">📈</div>
+    <div class="stat-label">میانگین هر تراکنش</div>
+    <div class="stat-value" style="font-size:26px;">{{ "{:,}".format(report.avg_transaction) }}</div>
+    <div class="stat-sub">تومان</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon pink">⚠️</div>
+    <div class="stat-label">ناموفق / در انتظار</div>
+    <div class="stat-value" style="font-size:26px;">{{ report.count_failed }} / {{ report.count_pending }}</div>
+    <div class="stat-sub">در همین بازه</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon cyan">🏦</div>
+    <div class="stat-label">درآمد کل (از ابتدا)</div>
+    <div class="stat-value" style="font-size:26px;">{{ "{:,}".format(report.revenue_all) }}</div>
+    <div class="stat-sub">تومان</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:20px;" class="dash-chart-row">
+  <!-- نمودار روزانه -->
+  <div class="card" style="padding:20px;">
+    <div style="font-weight:800;margin-bottom:14px;">روند درآمد روزانه</div>
+    <canvas id="revenueChart" height="120"></canvas>
+    {% if not report.chart_data %}
+    <p style="text-align:center;color:var(--text-faint);font-size:12px;margin-top:12px;">داده‌ای در این بازه نیست</p>
+    {% endif %}
+  </div>
+
+  <!-- تفکیک پلن -->
+  <div class="card" style="padding:20px;">
+    <div style="font-weight:800;margin-bottom:14px;">درآمد به تفکیک پلن</div>
+    {% if report.plan_rows %}
+    <div class="grid" style="gap:10px;">
+      {% for slug, data in report.plan_rows %}
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+        <span class="badge purple">{{ slug }}</span>
+        <span>{{ "{:,}".format(data.revenue) }} <span style="color:var(--text-faint);font-size:11px;">({{ data.count }})</span></span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--text-faint);font-size:12px;">—</p>
+    {% endif %}
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border-soft);">
+      <div style="font-weight:800;margin-bottom:10px;font-size:13px;">به تفکیک دوره اشتراک</div>
+      {% for label, data in report.period_rows %}
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;color:var(--text-dim);">
+        <span>{{ label }}</span>
+        <span>{{ "{:,}".format(data.revenue) }} تومان</span>
+      </div>
+      {% else %}
+      <span style="color:var(--text-faint);font-size:12px;">—</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- گزارش ماهانه سال -->
+<div class="card" style="padding:20px;margin-bottom:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+    <div style="font-weight:800;">گزارش ماهانه — سال {{ report.year }}</div>
+    <form method="get" style="display:flex;gap:8px;align-items:center;">
+      <input type="hidden" name="period" value="year">
+      <select name="year" onchange="this.form.submit()" style="width:90px;">
+        {% for y in years %}
+        <option value="{{ y }}" {{ 'selected' if report.year == y }}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+    {% for row in report.monthly_rows %}
+    <a href="{{ url_for('admin.accounting', period='month_pick', year=report.year, month=row.month) }}"
+       class="card" style="padding:12px 14px;text-decoration:none;{% if row.revenue %}border-color:rgba(34,211,160,.25);{% endif %}">
+      <div style="font-size:11px;color:var(--text-faint);">{{ row.name }}</div>
+      <div style="font-size:16px;font-weight:800;margin-top:4px;">{{ "{:,}".format(row.revenue) }}</div>
+      <div style="font-size:10px;color:var(--text-faint);">تومان</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- جدول تراکنش‌ها -->
+<div class="card" style="padding:0;overflow:hidden;">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border-soft);font-weight:800;">
+    جزئیات تراکنش‌ها ({{ report.payments|length }})
+  </div>
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <tr style="background:var(--panel-2);color:var(--text-faint);">
+        <th style="padding:10px;">#</th>
+        <th>کاربر</th>
+        <th>پلن</th>
+        <th>دوره</th>
+        <th>مبلغ (تومان)</th>
+        <th>وضعیت</th>
+        <th>کد پیگیری</th>
+        <th>تاریخ پرداخت</th>
+      </tr>
+      {% for p in report.payments %}
+      <tr style="border-top:1px solid var(--border-soft);">
+        <td style="padding:10px;">{{ p.id }}</td>
+        <td>{{ p.user.username if p.user else p.user_id }}</td>
+        <td><span class="badge purple">{{ p.plan_slug }}</span></td>
+        <td>{{ p.period_months }} ماه</td>
+        <td style="font-weight:700;">{{ "{:,}".format(p.amount_toman) }}</td>
+        <td><span class="badge {% if p.status == 'paid' %}ok{% elif p.status == 'failed' %}danger{% else %}pink{% endif %}">{{ p.status }}</span></td>
+        <td style="font-family:monospace;font-size:11px;">{{ p.ref_id or '—' }}</td>
+        <td style="color:var(--text-faint);white-space:nowrap;">
+          {{ (p.verified_at or p.created_at).strftime('%Y/%m/%d %H:%M') if (p.verified_at or p.created_at) else '—' }}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="padding:40px;text-align:center;color:var(--text-faint);">تراکنشی در این بازه یافت نشد</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/chart.js/chart.umd.min.js') }}"></script>
+<script>
+(function() {
+  const labels = {{ report.chart_labels | tojson }};
+  const data   = {{ report.chart_data | tojson }};
+  const ctx = document.getElementById('revenueChart');
+  if (!ctx || !data.length) return;
+  const grad = ctx.getContext('2d').createLinearGradient(0, 0, 0, 160);
+  grad.addColorStop(0, 'rgba(34,211,160,.35)');
+  grad.addColorStop(1, 'rgba(34,211,160,.02)');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'درآمد (تومان)',
+        data,
+        backgroundColor: grad,
+        borderColor: '#22d3a0',
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#7a7299', font: { family: 'Vazirmatn' } } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#7a7299', callback: v => v.toLocaleString('fa-IR') } }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

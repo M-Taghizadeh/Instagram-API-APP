@@ -96,14 +96,25 @@ def flow_list():
   return render_template("flows.html", pagination=pagination, q=q, kind=kind, flow_kinds=FLOW_KINDS)
 
 
+def _parse_nodes_from_form(raw: str, flow_kind: str) -> list:
+  try:
+    nodes = json.loads(raw or "[]")
+    if isinstance(nodes, list) and nodes:
+      return nodes
+  except json.JSONDecodeError:
+    pass
+  nodes = _default_nodes(flow_kind)
+  _link_nodes(nodes)
+  return nodes
+
+
 @bp.route("/new", methods=["GET", "POST"])
 @login_required
 def new_flow():
   if request.method == "POST":
     kind = request.form.get("flow_kind", "automation")
     channel = request.form.get("channel", "dm")
-    nodes = _default_nodes(kind)
-    _link_nodes(nodes)
+    nodes = _parse_nodes_from_form(request.form.get("nodes_json", "[]"), kind)
     flow = Flow(
       user_id=current_user.id,
       name=request.form.get("name", "فلو جدید").strip(),
