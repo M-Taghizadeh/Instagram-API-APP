@@ -20,7 +20,7 @@ def connect():
   if not oauth_configured():
     flash("OAuth تنظیم نشده — META_APP_ID، META_APP_SECRET و OAUTH_REDIRECT_URI را در Render تنظیم کن.", "error")
     return redirect(url_for("auth.onboarding"))
-  if IgAccount.query.filter_by(user_id=current_user.id).count() >= 1:
+  if not current_user.is_admin and IgAccount.query.filter_by(user_id=current_user.id).count() >= 1:
     flash("هر اشتراک فقط یک پیج دارد. برای تعویض، ابتدا پیج فعلی را قطع کن.", "error")
     return redirect(url_for("auth.pages"))
   state = str(current_user.id)
@@ -86,7 +86,7 @@ def callback():
       IgAccount.user_id == user.id,
       IgAccount.ig_user_id != ig_id,
     ).first()
-    if has_other_page:
+    if has_other_page and not user.is_admin:
       flash("هر اشتراک فقط یک پیج دارد. ابتدا پیج فعلی را قطع کن.", "error")
       return redirect(url_for("auth.pages"))
 

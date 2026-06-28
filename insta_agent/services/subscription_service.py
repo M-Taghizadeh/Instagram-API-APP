@@ -2,10 +2,33 @@ import datetime
 
 from insta_agent.config import Config
 from insta_agent.extensions import db
-from insta_agent.models import Plan, Subscription, Payment, TrialUsage, IgAccount
+from insta_agent.models import Plan, Subscription, Payment, TrialUsage, IgAccount, User
 from insta_agent.utils import now_tehran
 
 TRIAL_DAYS = Config.TRIAL_DAYS
+
+
+def is_platform_admin(user_id: int) -> bool:
+  user = db.session.get(User, user_id)
+  return bool(user and user.is_admin)
+
+
+def admin_subscription_status(user_id: int) -> dict:
+  ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
+  followers = ig.follower_count if ig else 0
+  return {
+    "active": True,
+    "is_admin": True,
+    "is_trial": False,
+    "plan_slug": "admin",
+    "plan_name": "مدیر سامانه",
+    "expires_at": None,
+    "days_left": 0,
+    "followers": followers,
+    "suggested_plan": plan_for_followers(followers),
+    "trial_available": False,
+    "label": "مدیر سامانه — دسترسی کامل",
+  }
 
 
 def get_plans(active_only: bool = True) -> list:
@@ -45,6 +68,8 @@ def get_active_subscription(user_id: int) -> Subscription | None:
 
 
 def has_automation_access(user_id: int) -> bool:
+  if is_platform_admin(user_id):
+    return True
   return get_active_subscription(user_id) is not None
 
 
@@ -67,6 +92,9 @@ def _days_left(expires_at) -> int:
 
 
 def subscription_status(user_id: int) -> dict:
+  if is_platform_admin(user_id):
+    return admin_subscription_status(user_id)
+
   sub = get_active_subscription(user_id)
   ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
   followers = ig.follower_count if ig else 0
@@ -104,6 +132,9 @@ def subscription_status(user_id: int) -> dict:
 
 
 def subscription_banner(user_id: int) -> dict | None:
+  if is_platform_admin(user_id):
+    return None
+
   info = subscription_status(user_id)
   ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
   trial_record = TrialUsage.query.filter_by(user_id=user_id).first()

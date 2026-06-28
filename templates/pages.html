@@ -3,7 +3,7 @@
 {% block title %}اتصال به اینستاگرام — محتوام{% endblock %}
 {% block topbar_title %}اتصال به اینستاگرام{% endblock %}
 {% block topbar_right %}
-  {% if oauth_ready and not accounts %}
+  {% if oauth_ready and (not accounts or current_user.is_admin) %}
   <a href="{{ url_for('oauth.connect') }}" class="btn small">{{ icon('plus', 14) }} اتصال پیج</a>
   {% endif %}
 {% endblock %}
@@ -12,7 +12,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">{{ icon('instagram', 22) }} اتصال به اینستاگرام</div>
-    <div class="page-sub">پیج متصل‌شده — توکن به‌صورت خودکار از Instagram OAuth دریافت می‌شود</div>
+    <div class="page-sub">پیج متصل‌شده — توکن به‌صورت خودکار از Instagram OAuth دریافت می‌شود{% if current_user.is_admin %} · مدیر سامانه: بدون محدودیت تعداد پیج{% endif %}</div>
   </div>
 </div>
 
