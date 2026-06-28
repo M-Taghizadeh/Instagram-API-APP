@@ -61,12 +61,12 @@ def callback():
 
     long = exchange_long_lived_token(short_token)
     access_token = long.get("access_token", short_token)
-    expires_in = long.get("expires_in", 3600)
+    expires_in = int(long.get("expires_in", 3600))
 
     profile = get_me(access_token)
     account_type = profile.get("account_type", "")
 
-    if not is_professional_account(account_type):
+    if account_type and not is_professional_account(account_type):
       flash(
         "فقط حساب‌های Business یا Creator قابل اتصال هستند. "
         "در تنظیمات اینستاگرام حسابت را به Professional تبدیل کن.",
