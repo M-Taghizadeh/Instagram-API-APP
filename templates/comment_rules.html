@@ -37,55 +37,37 @@
     {% for rule in pagination.items %}
     <div class="card rule-card-post {% if not rule.is_active %}rule-inactive{% endif %}"
          id="rule-{{ rule.id }}"
-         {% if not rule.post_thumb and rule.post_link %}data-needs-thumb="1"{% endif %}
+         data-rule-id="{{ rule.id }}"
+         {% if (not rule.post_thumb and (rule.post_link or rule.post_id)) %}data-needs-thumb="1"{% endif %}
          style="padding:0;overflow:hidden;display:flex;flex-direction:column;
                 {% if not rule.is_active %}opacity:.55;{% endif %}
                 transition:border-color .18s,box-shadow .18s,transform .18s;">
 
-      <!-- ══ Post image header ══ -->
-      <div style="position:relative;height:200px;background:var(--panel-3);flex-shrink:0;overflow:hidden;">
+      <div class="post-card-media">
         {% if rule.post_thumb %}
-        <!-- blurred background -->
-        <div style="position:absolute;inset:0;
-                    background-image:url('{{ rule.post_thumb }}');
-                    background-size:cover;background-position:center;
-                    filter:blur(18px) brightness(.55) saturate(1.3);
-                    transform:scale(1.1);"></div>
-        <!-- actual image centered -->
-        <img src="{{ rule.post_thumb }}" alt="پست"
-             style="position:absolute;inset:0;margin:auto;
-                    max-width:100%;max-height:100%;
-                    width:auto;height:auto;
-                    object-fit:contain;display:block;"
-             onerror="this.style.display='none'">
-        {% endif %}
-        <!-- gradient overlay -->
-        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(7,6,14,.85) 0%,transparent 55%);pointer-events:none;"></div>
-        <!-- top-right status badge -->
-        <div style="position:absolute;top:10px;left:10px;">{{ status_badge(rule.is_active) }}</div>
-        <!-- top-left open link -->
-        {% if rule.post_link %}
-        <a href="{{ rule.post_link }}" target="_blank"
-           style="position:absolute;top:10px;right:10px;width:28px;height:28px;
-                  border-radius:8px;background:rgba(7,6,14,.55);backdrop-filter:blur(6px);
-                  display:flex;align-items:center;justify-content:center;
-                  border:1px solid rgba(255,255,255,.1);color:var(--text-dim);font-size:13px;"
-           title="مشاهده پست">{{ icon('external-link', 14) }}</a>
-        {% endif %}
-        <!-- no-image placeholder -->
-        {% if not rule.post_thumb %}
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;
-                    align-items:center;justify-content:center;gap:6px;color:var(--text-faint);">
+        <div class="post-card-media-bg" style="background-image:url('{{ rule.post_thumb }}');"></div>
+        <img src="{{ rule.post_thumb }}" alt="پست" class="post-card-media-img"
+             onerror="refreshPostThumb(this)">
+        <div class="post-card-media-overlay"></div>
+        {% else %}
+        <div class="post-card-media-overlay post-card-media-overlay--empty"></div>
+        <div class="post-card-placeholder">
           {{ icon('image', 32) }}
-          <span style="font-size:11px;">بدون تصویر</span>
+          <span>بدون تصویر</span>
         </div>
         {% endif %}
-        <!-- post status bottom-left -->
-        <div style="position:absolute;bottom:8px;right:10px;">
-          {% if rule.post_id or rule.post_thumb %}
+
+        <div class="post-card-badge-tl">{{ status_badge(rule.is_active) }}</div>
+        {% if rule.post_link %}
+        <a href="{{ rule.post_link }}" target="_blank" class="post-card-link" title="مشاهده پست">
+          {{ icon('external-link', 14) }}
+        </a>
+        {% endif %}
+        {% if rule.post_id or rule.post_thumb %}
+        <div class="post-card-badge-br">
           <span class="badge ok" style="font-size:9.5px;backdrop-filter:blur(6px);">{{ icon('check', 10) }} پست شناسایی شده</span>
-          {% endif %}
         </div>
+        {% endif %}
       </div>
 
       <!-- ══ Card body ══ -->
@@ -188,19 +170,33 @@
 {% endblock %}
 
 {% block extra_js %}
-<style>
-@media (max-width: 1200px) {
-  .rules-grid { grid-template-columns: repeat(3, 1fr) !important; }
-}
-@media (max-width: 900px) {
-  .rules-grid { grid-template-columns: repeat(2, 1fr) !important; }
-}
-@media (max-width: 640px) {
-  .rules-grid { grid-template-columns: 1fr !important; }
-}
-</style>
 <script>
-// هنگام بارگذاری صفحه، thumbnail پست‌هایی که ناقص هستن رو از سرور بگیر
+function refreshPostThumb(img) {
+  const card = img.closest('[data-rule-id]');
+  if (!card || card.dataset.thumbRetry === '1') return;
+  card.dataset.thumbRetry = '1';
+  fetch('/api/comment-rule/' + card.dataset.ruleId + '/refresh-thumb', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      if (d.image) {
+        img.src = d.image;
+        img.style.display = 'block';
+        const bg = card.querySelector('.post-card-media-bg');
+        if (bg) bg.style.backgroundImage = "url('" + d.image + "')";
+        else {
+          const media = card.querySelector('.post-card-media');
+          const el = document.createElement('div');
+          el.className = 'post-card-media-bg';
+          el.style.backgroundImage = "url('" + d.image + "')";
+          media.insertBefore(el, img);
+        }
+        const ph = card.querySelector('.post-card-placeholder');
+        if (ph) ph.remove();
+      }
+    })
+    .catch(() => {});
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const missingThumbs = document.querySelectorAll('[data-needs-thumb="1"]');
   if (!missingThumbs.length) return;
@@ -208,10 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
   fetch('/api/refresh-post-thumbs', { method: 'POST' })
     .then(r => r.json())
     .then(data => {
-      if (data.updated > 0) {
-        // صفحه رو reload کن تا تصاویر جدید نشون داده بشن
-        window.location.reload();
-      }
+      if (data.updated > 0) window.location.reload();
     })
     .catch(() => {});
 });

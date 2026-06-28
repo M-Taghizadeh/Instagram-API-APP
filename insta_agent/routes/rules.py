@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
+from sqlalchemy import or_
 
 from insta_agent.extensions import db
 from insta_agent.models import DmRule, CommentRule
@@ -175,6 +176,15 @@ def api_post_preview():
   return jsonify(preview)
 
 
+def _apply_preview(rule, preview: dict):
+  if not preview:
+    return False
+  rule.post_id = preview.get("id", rule.post_id or "")
+  rule.post_caption = preview.get("caption", rule.post_caption or "")
+  rule.post_thumb = preview.get("image", "")
+  return bool(rule.post_thumb)
+
+
 @bp.route("/api/refresh-post-thumbs", methods=["POST"])
 @login_required
 def api_refresh_post_thumbs():
@@ -182,18 +192,35 @@ def api_refresh_post_thumbs():
   if not s.access_token:
     return jsonify(updated=0)
   rules = CommentRule.query.filter_by(user_id=current_user.id).filter(
-    (CommentRule.post_thumb == "") | (CommentRule.post_thumb == None),
-    CommentRule.post_link != "",
-    CommentRule.post_link != None,
+    or_(
+      CommentRule.post_link != "",
+      CommentRule.post_id != "",
+    )
+  ).filter(
+    or_(CommentRule.post_thumb == "", CommentRule.post_thumb.is_(None))
   ).all()
   updated = 0
   for rule in rules:
-    preview = get_post_preview(rule.post_link, s.access_token)
-    if preview:
-      rule.post_id = preview.get("id", rule.post_id or "")
-      rule.post_caption = preview.get("caption", "")
-      rule.post_thumb = preview.get("image", "")
+    preview = get_post_preview(rule.post_link or "", s.access_token, media_id=rule.post_id or "")
+    if _apply_preview(rule, preview):
       updated += 1
   if updated:
     db.session.commit()
   return jsonify(updated=updated)
+
+
+@bp.route("/api/comment-rule/<rule_id>/refresh-thumb", methods=["POST"])
+@login_required
+def api_refresh_rule_thumb(rule_id):
+  rule = CommentRule.query.filter_by(id=rule_id, user_id=current_user.id).first_or_404()
+  s = get_settings()
+  if not s.access_token:
+    return jsonify(error="توکن دسترسی تنظیم نشده"), 400
+  if not rule.post_link and not rule.post_id:
+    return jsonify(error="پستی برای این قانون ثبت نشده"), 400
+  preview = get_post_preview(rule.post_link or "", s.access_token, media_id=rule.post_id or "")
+  if not preview or not preview.get("image"):
+    return jsonify(error="تصویر پست در دسترس نیست"), 404
+  _apply_preview(rule, preview)
+  db.session.commit()
+  return jsonify(image=rule.post_thumb, id=rule.post_id)
