@@ -29,6 +29,13 @@ def upload():
   if not _ext_ok(f.filename, media_type):
     return jsonify(error="فرمت فایل مجاز نیست"), 400
 
+  max_bytes = current_app.config.get("MAX_UPLOAD_MB", 50) * 1024 * 1024
+  f.seek(0, os.SEEK_END)
+  size = f.tell()
+  f.seek(0)
+  if size > max_bytes:
+    return jsonify(error=f"حجم فایل بیش از {current_app.config.get('MAX_UPLOAD_MB', 50)} مگابایت است"), 400
+
   upload_dir = current_app.config["UPLOAD_DIR"]
   os.makedirs(upload_dir, exist_ok=True)
   ext = secure_filename(f.filename).rsplit(".", 1)[-1].lower()

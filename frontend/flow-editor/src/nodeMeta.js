@@ -33,9 +33,11 @@ export function previewText(nodeType, data) {
     case 'save_contact':
       return 'ذخیره در مخاطبین';
     case 'image':
+      return data.url ? 'تصویر' : 'بدون تصویر';
     case 'video':
+      return data.url ? 'ویدیو' : 'بدون ویدیو';
     case 'audio':
-      return data.url || 'بدون URL';
+      return data.url ? 'صوت' : 'بدون صوت';
     case 'carousel':
       return `${(data.elements || []).length} آیتم ویترین`;
     default:

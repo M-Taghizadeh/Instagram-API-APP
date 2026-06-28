@@ -1,4 +1,5 @@
 import { metaFor } from './nodeMeta';
+import MediaField from './MediaField';
 
 function Field({ label, children }) {
   return (
@@ -91,12 +92,11 @@ export default function NodePanel({ node, onChange, onDelete, onSetStart }) {
       )}
 
       {(nodeType === 'image' || nodeType === 'video' || nodeType === 'audio') && (
-        <Field label="URL مدیا">
-          <input
-            type="text"
-            dir="ltr"
-            value={data.url || ''}
-            onChange={(e) => setData('url', e.target.value)}
+        <Field label={nodeType === 'image' ? 'تصویر' : nodeType === 'video' ? 'ویدیو' : 'صوت'}>
+          <MediaField
+            mediaType={nodeType}
+            url={data.url || ''}
+            onChange={(value) => setData('url', value)}
           />
         </Field>
       )}
