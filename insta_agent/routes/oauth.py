@@ -13,9 +13,9 @@ from insta_agent.services.instagram_oauth import (
   is_professional_account, oauth_configured, oauth_status,
 )
 from insta_agent.services.instagram_profile import (
-  sync_ig_account_profile, fetch_ig_profile, apply_profile_to_account,
+  sync_ig_account_profile, fetch_ig_profile_fast, apply_profile_to_account,
   fetch_ig_profile_with_debug, debug_user_token, explain_profile_failure,
-  token_health_report,
+  token_health_report, explain_meta_api_error,
 )
 from insta_agent.services.subscription_service import maybe_start_trial
 from insta_agent.services.instagram_webhooks import subscribe_instagram_webhooks
@@ -94,6 +94,8 @@ def callback():
 
   user_id = user.id
   user_is_admin = bool(user.is_admin)
+  profile_err = ""
+  token_err = ""
   db.session.remove()
 
   try:
@@ -103,12 +105,16 @@ def callback():
     if not short_token or not ig_user_id:
       raise ValueError("پاسخ اینستاگرام ناقص بود — توکن یا شناسه کاربر دریافت نشد.")
 
-    # پروفایل را با توکن تازه بگیر (قبل از هر تأخیر)
-    profile = fetch_ig_profile(short_token, ig_user_id) or {"user_id": ig_user_id, "username": ""}
+    profile, profile_err = fetch_ig_profile_fast(short_token, ig_user_id)
+    if not profile:
+      profile = {"user_id": ig_user_id, "username": ""}
 
-    access_token, expires_in = resolve_access_token(short_token)
+    access_token, expires_in, token_err = resolve_access_token(short_token)
     if not profile.get("username"):
-      profile = fetch_ig_profile(access_token, ig_user_id) or profile
+      retry, err2 = fetch_ig_profile_fast(access_token, ig_user_id)
+      if retry:
+        profile = retry
+      profile_err = err2 or profile_err or token_err
 
     account_type = profile.get("account_type", "")
 
@@ -127,10 +133,12 @@ def callback():
 
     stored_profile = profile
     if ig_username.startswith("ig_"):
-      retry_profile = fetch_ig_profile(access_token, ig_id)
+      retry_profile, retry_err = fetch_ig_profile_fast(access_token, ig_id)
       if retry_profile.get("username"):
         stored_profile = retry_profile
         ig_username = retry_profile["username"]
+      elif retry_err:
+        profile_err = retry_err
 
     if expires_in < 86400:
       print(f"[IG OAuth] WARNING: short-lived token only expires_in={expires_in}", flush=True)
@@ -198,19 +206,12 @@ def callback():
     else:
       flash(f"پیج @{ig_username} وصل شد و توکن به‌صورت خودکار ذخیره شد!", "success")
     if not wh_ok:
-      flash(
-        f"ثبت Webhook برای @{ig_username} ناموفق بود: {wh_err} — "
-        "از صفحه «اتصال به اینستاگرام» دوباره «فعال‌سازی Webhook» را بزن.",
-        "error",
-      )
+      flash(f"ثبت Webhook ناموفق: {wh_err}", "error")
     if ig_username.startswith("ig_"):
-      flash(
-        "یوزرنیم واقعی پیج دریافت نشد — در Meta دسترسی instagram_business_basic را چک کن "
-        "و دوباره «اتصال مجدد» بزن.",
-        "error",
-      )
-    elif expires_in < 86400:
-      flash("توکن کوتاه‌مدت ذخیره شد — حتماً Webhook را فعال کن و اگر قطع شد دوباره وصل کن.", "error")
+      detail = explain_meta_api_error(profile_err or token_err)
+      flash(f"یوزرنیم واقعی نیامد — {detail}", "error")
+    elif expires_in < 86400 and token_err:
+      flash(f"توکن بلندمدت نشد: {explain_meta_api_error(token_err)}", "error")
     return redirect(url_for("dashboard.dashboard"))
 
   except ValueError as e:

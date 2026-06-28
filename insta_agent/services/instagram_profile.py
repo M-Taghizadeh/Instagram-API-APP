@@ -196,7 +196,51 @@ def explain_profile_failure(api_error: str, token_debug: dict) -> str:
   return format_token_error(token_debug, api_error)
 
 
+def explain_meta_api_error(msg: str) -> str:
+  low = (msg or "").lower()
+  if "method type" in low:
+    return (
+      "متا این درخواست را رد کرد — معمولاً یعنی پیج در Meta به‌عنوان Instagram Tester اضافه نشده "
+      "یا اپ هنوز Live / Advanced Access ندارد. "
+      "Meta Dashboard → Roles → Instagram Testers → اکانت را اضافه کن."
+    )
+  if "expired" in low:
+    return "توکن منقضی شده — دوباره اتصال پیج را بزن."
+  return msg or "خطای ناشناخته از Instagram API"
+
+
+def fetch_ig_profile_fast(access_token: str, ig_user_id: str = "") -> tuple[dict, str]:
+  """Bearer GET /me — same pattern as a working manual token test."""
+  if not access_token:
+    return {}, "توکن خالی است"
+
+  headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+  urls = [f"{GRAPH_API}/me"]
+  if ig_user_id:
+    urls.append(f"{GRAPH_API}/{ig_user_id}")
+
+  last_err = ""
+  for url in urls:
+    for fields in (PROFILE_FIELDS, MIN_FIELDS):
+      try:
+        r = get_no_redirect(url, headers=headers, params={"fields": fields})
+        raw = r.json()
+        if r.status_code == 200 and isinstance(raw, dict) and "error" not in raw:
+          data = _normalize_profile(_unwrap_payload(raw))
+          if data.get("username") or data.get("user_id"):
+            return data, ""
+        err = raw.get("error", {}) if isinstance(raw, dict) else {}
+        last_err = err.get("message", r.text) if isinstance(err, dict) else r.text
+        print(f"[IG PROFILE] fast {url} -> {last_err}", flush=True)
+      except Exception as e:
+        last_err = str(e)
+  return {}, last_err
+
+
 def fetch_ig_profile(access_token: str, ig_user_id: str = "") -> dict:
+  profile, _ = fetch_ig_profile_fast(access_token, ig_user_id)
+  if profile:
+    return profile
   profile, _ = fetch_ig_profile_with_debug(access_token, ig_user_id)
   return profile
 

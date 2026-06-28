@@ -78,34 +78,37 @@ def exchange_long_lived_token(short_token: str) -> dict:
       errors.append(f"{label}: {e}")
 
   print(f"[IG OAuth] long-lived exchange failed: {' | '.join(errors)}", flush=True)
-  return {"access_token": short_token, "expires_in": 3600}
+  return {"access_token": short_token, "expires_in": 3600, "error": " | ".join(errors)}
 
 
-from insta_agent.services.instagram_profile import fetch_ig_profile, probe_me, debug_user_token, format_token_error
+from insta_agent.services.instagram_profile import (
+  fetch_ig_profile_fast, probe_me, debug_user_token, format_token_error, explain_meta_api_error,
+)
 
 
-def resolve_access_token(short_token: str) -> tuple[str, int]:
+def resolve_access_token(short_token: str) -> tuple[str, int, str]:
   """Prefer 60-day token; short-lived only if exchange fails."""
   long = exchange_long_lived_token(short_token)
   token = long.get("access_token", short_token)
   expires = int(long.get("expires_in", 0))
+  exchange_err = long.get("error", "")
 
   if expires >= LONG_LIVED_MIN_EXPIRES:
     ok, err = probe_me(token)
     print(f"[IG OAuth] long token probe ok={ok} expires_in={expires} err={err}", flush=True)
-    return token, expires
+    return token, expires, exchange_err
 
   ok, err = probe_me(short_token)
   print(f"[IG OAuth] short token only ok={ok} err={err}", flush=True)
   if short_token:
-    return short_token, 3600
+    return short_token, 3600, exchange_err or err
 
   dbg = debug_user_token(short_token)
   raise ValueError(format_token_error(dbg, err))
 
 
 def get_me_optional(access_token: str, ig_user_id: str = "") -> dict:
-  profile = fetch_ig_profile(access_token, ig_user_id)
+  profile, _ = fetch_ig_profile_fast(access_token, ig_user_id)
   if profile.get("user_id") or profile.get("username"):
     return profile
   print(f"[IG OAuth] profile fetch empty for user_id={ig_user_id}", flush=True)
