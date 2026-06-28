@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import icon, icon_box, status_badge %}
+{% from "macros/ui.html" import icon, icon_box, status_badge, sub_ticker_footer %}
 {% block title %}داشبورد — محتوام{% endblock %}
 {% block topbar_title %}داشبورد{% endblock %}
 {% block topbar_right %}
@@ -211,6 +211,8 @@
   <i data-lucide="copy" style="width:14px;height:14px"></i> کپی
   </button>
 </div>
+
+{{ sub_ticker_footer(sub_banner) }}
 
 {% endblock %}
 

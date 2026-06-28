@@ -105,25 +105,40 @@ def subscription_status(user_id: int) -> dict:
 
 def subscription_banner(user_id: int) -> dict | None:
   info = subscription_status(user_id)
+  ig = IgAccount.query.filter_by(user_id=user_id, is_primary=True).first()
+  trial_record = TrialUsage.query.filter_by(user_id=user_id).first()
 
-  if not info["active"]:
-    message = "اشتراک فعال نیست — در حال استفاده رایگان هستید"
-    if info.get("trial_available"):
-      message += " · با اتصال پیج اینستاگرام، ۷ روز تریال رایگان دریافت کنید"
-    else:
-      message += " · برای ادامه، اشتراک تهیه کنید"
+  if info["active"]:
+    days = info["days_left"]
+    if info["is_trial"]:
+      message = (
+        f"دوره آزمایشی رایگان — {days} روز از {TRIAL_DAYS} روز مانده"
+        f" · پس از اتمام، همه امکانات تا انتخاب پلن غیرفعال می‌شود"
+      )
+      return {"message": message, "tone": "warn"}
+
+    if days <= 14:
+      message = f"اشتراک {info['plan_name']} فعال است · {days} روز تا پایان اشتراک"
+      return {"message": message, "tone": "warn"}
+
+    return None
+
+  if not ig and not trial_record:
+    message = (
+      "اشتراک فعال نیست — در حال استفاده رایگان هستید"
+      f" · با اتصال اولین پیج اینستاگرام، {TRIAL_DAYS} روز استفاده رایگان فعال می‌شود"
+    )
     return {"message": message, "tone": "danger"}
 
-  days = info["days_left"]
-  if info["is_trial"]:
-    message = f"اشتراک پولی فعال نیست — تریال رایگان · {days} روز مانده"
-    return {"message": message, "tone": "warn"}
+  if trial_record:
+    message = (
+      f"اشتراک فعال نیست — دوره آزمایشی {TRIAL_DAYS} روزه تمام شده"
+      " · همه امکانات غیرفعال است تا پلن اشتراک را انتخاب کنید"
+    )
+    return {"message": message, "tone": "danger"}
 
-  if days <= 14:
-    message = f"اشتراک {info['plan_name']} فعال است · {days} روز تا پایان اشتراک"
-    return {"message": message, "tone": "warn"}
-
-  return None
+  message = "اشتراک فعال نیست — برای ادامه، اشتراک تهیه کنید"
+  return {"message": message, "tone": "danger"}
 
 
 def maybe_start_trial(user_id: int, ig_user_id: str) -> Subscription | None:

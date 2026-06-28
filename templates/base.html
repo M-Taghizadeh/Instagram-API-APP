@@ -99,18 +99,7 @@
 
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-  <div class="main-area{% if sub_banner %} has-sub-ticker{% endif %}">
-    {% if sub_banner %}
-    <a href="{{ url_for('billing.pricing') }}" class="sub-ticker sub-ticker--{{ sub_banner.tone }}" aria-label="{{ sub_banner.message }}">
-      <div class="sub-ticker__viewport">
-        <div class="sub-ticker__track">
-          {% for _ in range(4) %}
-          <span class="sub-ticker__item">{{ sub_banner.message }}</span>
-          {% endfor %}
-        </div>
-      </div>
-    </a>
-    {% endif %}
+  <div class="main-area">
     <div class="topbar">
       <button type="button" class="topbar-mobile-menu" onclick="openSidebar()" aria-label="منو">
         <i data-lucide="menu" style="width:22px;height:22px"></i>

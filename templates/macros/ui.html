@@ -14,3 +14,17 @@
   <i data-lucide="{{ name }}" style="width:{% if size == 'sm' %}16{% elif size == 'lg' %}22{% else %}20{% endif %}px;height:{% if size == 'sm' %}16{% elif size == 'lg' %}22{% else %}20{% endif %}px"></i>
 </span>
 {%- endmacro %}
+
+{% macro sub_ticker_footer(banner) -%}
+{% if banner %}
+<a href="{{ url_for('billing.pricing') }}" class="sub-ticker sub-ticker--footer sub-ticker--{{ banner.tone }}" aria-label="{{ banner.message }}">
+  <div class="sub-ticker__viewport">
+    <div class="sub-ticker__track">
+      {% for _ in range(4) %}
+      <span class="sub-ticker__item">{{ banner.message }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</a>
+{% endif %}
+{%- endmacro %}
