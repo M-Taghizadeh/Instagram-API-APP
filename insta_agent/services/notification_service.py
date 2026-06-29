@@ -53,7 +53,7 @@ def notify_admins_new_tester_request(requester: User, ig_username: str):
       title=f"درخواست جدید: @{ig}",
       body=body,
       action_url=meta_url,
-      action_label="افزودن Tester در Meta",
+      action_label="اتصال به متا",
       ig_username=ig,
     )
   db.session.commit()
