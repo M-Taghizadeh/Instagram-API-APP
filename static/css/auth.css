@@ -251,6 +251,29 @@ input:focus {
 }
 .ig-btn:hover { opacity: 0.92; }
 .ig-btn:disabled, .ig-btn.disabled { opacity: 0.4; pointer-events: none; cursor: not-allowed; }
+.ig-btn-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--surface-2);
+  transition: border-color var(--tr), background var(--tr);
+}
+.ig-btn-outline:hover {
+  border-color: var(--primary);
+  background: var(--primary-muted);
+  color: var(--primary);
+}
 .ig-input {
   width: 100%;
   padding: 12px 14px;

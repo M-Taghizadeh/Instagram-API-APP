@@ -53,30 +53,30 @@
 
   {% elif phase == 'activate' %}
   <div class="connect-handle">@{{ ig_username_requested }}</div>
+
   {% if tester_status == 'pending' %}
   <div class="pending-box">
     <i data-lucide="clock" style="width:20px;height:20px;color:var(--primary)"></i>
     <div><strong>پیج در انتظار تایید سامانه</strong><br>به محض فعال‌سازی بهت اعلان می‌دیم.</div>
   </div>
-  {% else %}
-  <div class="connect-sub">دعوت اینستاگرام آماده است — اول Accept کن</div>
-  {% endif %}
-  <a href="{{ instagram_invite_url }}" target="_blank" rel="noopener" class="ig-btn" style="margin-bottom:10px;">
-    <i data-lucide="external-link" style="width:18px;height:18px"></i> قبول دعوت
-  </a>
-  {% if oauth_ready %}
-  <form method="post" action="{{ url_for('auth.onboarding_connect') }}">
-    <button type="submit" class="ig-btn"><i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج</button>
-  </form>
-  {% endif %}
+  <p class="connect-hint">تا تأیید تیم محتوام، دعوت اینستاگرام و اتصال پیج فعال نمی‌شود.</p>
   <a href="{{ url_for('notifications.inbox') }}" class="connect-link">مشاهده اعلان‌ها</a>
+
+  {% elif tester_status == 'invited' %}
+  <div class="connect-sub" style="margin-bottom:16px;">دعوت اینستاگرام ارسال شده — اول در اینستاگرام Accept کن</div>
+  <a href="{{ instagram_invite_url }}" target="_blank" rel="noopener" class="ig-btn-outline" style="margin-bottom:8px;">
+    <i data-lucide="external-link" style="width:16px;height:16px"></i> تنظیمات اینستاگرام
+  </a>
+  <p class="connect-hint">Tester invitations → Accept<br>بعد از تأیید نهایی سامانه، دکمه «اتصال پیج» فعال می‌شود.</p>
+  <a href="{{ url_for('notifications.inbox') }}" class="connect-link">مشاهده اعلان‌ها</a>
+  {% endif %}
 
   {% else %}
   <div class="connect-title">پیج را وصل کن</div>
   <div class="connect-sub">Allow را در اینستاگرام بزن</div>
   {% if oauth_ready and can_connect %}
   <form method="post" action="{{ url_for('auth.onboarding_connect') }}">
-    <button type="submit" class="ig-btn"><i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج اینستاگرام</button>
+    <button type="submit" class="ig-btn"><i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج</button>
   </form>
   {% endif %}
   <a href="{{ url_for('oauth.connect_manual') }}" class="connect-link">اتصال باز نمی‌شود؟</a>

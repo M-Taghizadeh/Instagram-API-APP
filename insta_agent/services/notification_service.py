@@ -79,9 +79,9 @@ def notify_user_tester_invited(user_id: int, ig_username: str):
     user_id,
     kind="user_invited",
     title="دعوت اینستاگرام آماده است",
-    body=f"پیج @{ig} در Meta ثبت شد. دعوت را در اینستاگرام Accept کن و بعد اتصال را بزن.",
+    body=f"پیج @{ig} در Meta ثبت شد. دعوت را در اینستاگرام Accept کن؛ بعد از تأیید نهایی سامانه اتصال فعال می‌شود.",
     action_url="https://www.instagram.com/accounts/manage_access/",
-    action_label="قبول دعوت در اینستاگرام",
+    action_label="تنظیمات اینستاگرام",
     ig_username=ig,
   )
   db.session.commit()

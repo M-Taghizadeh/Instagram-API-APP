@@ -194,10 +194,6 @@ def onboarding_connect():
     if status == "none":
       flash("اول یوزرنیم پیج را وارد کن.", "error")
       return redirect(url_for("auth.onboarding"))
-    if status in ("pending", "invited"):
-      current_user.tester_status = "ready"
-      current_user.tester_ready_at = now_tehran()
-      db.session.commit()
 
   allowed, gate_msg = can_start_oauth(current_user)
   if not allowed:
