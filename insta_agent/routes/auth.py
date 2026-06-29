@@ -54,6 +54,8 @@ def require_ig_connection_for_panel():
     return
   if ep in ("auth.request_tester_access", "auth.onboarding_connect"):
     return
+  if ep and ep.startswith("notifications."):
+    return
   try:
     if user_has_connection(current_user):
       return
@@ -170,6 +172,13 @@ def request_tester_access():
   current_user.tester_status = "pending"
   current_user.tester_requested_at = now_tehran()
   db.session.commit()
+
+  from insta_agent.services.notification_service import (
+    notify_admins_new_tester_request, notify_user_tester_pending,
+  )
+  notify_admins_new_tester_request(current_user, ig_user)
+  notify_user_tester_pending(current_user.id, ig_user)
+
   return redirect(url_for("auth.onboarding"))
 
 

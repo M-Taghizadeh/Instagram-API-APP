@@ -24,10 +24,9 @@
 
 <div class="card" style="padding:16px 18px;margin-bottom:20px;font-size:12.5px;line-height:2;color:var(--text-dim);">
   <strong style="color:var(--text);">روند کار (۲ دقیقه):</strong>
-  ۱. یوزرنیم را کپی کن → Meta → App roles → <strong>Instagram Tester</strong> → Add People<br>
-  ۲. کاربر از همان صفحه onboarding لینک <strong>قبول دعوت در اینستاگرام</strong> را دارد — خودش Accept می‌کند<br>
-  ۳. «دعوت فرستاده» اختیاری است (برای اطلاع کاربر) · بعد از Accept کاربر «قبول کردم» می‌زند<br>
-  ۴. کاربر دکمه «اتصال پیج» را می‌بیند
+  ۱. یوزرنیم را کپی کن → <a href="{{ meta_roles_url }}" target="_blank" rel="noopener"><strong>افزودن Tester در Meta</strong></a><br>
+  ۲. کاربر اعلان «در انتظار تایید» می‌بیند — بعد از Add در Meta «دعوت فرستاده» بزن<br>
+  ۳. کاربر Accept می‌کند و «اتصال پیج» را می‌زند
 </div>
 
 {% if not queue %}
@@ -68,6 +67,7 @@
         {{ u.tester_requested_at.strftime('%Y/%m/%d %H:%M') if u.tester_requested_at else '—' }}
       </td>
       <td style="padding:10px;white-space:nowrap;">
+        <a href="{{ meta_roles_url }}" target="_blank" rel="noopener" class="btn ghost small" title="Meta Tester">{{ icon('external-link', 12) }}</a>
         <form method="post" style="display:inline;">
           <input type="hidden" name="user_id" value="{{ u.id }}">
           {% if u.tester_status == 'pending' %}

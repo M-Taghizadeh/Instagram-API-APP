@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import icon %}
+{% block title %}اعلان‌ها — محتوام{% endblock %}
+{% block topbar_title %}اعلان‌ها{% endblock %}
+{% block topbar_right %}
+  {% if unread %}
+  <form method="post" action="{{ url_for('notifications.read_all') }}" style="display:inline;">
+    <button type="submit" class="btn secondary small">همه خوانده شد</button>
+  </form>
+  {% endif %}
+{% endblock %}
+{% block content %}
+
+{% if current_user.is_admin %}
+{% set active = 'notifications' %}
+{% include "admin/_nav.html" %}
+{% endif %}
+
+<div class="page-header">
+  <div class="page-title">{{ icon('bell', 22) }} اعلان‌ها{% if unread %} <span class="badge pink">{{ unread }}</span>{% endif %}</div>
+</div>
+
+{% if not items %}
+<div class="card" style="padding:40px;text-align:center;color:var(--text-faint);">
+  {{ icon('bell-off', 36) }}
+  <div style="margin-top:12px;font-size:13px;">اعلانی نیست.</div>
+</div>
+{% else %}
+<div class="card" style="padding:0;overflow:hidden;">
+  {% for n in items %}
+  <div class="notif-row {% if not n.read_at %}unread{% endif %}" style="padding:14px 18px;border-top:{% if loop.first %}0{% else %}1px solid var(--border-soft){% endif %};">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px;">{{ n.title }}</div>
+        {% if n.body %}<div style="font-size:12px;color:var(--text-dim);line-height:1.7;">{{ n.body }}</div>{% endif %}
+        {% if n.ig_username %}<code dir="ltr" style="font-size:11px;margin-top:6px;display:inline-block;">@{{ n.ig_username }}</code>{% endif %}
+        <div style="font-size:10px;color:var(--text-faint);margin-top:8px;">{{ n.created_at.strftime('%Y/%m/%d %H:%M') if n.created_at else '' }}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+        {% if current_user.is_admin and n.kind == 'admin_tester_request' %}
+        <a href="{{ meta_roles_url }}" target="_blank" rel="noopener" class="btn small">{{ icon('external-link', 12) }} Meta Tester</a>
+        <a href="{{ url_for('admin.activation') }}" class="btn secondary small">صف فعال‌سازی</a>
+        {% endif %}
+        {% if n.action_url %}
+        <a href="{{ url_for('notifications.read_one', nid=n.id) }}" class="btn small">{{ n.action_label or 'مشاهده' }}</a>
+        {% elif not n.read_at %}
+        <a href="{{ url_for('notifications.read_one', nid=n.id) }}" class="btn ghost small">خواندم</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<style>
+.notif-row.unread { background: var(--primary-muted); }
+</style>
+{% endblock %}

@@ -4,6 +4,7 @@
   <a href="{{ url_for('admin.plans') }}" class="btn ghost small {% if active == 'plans' %}active{% endif %}">قیمت پلن‌ها</a>
   <a href="{{ url_for('admin.integrations') }}" class="btn ghost small {% if active == 'integrations' %}active{% endif %}"><i data-lucide="plug" style="width:14px;height:14px"></i> یکپارچه‌سازی</a>
   <a href="{{ url_for('admin.activation') }}" class="btn ghost small {% if active == 'activation' %}active{% endif %}"><i data-lucide="user-check" style="width:14px;height:14px"></i> فعال‌سازی</a>
+  <a href="{{ url_for('notifications.inbox') }}" class="btn ghost small {% if active == 'notifications' %}active{% endif %}"><i data-lucide="bell" style="width:14px;height:14px"></i> اعلان‌ها</a>
   <a href="{{ url_for('admin.users') }}" class="btn ghost small {% if active == 'users' %}active{% endif %}">کاربران</a>
 </div>
 <style>

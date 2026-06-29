@@ -79,7 +79,30 @@ def onboarding_context(user) -> dict:
     "instagram_invite_url": INSTAGRAM_INVITE_URL,
     "can_connect": can_start_oauth(user)[0],
     "is_admin_preview": bool(user.is_admin and gate_on),
+    "beta_timeline": _beta_timeline(status) if gate_on else [],
   }
+
+
+def _beta_timeline(status: str) -> list:
+  steps = [
+    ("submitted", "ثبت درخواست"),
+    ("review", "تایید سامانه"),
+    ("invite", "قبول دعوت"),
+    ("connect", "اتصال پیج"),
+  ]
+  mapping = {"none": 0, "pending": 1, "invited": 2, "ready": 3, "connected": 4}
+  cur = mapping.get((status or "none").lower(), 0)
+  out = []
+  for i, (key, label) in enumerate(steps):
+    if cur >= 4:
+      out.append({"key": key, "label": label, "done": True, "active": False})
+    elif i < cur:
+      out.append({"key": key, "label": label, "done": True, "active": False})
+    elif i == cur:
+      out.append({"key": key, "label": label, "done": False, "active": True})
+    else:
+      out.append({"key": key, "label": label, "done": False, "active": False})
+  return out
 
 
 def count_tester_slots_used() -> int:

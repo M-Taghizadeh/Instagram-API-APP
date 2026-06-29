@@ -73,6 +73,10 @@
         <a href="{{ url_for('settings.settings') }}" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
           <i data-lucide="settings" class="nav-icon"></i> تنظیمات
         </a>
+        <a href="{{ url_for('notifications.inbox') }}" class="nav-item {% if request.path.startswith('/notifications') %}active{% endif %}">
+          <i data-lucide="bell" class="nav-icon"></i> اعلان‌ها
+          {% if notif_unread %}<span class="nav-badge">{{ notif_unread }}</span>{% endif %}
+        </a>
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.path.startswith('/admin') %}active{% endif %}">
           <i data-lucide="shield" class="nav-icon"></i> پنل ادمین
@@ -106,6 +110,12 @@
       </button>
       <div class="topbar-title">{% block topbar_title %}{% endblock %}</div>
       <div class="topbar-right">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('notifications.inbox') }}" class="icon-btn" title="اعلان‌ها" style="position:relative;text-decoration:none;">
+          <i data-lucide="bell" style="width:18px;height:18px"></i>
+          {% if notif_unread %}<span style="position:absolute;top:4px;left:4px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ notif_unread }}</span>{% endif %}
+        </a>
+        {% endif %}
         <button type="button" class="icon-btn" onclick="toggleTheme()" aria-label="تغییر تم" title="تغییر تم">
           <i data-theme-icon="sun" data-lucide="sun" style="width:18px;height:18px;display:none"></i>
           <i data-theme-icon="moon" data-lucide="moon" style="width:18px;height:18px"></i>

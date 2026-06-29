@@ -18,6 +18,9 @@ from insta_agent.config import Config
 from insta_agent.services.instagram_oauth import oauth_configured, oauth_status
 from insta_agent.services.tester_gate import count_tester_slots_used, beta_gate_enabled
 from insta_agent.services.app_settings_service import set_beta_tester_gate
+from insta_agent.services.notification_service import (
+  meta_roles_url, notify_user_tester_invited, notify_user_tester_ready,
+)
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -281,6 +284,7 @@ def activation():
       else:
         target.tester_status = "invited"
         db.session.commit()
+        notify_user_tester_invited(target.id, target.ig_username_requested or "")
         flash(f"@{target.ig_username_requested} — وضعیت به «دعوت فرستاده» تغییر کرد.", "success")
     elif action == "ready":
       if (target.tester_status or "") not in ("pending", "invited"):
@@ -289,6 +293,7 @@ def activation():
         target.tester_status = "ready"
         target.tester_ready_at = now_tehran()
         db.session.commit()
+        notify_user_tester_ready(target.id, target.ig_username_requested or "")
         flash(f"@{target.ig_username_requested} — آماده اتصال است.", "success")
     elif action == "reset":
       target.tester_status = "none"
@@ -315,7 +320,7 @@ def activation():
     pending_count=pending_count,
     connected_count=connected,
     beta_gate=beta_gate_enabled(),
-    meta_roles_url="https://developers.facebook.com/apps/",
+    meta_roles_url=meta_roles_url(),
   )
 
 

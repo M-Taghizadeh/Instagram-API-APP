@@ -36,6 +36,17 @@ def create_app():
   for bp in ALL_BLUEPRINTS:
     app.register_blueprint(bp)
 
+  @app.context_processor
+  def inject_notifications():
+    from flask_login import current_user
+    if not current_user.is_authenticated:
+      return {"notif_unread": 0}
+    try:
+      from insta_agent.services.notification_service import unread_count
+      return {"notif_unread": unread_count(current_user.id)}
+    except Exception:
+      return {"notif_unread": 0}
+
   init_db(app)
   start_scheduler(app)
 

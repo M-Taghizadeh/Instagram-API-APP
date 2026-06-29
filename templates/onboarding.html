@@ -24,75 +24,67 @@
     </div>
   </div>
 
-  {% if beta_gate %}
-  <div class="mode-badge mode-beta">حالت بتا{% if phase == 'username' %} · ثبت یوزرنیم{% elif phase == 'activate' %} · فعال‌سازی{% else %} · اتصال{% endif %}</div>
-  {% else %}
-  <div class="mode-badge mode-direct">اتصال مستقیم — صف Tester غیرفعال</div>
+  {% if beta_gate and beta_timeline %}
+  <div class="beta-timeline">
+    {% for step in beta_timeline %}
+    <div class="beta-tl-item {% if step.done %}done{% endif %} {% if step.active %}active{% endif %}">
+      <div class="beta-tl-dot"></div>
+      <span>{{ step.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% elif not beta_gate %}
+  <div class="mode-badge mode-direct">اتصال مستقیم</div>
   {% endif %}
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
-      <div class="flash {{ category }}">
-        <i data-lucide="{% if category == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px;height:16px"></i>
-        {{ message }}
-      </div>
+      <div class="flash {{ category }}">{{ message }}</div>
     {% endfor %}
   {% endwith %}
 
-  {% if is_admin_preview and phase == 'username' %}
-  <div class="flash" style="background:var(--primary-muted);color:var(--primary);border:1px solid var(--primary);font-size:12px;">
-    پیش‌نمایش حالت بتا — به‌عنوان ادمین OAuth بدون محدودیت است.
-  </div>
-  {% endif %}
-
   {% if phase == 'username' %}
   <div class="connect-title">یوزرنیم پیجت</div>
-  <div class="connect-sub">پیج باید Business یا Creator باشد</div>
+  <div class="connect-sub">Business یا Creator</div>
   <form method="post" action="{{ url_for('auth.request_tester_access') }}">
-    <input type="text" name="ig_username" class="ig-input" placeholder="@username" required autofocus
-           autocomplete="off" spellcheck="false">
+    <input type="text" name="ig_username" class="ig-input" placeholder="@username" required autofocus autocomplete="off" spellcheck="false">
     <button type="submit" class="ig-btn" style="background:var(--primary);">ادامه</button>
   </form>
 
   {% elif phase == 'activate' %}
   <div class="connect-handle">@{{ ig_username_requested }}</div>
-  <div class="connect-sub">
-    اگر دعوت اینستاگرام داری، اول Accept کن — بعد اتصال را بزن.
+  {% if tester_status == 'pending' %}
+  <div class="pending-box">
+    <i data-lucide="clock" style="width:20px;height:20px;color:var(--primary)"></i>
+    <div><strong>پیج در انتظار تایید سامانه</strong><br>به محض فعال‌سازی بهت اعلان می‌دیم.</div>
   </div>
+  {% else %}
+  <div class="connect-sub">دعوت اینستاگرام آماده است — اول Accept کن</div>
+  {% endif %}
   <a href="{{ instagram_invite_url }}" target="_blank" rel="noopener" class="ig-btn" style="margin-bottom:10px;">
     <i data-lucide="external-link" style="width:18px;height:18px"></i> قبول دعوت
   </a>
   {% if oauth_ready %}
   <form method="post" action="{{ url_for('auth.onboarding_connect') }}">
-    <button type="submit" class="ig-btn">
-      <i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج
-    </button>
+    <button type="submit" class="ig-btn"><i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج</button>
   </form>
-  {% else %}
-  <button type="button" class="ig-btn disabled" disabled>اتصال پیج</button>
   {% endif %}
-  <p class="connect-hint">دعوت نمی‌بینی؟ چند دقیقه صبر کن — با همان اکانت @{{ ig_username_requested }} وارد شو.</p>
+  <a href="{{ url_for('notifications.inbox') }}" class="connect-link">مشاهده اعلان‌ها</a>
 
   {% else %}
   <div class="connect-title">پیج را وصل کن</div>
-  <div class="connect-sub">با اکانت Business/Creator وارد شو و Allow را بزن</div>
+  <div class="connect-sub">Allow را در اینستاگرام بزن</div>
   {% if oauth_ready and can_connect %}
   <form method="post" action="{{ url_for('auth.onboarding_connect') }}">
-    <button type="submit" class="ig-btn">
-      <i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج اینستاگرام
-    </button>
+    <button type="submit" class="ig-btn"><i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج اینستاگرام</button>
   </form>
-  {% elif oauth_ready %}
-  <button type="button" class="ig-btn disabled" disabled>اتصال پیج</button>
-  {% else %}
-  <div class="flash error">اتصال موقتاً در دسترس نیست.</div>
   {% endif %}
-  {% if oauth_ready %}
-  <a href="{{ url_for('oauth.connect_manual') }}" class="connect-link">اتصال باز نمی‌شود؟ روش کپی لینک</a>
-  {% endif %}
+  <a href="{{ url_for('oauth.connect_manual') }}" class="connect-link">اتصال باز نمی‌شود؟</a>
   {% endif %}
 
   <div class="connect-foot">
+    <a href="{{ url_for('notifications.inbox') }}" class="connect-link">اعلان‌ها</a>
+    ·
     <a href="{{ url_for('auth.logout') }}" class="connect-link">خروج</a>
   </div>
 </div>
