@@ -15,96 +15,38 @@
   <i data-theme-icon="moon" data-lucide="moon" style="width:18px;height:18px"></i>
 </button>
 
-<div class="auth-card">
-  <div class="auth-info">
+<div class="connect-card" style="text-align:right;">
+  <div class="auth-brand" style="justify-content:center;margin-bottom:28px;">
+    <div class="auth-brand-mark"><i data-lucide="layers" style="width:20px;height:20px"></i></div>
     <div>
-      <div class="auth-brand">
-        <div class="auth-brand-mark"><i data-lucide="layers" style="width:20px;height:20px"></i></div>
-        <div>
-          <div class="auth-brand-name">محتوام</div>
-          <div class="auth-brand-sub">Mohtavam · اتومیشن اینستاگرام</div>
-        </div>
-      </div>
-
-      <div class="auth-features" style="margin-top:36px;">
-        <div class="auth-feature">
-          <div class="auth-feature-icon"><i data-lucide="message-circle" style="width:18px;height:18px"></i></div>
-          <div>
-            <div class="auth-feature-title">پاسخ خودکار دایرکت</div>
-            <div class="auth-feature-desc">با کلمات کلیدی دلخواه، پیام‌های خودکار بفرست</div>
-          </div>
-        </div>
-        <div class="auth-feature">
-          <div class="auth-feature-icon"><i data-lucide="message-square-text" style="width:18px;height:18px"></i></div>
-          <div>
-            <div class="auth-feature-title">مدیریت کامنت‌ها</div>
-            <div class="auth-feature-desc">زیر کامنت پاسخ بده و همزمان دایرکت بفرست</div>
-          </div>
-        </div>
-        <div class="auth-feature">
-          <div class="auth-feature-icon"><i data-lucide="git-branch" style="width:18px;height:18px"></i></div>
-          <div>
-            <div class="auth-feature-title">فلوهای هوشمند</div>
-            <div class="auth-feature-desc">مسیرهای چندمرحله‌ای برای تعامل با مخاطب</div>
-          </div>
-        </div>
-        <div class="auth-feature">
-          <div class="auth-feature-icon"><i data-lucide="scroll-text" style="width:18px;height:18px"></i></div>
-          <div>
-            <div class="auth-feature-title">لاگ فعالیت</div>
-            <div class="auth-feature-desc">همه پاسخ‌های ارسال‌شده را رصد کن</div>
-          </div>
-        </div>
-      </div>
+      <div class="auth-brand-name">محتوام</div>
+      <div class="auth-brand-sub">ورود</div>
     </div>
-    <div style="font-size:12px;color:var(--text-muted);">ساخته شده برای کسب‌وکارهای ایرانی</div>
   </div>
 
-  <div class="auth-form-panel">
-    <div class="auth-mobile-brand">
-      <div class="auth-brand-mark"><i data-lucide="layers" style="width:18px;height:18px"></i></div>
-      <div>
-        <div class="auth-brand-name">محتوام</div>
-        <div class="auth-brand-sub">Mohtavam</div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">
+        <i data-lucide="{% if category == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px;height:16px"></i>
+        {{ message }}
       </div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="post" autocomplete="on">
+    <div class="field">
+      <label for="username">نام کاربری</label>
+      <input type="text" id="username" name="username" required autofocus autocomplete="username">
     </div>
-
-    <div class="auth-form-head">
-      <div class="auth-form-title">ورود به حساب</div>
-      <div class="auth-form-sub">به پنل مدیریت محتوام خوش آمدی</div>
+    <div class="field">
+      <label for="password">رمز عبور</label>
+      <input type="password" id="password" name="password" required autocomplete="current-password">
     </div>
+    <button type="submit" class="btn-auth">ورود</button>
+  </form>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="flash {{ category }}">
-          <i data-lucide="{% if category == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px;height:16px"></i>
-          {{ message }}
-        </div>
-      {% endfor %}
-    {% endwith %}
-
-    <form method="post" autocomplete="on">
-      <div class="field">
-        <label for="username">نام کاربری</label>
-        <input type="text" id="username" name="username" placeholder="نام کاربری" required autofocus autocomplete="username">
-      </div>
-      <div class="field">
-        <label for="password">رمز عبور</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
-      </div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);margin-bottom:8px;cursor:pointer;">
-        <input type="checkbox" name="remember" style="width:auto;">
-        مرا به خاطر بسپار
-      </label>
-      <button type="submit" class="btn-auth">
-        ورود به پنل
-        <i data-lucide="arrow-left" style="width:18px;height:18px"></i>
-      </button>
-    </form>
-
-    <div class="auth-form-sub" style="margin-top:24px;text-align:center;">
-      حساب نداری؟ <a href="{{ url_for('auth.register') }}">ثبت‌نام رایگان</a>
-    </div>
+  <div class="connect-foot" style="text-align:center;">
+    حساب نداری؟ <a href="{{ url_for('auth.register') }}" class="connect-link" style="color:var(--primary);">ثبت‌نام</a>
   </div>
 </div>
 

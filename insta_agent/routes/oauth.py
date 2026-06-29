@@ -78,6 +78,15 @@ def connect():
   blocked = _connect_checks()
   if blocked:
     return blocked
+  return redirect(url_for("oauth.connect_direct"))
+
+
+@bp.route("/connect/manual")
+@login_required
+def connect_manual():
+  blocked = _connect_checks()
+  if blocked:
+    return blocked
   state = str(current_user.id)
   session["oauth_state"] = state
   has_page = IgAccount.query.filter_by(user_id=current_user.id).count() > 0

@@ -50,9 +50,9 @@ def require_ig_connection_for_panel():
   ep = request.endpoint or ""
   if ep in PUBLIC_ENDPOINTS or ep.startswith("webhook."):
     return
-  if ep in ("auth.logout", "auth.onboarding", "auth.pages", "oauth.connect", "oauth.connect_direct", "oauth.disconnect", "settings.settings"):
+  if ep in ("auth.logout", "auth.onboarding", "auth.pages", "oauth.connect", "oauth.connect_direct", "oauth.connect_manual", "oauth.disconnect", "settings.settings"):
     return
-  if ep in ("auth.request_tester_access", "auth.confirm_tester_invite"):
+  if ep in ("auth.request_tester_access", "auth.onboarding_connect"):
     return
   try:
     if user_has_connection(current_user):
@@ -113,7 +113,7 @@ def register():
       db.session.add(user)
       db.session.commit()
       login_user(user, remember=True)
-      flash("حسابت ساخته شد! حالا پیج اینستاگرامت را وصل کن.", "success")
+      flash("حسابت ساخته شد.", "success")
       return redirect(url_for("auth.onboarding"))
   return render_template("register.html")
 
@@ -170,31 +170,32 @@ def request_tester_access():
   current_user.tester_status = "pending"
   current_user.tester_requested_at = now_tehran()
   db.session.commit()
-  flash(
-    f"درخواست @{ig_user} ثبت شد. وقتی دعوت Meta آمد، از لینک «قبول دعوت در اینستاگرام» Accept کن.",
-    "success",
-  )
   return redirect(url_for("auth.onboarding"))
 
 
-@bp.route("/onboarding/confirm-invite", methods=["POST"])
+@bp.route("/onboarding/connect", methods=["POST"])
 @login_required
-def confirm_tester_invite():
+def onboarding_connect():
+  """Mark beta user ready (if needed) and start Instagram OAuth."""
   if user_has_connection(current_user):
     return redirect(url_for("dashboard.dashboard"))
-  if not beta_gate_enabled() or current_user.is_admin:
+
+  if beta_gate_enabled() and not current_user.is_admin:
+    status = (current_user.tester_status or "none").lower()
+    if status == "none":
+      flash("اول یوزرنیم پیج را وارد کن.", "error")
+      return redirect(url_for("auth.onboarding"))
+    if status in ("pending", "invited"):
+      current_user.tester_status = "ready"
+      current_user.tester_ready_at = now_tehran()
+      db.session.commit()
+
+  allowed, gate_msg = can_start_oauth(current_user)
+  if not allowed:
+    flash(gate_msg, "error")
     return redirect(url_for("auth.onboarding"))
 
-  status = (current_user.tester_status or "").lower()
-  if status not in ("pending", "invited"):
-    flash("اول یوزرنیم پیج را ثبت کن.", "error")
-    return redirect(url_for("auth.onboarding"))
-
-  current_user.tester_status = "ready"
-  current_user.tester_ready_at = now_tehran()
-  db.session.commit()
-  flash("عالی! حالا می‌توانی پیج را وصل کنی.", "success")
-  return redirect(url_for("auth.onboarding"))
+  return redirect(url_for("oauth.connect_direct"))
 
 
 @bp.route("/pages")

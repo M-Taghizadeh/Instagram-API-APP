@@ -7,12 +7,6 @@
 <script>(function(){var t=localStorage.getItem('mohtavam-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/vazirmatn/vazirmatn.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
-<style>
-.register-card { max-width: 440px; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 36px 32px; box-shadow: var(--shadow); }
-.steps { display: flex; gap: 6px; margin-bottom: 24px; }
-.step { flex: 1; height: 3px; border-radius: 99px; background: var(--border); }
-.step.active { background: var(--primary); }
-</style>
 </head>
 <body class="auth-page">
 
@@ -21,20 +15,13 @@
   <i data-theme-icon="moon" data-lucide="moon" style="width:18px;height:18px"></i>
 </button>
 
-<div class="register-card">
-  <div class="auth-brand" style="margin-bottom:24px;">
+<div class="connect-card" style="text-align:right;">
+  <div class="auth-brand" style="justify-content:center;margin-bottom:28px;">
     <div class="auth-brand-mark"><i data-lucide="layers" style="width:20px;height:20px"></i></div>
     <div>
       <div class="auth-brand-name">محتوام</div>
-      <div class="auth-brand-sub">Mohtavam · ثبت‌نام رایگان</div>
+      <div class="auth-brand-sub">ثبت‌نام رایگان</div>
     </div>
-  </div>
-
-  <div class="steps"><div class="step active"></div><div class="step"></div></div>
-
-  <div class="auth-form-head">
-    <div class="auth-form-title">ساخت حساب کاربری</div>
-    <div class="auth-form-sub">مرحله ۱ از ۲ — بعد از ثبت‌نام، پیج اینستاگرام Business/Creator خودت را وصل می‌کنی.</div>
   </div>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -47,18 +34,24 @@
   {% endwith %}
 
   <form method="post">
-    <div class="field"><label>نام کاربری</label><input type="text" name="username" required minlength="3" placeholder="مثلاً: myshop" autofocus></div>
-    <div class="field"><label>ایمیل <span style="color:var(--text-muted);font-weight:400;">(اختیاری)</span></label><input type="email" name="email" placeholder="you@example.com"></div>
-    <div class="field"><label>رمز عبور</label><input type="password" name="password" required minlength="6" placeholder="حداقل ۶ کاراکتر"></div>
-    <div class="field"><label>تکرار رمز عبور</label><input type="password" name="confirm_password" required minlength="6"></div>
-    <button type="submit" class="btn-auth">
-      ثبت‌نام و ادامه
-      <i data-lucide="arrow-left" style="width:18px;height:18px"></i>
-    </button>
+    <div class="field">
+      <label>نام کاربری</label>
+      <input type="text" name="username" required minlength="3" autofocus>
+    </div>
+    <div class="field">
+      <label>رمز عبور</label>
+      <input type="password" name="password" required minlength="6">
+    </div>
+    <div class="field">
+      <label>تکرار رمز</label>
+      <input type="password" name="confirm_password" required minlength="6">
+    </div>
+    <input type="hidden" name="email" value="">
+    <button type="submit" class="btn-auth">ساخت حساب</button>
   </form>
 
-  <div class="auth-form-sub" style="margin-top:24px;text-align:center;">
-    حساب داری؟ <a href="{{ url_for('auth.login') }}">ورود</a>
+  <div class="connect-foot" style="text-align:center;">
+    حساب داری؟ <a href="{{ url_for('auth.login') }}" class="connect-link" style="color:var(--primary);">ورود</a>
   </div>
 </div>
 

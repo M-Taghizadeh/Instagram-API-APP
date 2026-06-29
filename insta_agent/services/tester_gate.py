@@ -57,33 +57,27 @@ def can_start_oauth(user) -> tuple[bool, str]:
 
 
 def onboarding_context(user) -> dict:
-  """Template context for onboarding wizard."""
+  """Template context — phase: username | activate | connect."""
   gate = beta_gate_enabled() and not user.is_admin
   status = (user.tester_status or "none").lower()
   ig_user = user.ig_username_requested or ""
 
   if not gate:
-    step = "connect"
+    phase = "connect"
   elif status == "none":
-    step = "request"
-  elif status == "pending":
-    step = "waiting"
-  elif status == "invited":
-    step = "accept"
-  elif status in ("ready", "connected"):
-    step = "connect"
+    phase = "username"
+  elif status in ("pending", "invited"):
+    phase = "activate"
   else:
-    step = "request"
+    phase = "connect"
 
   return {
     "beta_gate": gate,
-    "tester_step": step,
+    "phase": phase,
     "tester_status": status,
     "ig_username_requested": ig_user,
     "instagram_invite_url": INSTAGRAM_INVITE_URL,
     "can_connect": can_start_oauth(user)[0],
-    "tester_slots_max": Config.BETA_TESTER_SLOTS,
-    "tester_slots_used": count_tester_slots_used(),
   }
 
 
