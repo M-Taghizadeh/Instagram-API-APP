@@ -16,7 +16,7 @@
   {% endif %}
   <span class="badge">{{ slots_used }} / {{ slots_max }} اسلات</span>
   {% if pending_count %}<span class="badge pink">{{ pending_count }} در انتظار</span>{% endif %}
-  {% if ready_count %}<span class="badge ok">{{ ready_count }} آماده اتصال (خارج از صف)</span>{% endif %}
+  {% if ready_count %}<span class="badge ok">{{ ready_count }} تأییدشده — منتظر اتصال</span>{% endif %}
 </div>
 
 <div class="card" style="padding:16px 18px;margin-bottom:20px;font-size:12.5px;line-height:2;color:var(--text-dim);">
@@ -32,7 +32,7 @@
   {{ icon('inbox', 32) }}
   <div style="margin-top:12px;font-size:13px;">
     صف خالی است — {{ connected_count }} کاربر وصل شده
-    {% if ready_count %} · {{ ready_count }} آماده اتصال مجدد{% endif %}
+    {% if ready_count %} · {{ ready_count }} نفر می‌توانند خودشان وصل شوند{% endif %}
   </div>
 </div>
 {% else %}
@@ -77,6 +77,40 @@
           {% endif %}
           <button type="submit" name="action" value="reset" class="btn ghost small" title="ریست"
                   onclick="return confirm('درخواست ریست شود؟')">×</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% if ready_users %}
+<div class="card" style="padding:0;overflow:hidden;margin-top:20px;">
+  <div style="padding:12px 16px;border-bottom:1px solid var(--border-soft);font-size:13px;font-weight:700;">
+    {{ icon('user-check', 16) }} تأییدشده — منتظر اتصال کاربر ({{ ready_count }})
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <tr style="background:var(--panel-2);color:var(--text-faint);">
+      <th style="padding:10px;text-align:right;">کاربر</th>
+      <th>اینستاگرام</th>
+      <th>تأیید شده</th>
+      <th style="text-align:left;">عملیات</th>
+    </tr>
+    {% for u in ready_users %}
+    <tr style="border-top:1px solid var(--border-soft);">
+      <td style="padding:10px;font-weight:700;">{{ u.username }}</td>
+      <td>
+        <code dir="ltr" style="font-size:12px;">@{{ u.ig_username_requested }}</code>
+      </td>
+      <td style="color:var(--text-faint);font-size:11px;">
+        {{ u.tester_ready_at.strftime('%Y/%m/%d %H:%M') if u.tester_ready_at else '—' }}
+      </td>
+      <td style="padding:10px;white-space:nowrap;">
+        <form method="post" style="display:inline;">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <button type="submit" name="action" value="reset" class="btn ghost small" title="ریست"
+                  onclick="return confirm('درخواست ریست شود؟')">ریست</button>
         </form>
       </td>
     </tr>
