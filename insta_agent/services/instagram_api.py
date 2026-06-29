@@ -7,7 +7,9 @@ from insta_agent.config import Config
 GRAPH_API = Config.GRAPH_API
 
 _PAGE_ID_CACHE: dict[str, tuple[str, float]] = {}
+_USERNAME_CACHE: dict[str, tuple[str, float]] = {}
 _PAGE_ID_TTL_SEC = 300
+_USERNAME_TTL_SEC = 600
 
 _MEDIA_FIELDS = (
   "id,shortcode,caption,thumbnail_url,media_url,media_type,permalink,timestamp,"
@@ -18,6 +20,11 @@ _MEDIA_FIELDS = (
 def get_ig_username(ig_user_id: str, access_token: str) -> str:
   if not ig_user_id or not access_token:
     return ""
+  cache_key = f"{access_token[-24:]}:{ig_user_id}"
+  cached = _USERNAME_CACHE.get(cache_key)
+  if cached and (time.time() - cached[1]) < _USERNAME_TTL_SEC:
+    return cached[0]
+  username = ""
   try:
     r = requests.get(
       f"{GRAPH_API}/me/conversations",
@@ -28,10 +35,26 @@ def get_ig_username(ig_user_id: str, access_token: str) -> str:
     for conv in r.json().get("data", []):
       for p in conv.get("participants", {}).get("data", []):
         if p.get("id") == ig_user_id:
-          return p.get("username", "")
+          username = p.get("username", "")
+          break
+      if username:
+        break
   except Exception as e:
     print(f"[USERNAME] ERROR: {e}", flush=True)
-  return ""
+  _USERNAME_CACHE[cache_key] = (username, time.time())
+  return username
+
+
+def resolve_ig_username(owner_id: int, ig_user_id: str, access_token: str) -> str:
+  """Contact DB first, then Graph API (cached)."""
+  if not ig_user_id:
+    return ""
+  from insta_agent.models import Contact
+
+  contact = Contact.query.filter_by(user_id=owner_id, ig_user_id=ig_user_id).first()
+  if contact and contact.ig_username:
+    return contact.ig_username
+  return get_ig_username(ig_user_id, access_token)
 
 
 def get_page_ig_id(token: str) -> str:

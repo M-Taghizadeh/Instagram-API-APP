@@ -99,7 +99,7 @@ def webhook():
         field = change.get("field", "")
         value = change.get("value", {})
         if field == "comments":
-          _handle_comment(value, com_rules, token, ig.user_id)
+          _enqueue_comment(value, com_rules, token, ig.user_id)
         elif field in ("messages", "messaging"):
           if messaging_had_message:
             print("WEBHOOK skip changes/messages (messaging array had message)", flush=True)
@@ -119,6 +119,24 @@ def webhook():
     print("WEBHOOK ERROR:", e, flush=True)
     print(traceback.format_exc(), flush=True)
     return jsonify(ok=False), 200
+
+
+def _enqueue_comment(comment, rules, token, owner_id):
+  """Run comment handling off the webhook request thread."""
+  app = current_app._get_current_object()
+
+  def worker():
+    with app.app_context():
+      try:
+        _handle_comment(comment, rules, token, owner_id)
+      except Exception as e:
+        import traceback
+        print(f"WEBHOOK comment worker ERROR: {e}", flush=True)
+        print(traceback.format_exc(), flush=True)
+      finally:
+        db.session.remove()
+
+  threading.Thread(target=worker, daemon=True, name="ig-webhook-comment").start()
 
 
 def _enqueue_messaging(event, dm_rules, token, owner_id, page_ids: set[str]):
@@ -174,7 +192,7 @@ def _handle_messaging(event, dm_rules, token, owner_id, page_ids: set[str]):
       rule.fire_count = (rule.fire_count or 0) + 1
       db.session.commit()
       update_cooldown(owner_id, rule.id, sender_id)
-      username = instagram_api.get_ig_username(sender_id, token)
+      username = instagram_api.resolve_ig_username(owner_id, sender_id, token)
       log_activity(owner_id, "dm", rule.id, rule.trigger, sender_id,
                    "sent_dm", "ok" if ok else "error", ig_username=username)
       break
@@ -235,7 +253,7 @@ def _handle_comment(comment, rules, token, owner_id):
       if ig_user_id:
         update_cooldown(owner_id, rule.id, ig_user_id)
       if not ig_username and ig_user_id:
-        ig_username = instagram_api.get_ig_username(ig_user_id, token)
+        ig_username = instagram_api.resolve_ig_username(owner_id, ig_user_id, token)
 
       status = "ok"
       if not actions or "comment_failed" in actions or "dm_failed" in actions:

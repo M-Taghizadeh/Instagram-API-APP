@@ -7,7 +7,7 @@ from insta_agent.extensions import db
 from insta_agent.models import Flow, FlowSession, Contact, ScheduledMessage, ActivityLog
 from insta_agent.services.match import match_text
 from insta_agent.services import messaging
-from insta_agent.services.instagram_api import get_ig_username, get_page_ig_id
+from insta_agent.services.instagram_api import get_page_ig_id, resolve_ig_username
 from insta_agent.db_init import clear_flow_cooldowns
 from insta_agent.utils import now_tehran
 
@@ -27,16 +27,9 @@ def _flow_triggered(flows: list, text: str) -> Flow | None:
   return None
 
 
-def _resolve_ig_username(owner_id: int, ig_user_id: str, token: str) -> str:
-  contact = Contact.query.filter_by(user_id=owner_id, ig_user_id=ig_user_id).first()
-  if contact and contact.ig_username:
-    return contact.ig_username
-  return get_ig_username(ig_user_id, token)
-
-
 def _start_flow_session(owner_id: int, flow: Flow, ig_user_id: str, username: str, token: str) -> bool:
   if not username:
-    username = _resolve_ig_username(owner_id, ig_user_id, token)
+    username = resolve_ig_username(owner_id, ig_user_id, token)
   _abandon_active_sessions(owner_id, ig_user_id)
   clear_flow_cooldowns(owner_id, ig_user_id, flow.id)
   session = FlowSession(
@@ -283,7 +276,7 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
   if triggered:
     return _start_flow_session(owner_id, triggered, ig_user_id, "", token)
 
-  username = _resolve_ig_username(owner_id, ig_user_id, token)
+  username = resolve_ig_username(owner_id, ig_user_id, token)
 
   # ادامه session فعال
   active = FlowSession.query.filter_by(
@@ -393,7 +386,8 @@ def handle_incoming_comment(owner_id: int, comment: dict, token: str) -> bool:
 
     flow.fire_count = (flow.fire_count or 0) + 1
     db.session.commit()
-    username = get_ig_username(ig_user_id, token) if ig_user_id else ""
-    log_flow_activity(owner_id, flow, ig_user_id or "", "+".join(actions), ig_username=username)
+    if not ig_username and ig_user_id:
+      ig_username = resolve_ig_username(owner_id, ig_user_id, token)
+    log_flow_activity(owner_id, flow, ig_user_id or "", "+".join(actions), ig_username=ig_username)
     return True
   return False
