@@ -34,6 +34,9 @@
           <i data-lucide="bell" class="nav-icon"></i> اعلان‌ها
           {% if notif_unread %}<span class="nav-badge">{{ notif_unread }}</span>{% endif %}
         </a>
+        <a href="{{ url_for('activity.activity_log') }}" class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}">
+          <i data-lucide="scroll-text" class="nav-icon"></i> لاگ فعالیت
+        </a>
         {% if current_user.is_authenticated and current_user.is_admin %}
         <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.path.startswith('/admin') %}active{% endif %}">
           <i data-lucide="shield" class="nav-icon"></i> پنل ادمین
@@ -67,7 +70,7 @@
       <div class="nav-section">
         <div class="nav-section-title">حساب</div>
         <a href="{{ url_for('billing.pricing') }}" class="nav-item {% if request.path.startswith('/billing') %}active{% endif %}">
-          <i data-lucide="credit-card" class="nav-icon"></i> اشتراک و تعریف
+          <i data-lucide="credit-card" class="nav-icon"></i> اشتراک و تعرفه
         </a>
         <a href="{{ url_for('auth.pages') }}" class="nav-item {% if request.path.startswith('/pages') %}active{% endif %}">
           <i data-lucide="instagram" class="nav-icon"></i> اتصال به اینستاگرام

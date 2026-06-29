@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box, status_badge %}
 {% block title %}قانون‌های دایرکت — محتوام{% endblock %}
-{% block topbar_icon %}{{ icon('message-circle', 18) }}{% endblock %}
+{% block topbar_icon %}{{ icon_box('message-circle', 'violet', 'sm') }}{% endblock %}
 {% block topbar_title %}مدیریت دایرکت و استوری{% endblock %}
 {% block topbar_right %}
   <a href="{{ url_for('rules.new_dm_rule') }}" class="btn small">

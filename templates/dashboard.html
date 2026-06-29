@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import icon, icon_box, status_badge, sub_ticker_footer %}
+{% from "macros/ui.html" import icon, icon_box, status_badge, sub_ticker_footer, activity_type_icon %}
 {% block title %}داشبورد — محتوام{% endblock %}
 {% block topbar_icon %}{{ icon('layout-dashboard', 18) }}{% endblock %}
 {% block topbar_title %}داشبورد{% endblock %}
@@ -83,9 +83,7 @@
       <div style="display:flex;flex-direction:column;gap:12px;">
         {% for log in recent_logs %}
         <div class="activity-row">
-          <div class="act-icon {{ log.rule_type }}">
-            {{ icon('message-circle' if log.rule_type == 'dm' else 'message-square-text', 16) }}
-          </div>
+          {{ activity_type_icon(log.rule_type) }}
           <div style="flex:1;min-width:0;">
             <div class="activity-row-title">{{ log.rule_name[:30] }}{% if log.rule_name|length > 30 %}…{% endif %}</div>
             <div class="activity-row-meta">
@@ -150,7 +148,7 @@
       </div>
     {% else %}
       <div class="empty">
-        <div class="empty-icon">{{ icon('message-circle', 22) }}</div>
+        <div style="margin:0 auto 12px;width:fit-content;">{{ icon_box('message-circle', 'violet', 'md') }}</div>
         هنوز قانونی نداری.
       </div>
     {% endif %}
@@ -198,7 +196,7 @@
       </div>
     {% else %}
       <div class="empty">
-        <div class="empty-icon">{{ icon('message-square-text', 22) }}</div>
+        <div style="margin:0 auto 12px;width:fit-content;">{{ icon_box('message-square-text', 'rose', 'md') }}</div>
         هنوز قانونی نداری.
       </div>
     {% endif %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box, status_badge %}
 {% block title %}قانون‌های کامنت — محتوام{% endblock %}
-{% block topbar_icon %}{{ icon('message-square-text', 18) }}{% endblock %}
+{% block topbar_icon %}{{ icon_box('message-square-text', 'rose', 'sm') }}{% endblock %}
 {% block topbar_title %}قانون‌های کامنت{% endblock %}
 {% block topbar_right %}
   <a href="{{ url_for('rules.new_comment_rule') }}" class="btn small">{{ icon('plus', 14) }} قانون جدید</a>
@@ -156,7 +156,7 @@
 
 {% else %}
   <div class="empty">
-    <div class="empty-icon">{{ icon('message-square-text', 24) }}</div>
+    <div style="margin:0 auto 12px;width:fit-content;">{{ icon_box('message-square-text', 'rose', 'md') }}</div>
     {% if q %}نتیجه‌ای برای «{{ q }}» پیدا نشد.
     {% else %}هنوز قانونی برای کامنت نساخته‌ای.<br>با دکمه «قانون جدید» شروع کن.{% endif %}
   </div>

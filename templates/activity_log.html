@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import icon, status_badge %}
+{% from "macros/ui.html" import icon, icon_box, status_badge, activity_type_icon %}
 {% block title %}لاگ فعالیت — محتوام{% endblock %}
-{% block topbar_icon %}{{ icon('scroll-text', 18) }}{% endblock %}
+{% block topbar_icon %}{{ icon_box('scroll-text', 'amber', 'sm') }}{% endblock %}
 {% block topbar_title %}لاگ فعالیت{% endblock %}
 {% block topbar_right %}
   {% if pagination.total %}
@@ -56,9 +56,7 @@
         {% for log in pagination.items %}
         <tr>
           <td>
-            <div class="act-icon {{ log.rule_type }}">
-              {{ icon('message-circle' if log.rule_type == 'dm' else 'message-square-text', 16) }}
-            </div>
+            {{ activity_type_icon(log.rule_type) }}
           </td>
           <td style="max-width:240px;">
             <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">

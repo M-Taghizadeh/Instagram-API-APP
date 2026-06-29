@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import icon, status_badge %}
+{% from "macros/ui.html" import icon, icon_box, status_badge %}
 {% block title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }} — محتوام{% endblock %}
-{% block topbar_icon %}{{ icon('pencil' if rule else 'message-circle', 18) }}{% endblock %}
+{% block topbar_icon %}{{ icon_box('pencil' if rule else 'message-circle', 'violet', 'sm') }}{% endblock %}
 {% block topbar_title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }}{% endblock %}
 {% block content %}
 

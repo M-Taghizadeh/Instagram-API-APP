@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import icon, status_badge %}
+{% from "macros/ui.html" import icon, icon_box, status_badge %}
 {% block title %}{{ 'ویرایش قانون کامنت' if rule else 'قانون جدید کامنت' }} — محتوام{% endblock %}
-{% block topbar_icon %}{{ icon('pencil' if rule else 'message-square-text', 18) }}{% endblock %}
+{% block topbar_icon %}{{ icon_box('pencil' if rule else 'message-square-text', 'rose', 'sm') }}{% endblock %}
 {% block topbar_title %}{{ 'ویرایش قانون کامنت' if rule else 'قانون جدید کامنت' }}{% endblock %}
 {% block content %}
 

@@ -15,6 +15,16 @@
 </span>
 {%- endmacro %}
 
+{% macro activity_type_icon(rule_type, size='sm') -%}
+{% if rule_type == 'dm' %}
+{{ icon_box('message-circle', 'violet', size) }}
+{% elif rule_type == 'flow' %}
+{{ icon_box('git-branch', 'violet', size) }}
+{% else %}
+{{ icon_box('message-square-text', 'rose', size) }}
+{% endif %}
+{%- endmacro %}
+
 {% macro sub_ticker_footer(banner) -%}
 {% if banner %}
 <a href="{{ url_for('billing.pricing') }}" class="sub-ticker sub-ticker--footer sub-ticker--{{ banner.tone }}" aria-label="{{ banner.message }}">
