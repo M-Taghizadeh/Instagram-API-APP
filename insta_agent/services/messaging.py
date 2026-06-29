@@ -132,7 +132,32 @@ def send_media(user_id: str, media_type: str, url: str, token: str, ig_account_i
     return False
 
   if media_type == "audio":
-    return send_text(user_id, f"🎵 پیام صوتی:\n{media_url}", token, ig_account_id)
+    payload = {
+      "recipient": {"id": str(user_id)},
+      "message": {
+        "attachment": {
+          "type": "audio",
+          "payload": {"url": media_url, "is_reusable": True},
+        }
+      },
+    }
+    ok, err = _post_messages(
+      token,
+      payload,
+      "SEND_MEDIA_audio",
+      ig_account_id,
+      timeout=MEDIA_TIMEOUT,
+      bearer_only=True,
+    )
+    if not ok:
+      print(f"SEND_MEDIA FAILED type=audio url={media_url[:80]}: {err}", flush=True)
+      return send_text(
+        user_id,
+        f"🎵 برای شنیدن پیام صوتی:\n{media_url}",
+        token,
+        ig_account_id,
+      )
+    return ok
 
   if media_type == "video":
     return send_text(user_id, f"📎 ویدیو:\n{media_url}", token, ig_account_id)

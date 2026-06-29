@@ -13,6 +13,14 @@ ALLOWED = {
   "audio": {"mp3", "wav", "m4a", "aac", "ogg"},
 }
 
+_AUDIO_MIME = {
+  "wav": "audio/wav",
+  "mp3": "audio/mpeg",
+  "m4a": "audio/mp4",
+  "aac": "audio/aac",
+  "ogg": "audio/ogg",
+}
+
 
 def _ext_ok(filename, group):
   ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
@@ -58,7 +66,8 @@ def serve_file(filename):
   upload_dir = current_app.config["UPLOAD_DIR"]
   safe = secure_filename(filename)
   resp = make_response(send_from_directory(upload_dir, safe))
-  mime, _ = mimetypes.guess_type(safe)
+  ext = safe.rsplit(".", 1)[-1].lower() if "." in safe else ""
+  mime = _AUDIO_MIME.get(ext) or mimetypes.guess_type(safe)[0]
   if mime:
     resp.headers["Content-Type"] = mime
   resp.headers["Cache-Control"] = "public, max-age=31536000"
