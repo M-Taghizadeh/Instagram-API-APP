@@ -213,6 +213,7 @@ def pages():
   from insta_agent.models import IgAccount
   from insta_agent.services.instagram_profile import sync_ig_account_profile, probe_me
   from insta_agent.services.instagram_webhooks import get_webhook_subscription
+  from insta_agent.services.tester_gate import beta_gate_enabled, needs_beta_onboarding, onboarding_context
 
   accounts = IgAccount.query.filter_by(user_id=current_user.id).order_by(
     IgAccount.is_primary.desc(), IgAccount.connected_at.desc()
@@ -246,6 +247,9 @@ def pages():
     oauth_ready=oauth_configured(),
     webhook_subs=webhook_subs,
     token_health=token_health,
+    beta_gate=beta_gate_enabled(),
+    needs_beta=needs_beta_onboarding(current_user),
+    onboarding_ctx=onboarding_context(current_user),
   )
 
 

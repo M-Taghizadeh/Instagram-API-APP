@@ -306,11 +306,12 @@ def activation():
 
   queue = User.query.filter(
     User.is_admin == False,
-    User.tester_status.in_(("pending", "invited", "ready")),
+    User.tester_status.in_(("pending", "invited")),
   ).order_by(User.tester_requested_at.asc(), User.id.asc()).all()
 
   connected = User.query.filter_by(tester_status="connected", is_admin=False).count()
   pending_count = User.query.filter_by(tester_status="pending", is_admin=False).count()
+  ready_count = User.query.filter_by(tester_status="ready", is_admin=False).count()
 
   return render_template(
     "admin/activation.html",
@@ -318,6 +319,7 @@ def activation():
     slots_used=count_tester_slots_used(),
     slots_max=Config.BETA_TESTER_SLOTS,
     pending_count=pending_count,
+    ready_count=ready_count,
     connected_count=connected,
     beta_gate=beta_gate_enabled(),
     meta_roles_url=meta_roles_url(),

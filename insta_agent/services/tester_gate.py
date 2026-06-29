@@ -12,6 +12,14 @@ def beta_gate_enabled() -> bool:
   return beta_tester_gate_enabled()
 
 
+def needs_beta_onboarding(user) -> bool:
+  """True when user must complete beta steps before OAuth."""
+  if not beta_gate_enabled():
+    return False
+  status = (user.tester_status or "none").lower()
+  return status in ("none", "pending", "invited")
+
+
 def normalize_ig_username(raw: str) -> str:
   u = (raw or "").strip().lstrip("@").lower()
   u = u.split("/")[-1].split("?")[0]

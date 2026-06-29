@@ -1,15 +1,9 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box %}
 {% block title %}یکپارچه‌سازی Meta — ادمین{% endblock %}
+{% block topbar_icon %}{{ icon('plug', 18) }}{% endblock %}
 {% block topbar_title %}یکپارچه‌سازی Instagram / Meta{% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('plug', 22) }} تنظیمات پلتفرم</div>
-    <div class="page-sub">فقط مدیر سامانه — OAuth، Webhook و متغیرهای Render</div>
-  </div>
-</div>
 
 {% set active = 'integrations' %}
 {% include "admin/_nav.html" %}

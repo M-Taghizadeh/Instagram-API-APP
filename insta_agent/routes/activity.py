@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
+from sqlalchemy import or_
 
 from insta_agent.extensions import db
 from insta_agent.models import ActivityLog, CooldownEntry
@@ -13,12 +14,24 @@ bp = Blueprint("activity", __name__)
 def activity_log():
   page = request.args.get("page", 1, type=int)
   ftype = request.args.get("type", "")
+  q = request.args.get("q", "").strip()
   query = ActivityLog.query.filter_by(user_id=current_user.id)
   if ftype in ("dm", "comment", "flow"):
     query = query.filter_by(rule_type=ftype)
+  if q:
+    like = f"%{q}%"
+    query = query.filter(
+      or_(
+        ActivityLog.rule_name.ilike(like),
+        ActivityLog.ig_username.ilike(like),
+        ActivityLog.ig_user_id.ilike(like),
+        ActivityLog.action.ilike(like),
+        ActivityLog.note.ilike(like),
+      )
+    )
   pagination = query.order_by(ActivityLog.created_at.desc()).paginate(page=page, per_page=15, error_out=False)
   total = ActivityLog.query.filter_by(user_id=current_user.id).count()
-  return render_template("activity_log.html", pagination=pagination, ftype=ftype, total=total)
+  return render_template("activity_log.html", pagination=pagination, ftype=ftype, q=q, total=total)
 
 
 @bp.route("/activity/clear", methods=["POST"])

@@ -1,17 +1,9 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, status_badge %}
 {% block title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }} — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('pencil' if rule else 'message-circle', 18) }}{% endblock %}
 {% block topbar_title %}{{ 'ویرایش قانون دایرکت' if rule else 'قانون جدید دایرکت' }}{% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">
-      {% if rule %}{{ icon('pencil', 22) }} ویرایش قانون دایرکت{% else %}{{ icon('message-circle', 22) }} قانون جدید دایرکت{% endif %}
-    </div>
-    <div class="page-sub">وقتی کسی در دایرکت یا ریپلای استوری کلمه موردنظر را بفرستد، این پاسخ ارسال می‌شود.</div>
-  </div>
-</div>
 
 <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
 

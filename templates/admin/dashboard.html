@@ -1,21 +1,15 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box, status_badge %}
 {% block title %}پنل ادمین — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('shield', 18) }}{% endblock %}
 {% block topbar_title %}مدیریت سامانه{% endblock %}
+{% block topbar_right %}
+  <a href="{{ url_for('admin.accounting') }}" class="btn secondary small">{{ icon('bar-chart-3', 14) }} حسابداری</a>
+  <a href="{{ url_for('admin.plans') }}" class="btn secondary small">قیمت پلن‌ها</a>
+  <a href="{{ url_for('admin.integrations') }}" class="btn secondary small">{{ icon('plug', 14) }} یکپارچه‌سازی</a>
+  <a href="{{ url_for('admin.users') }}" class="btn secondary small">کاربران</a>
+{% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('shield', 22) }} پنل ادمین</div>
-    <div class="page-sub">گزارش جامع و مدیریت سامانه</div>
-  </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">
-    <a href="{{ url_for('admin.accounting') }}" class="btn secondary small">{{ icon('bar-chart-3', 14) }} حسابداری</a>
-    <a href="{{ url_for('admin.plans') }}" class="btn secondary small">قیمت پلن‌ها</a>
-    <a href="{{ url_for('admin.integrations') }}" class="btn secondary small">{{ icon('plug', 14) }} یکپارچه‌سازی</a>
-    <a href="{{ url_for('admin.users') }}" class="btn secondary small">کاربران</a>
-  </div>
-</div>
 
 {% set active = 'dashboard' %}
 {% include "admin/_nav.html" %}

@@ -1,15 +1,9 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box %}
 {% block title %}تنظیمات — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('settings', 18) }}{% endblock %}
 {% block topbar_title %}تنظیمات{% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('settings', 22) }} تنظیمات</div>
-    <div class="page-sub">اتصال اینستاگرام، Cooldown و امنیت حساب</div>
-  </div>
-</div>
 
 <div class="card" style="padding:18px 20px;margin-bottom:20px;">
   <div class="settings-section-head">

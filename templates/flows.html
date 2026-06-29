@@ -1,18 +1,12 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, status_badge %}
 {% block title %}فلوهای هوشمند — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('git-branch', 18) }}{% endblock %}
 {% block topbar_title %}فلو هوشمند{% endblock %}
 {% block topbar_right %}
   <a href="{{ url_for('flows.new_flow') }}" class="btn small">{{ icon('plus', 14) }} فلو جدید</a>
 {% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('git-branch', 22) }} فلوهای هوشمند</div>
-    <div class="page-sub">پاسخ هوشمند، فرم‌ساز، نظرسنجی، آزمون، ویترین و فالوآپ</div>
-  </div>
-</div>
 
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
   <a href="{{ url_for('flows.flow_list') }}" class="btn {{ 'secondary' if kind else 'ghost' }} small">همه</a>

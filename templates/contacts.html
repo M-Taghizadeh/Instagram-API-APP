@@ -1,19 +1,13 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon %}
 {% block title %}مخاطبین — محتوام{% endblock %}
-{% block topbar_title %}مخاطبین CRM{% endblock %}
+{% block topbar_icon %}{{ icon('users', 18) }}{% endblock %}
+{% block topbar_title %}مخاطبین{% endblock %}
 {% block topbar_right %}
   <a href="{{ url_for('contacts.export_contacts') }}" class="btn secondary small">{{ icon('download', 14) }} Excel</a>
   <a href="{{ url_for('contacts.export_phones') }}" class="btn secondary small">{{ icon('smartphone', 14) }} شماره‌ها</a>
 {% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('users', 22) }} مخاطبین</div>
-    <div class="page-sub">{{ total }} مخاطب · {{ with_phone }} با شماره تماس</div>
-  </div>
-</div>
 
 <form method="get" class="toolbar">
   <div class="search-bar">

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon %}
 {% block title %}اعلان‌ها — محتوام{% endblock %}
-{% block topbar_title %}اعلان‌ها{% endblock %}
+{% block topbar_icon %}{{ icon('bell', 18) }}{% endblock %}
+{% block topbar_title %}اعلان‌ها{% if unread %} <span class="badge pink" style="font-size:10px;padding:2px 7px;vertical-align:middle">{{ unread }}</span>{% endif %}{% endblock %}
 {% block topbar_right %}
   {% if unread %}
   <form method="post" action="{{ url_for('notifications.read_all') }}" style="display:inline;">
@@ -15,10 +16,6 @@
 {% set active = 'notifications' %}
 {% include "admin/_nav.html" %}
 {% endif %}
-
-<div class="page-header">
-  <div class="page-title">{{ icon('bell', 22) }} اعلان‌ها{% if unread %} <span class="badge pink">{{ unread }}</span>{% endif %}</div>
-</div>
 
 {% if not items %}
 <div class="card" style="padding:40px;text-align:center;color:var(--text-faint);">

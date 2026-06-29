@@ -1,17 +1,13 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box %}
 {% block title %}حسابداری — ادمین{% endblock %}
-{% block topbar_title %}پنل حسابداری و مالی{% endblock %}
-{% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('bar-chart-3', 22) }} حسابداری و مالی</div>
-    <div class="page-sub">گزارش درآمد سامانه — {{ report.period_label }}</div>
-  </div>
+{% block topbar_icon %}{{ icon('bar-chart-3', 18) }}{% endblock %}
+{% block topbar_title %}حسابداری و مالی{% endblock %}
+{% block topbar_right %}
   <a href="{{ url_for('admin.accounting_export', period=report.period, date_from=report.date_from, date_to=report.date_to, year=report.year, month=report.month, status=report.status_filter) }}"
      class="btn secondary small">{{ icon('download', 14) }} خروجی CSV</a>
-</div>
+{% endblock %}
+{% block content %}
 
 {% set active = 'accounting' %}
 {% include "admin/_nav.html" %}

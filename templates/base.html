@@ -27,28 +27,30 @@
 
     <nav class="sidebar-nav">
       <div class="nav-section">
-        <div class="nav-section-title">اصلی</div>
         <a href="{{ url_for('dashboard.dashboard') }}" class="nav-item {% if request.path.startswith('/dashboard') %}active{% endif %}">
           <i data-lucide="layout-dashboard" class="nav-icon"></i> داشبورد
         </a>
-        <a href="{{ url_for('activity.activity_log') }}" class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}">
-          <i data-lucide="scroll-text" class="nav-icon"></i> لاگ فعالیت
+        <a href="{{ url_for('notifications.inbox') }}" class="nav-item {% if request.path.startswith('/notifications') %}active{% endif %}">
+          <i data-lucide="bell" class="nav-icon"></i> اعلان‌ها
+          {% if notif_unread %}<span class="nav-badge">{{ notif_unread }}</span>{% endif %}
         </a>
-        <a href="{{ url_for('contacts.contact_list') }}" class="nav-item {% if request.path.startswith('/contacts') %}active{% endif %}">
-          <i data-lucide="users" class="nav-icon"></i> مخاطبین
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.path.startswith('/admin') %}active{% endif %}">
+          <i data-lucide="shield" class="nav-icon"></i> پنل ادمین
         </a>
+        {% endif %}
       </div>
 
       <div class="nav-section">
-        <div class="nav-section-title">اتومیشن</div>
-        <a href="{{ url_for('flows.flow_list') }}" class="nav-item {% if request.path.startswith('/flows') %}active{% endif %}">
-          <i data-lucide="git-branch" class="nav-icon"></i> فلو هوشمند
-        </a>
+        <div class="nav-section-title">ایجنت‌های هوشمند</div>
         <a href="{{ url_for('rules.dm_rules') }}" class="nav-item {% if request.path.startswith('/dm') %}active{% endif %}">
-          <i data-lucide="message-circle" class="nav-icon"></i> دایرکت ساده
+          <i data-lucide="message-circle" class="nav-icon"></i> مدیریت استوری و دایرکت
         </a>
         <a href="{{ url_for('rules.comment_rules') }}" class="nav-item {% if request.path.startswith('/comment') %}active{% endif %}">
-          <i data-lucide="message-square-text" class="nav-icon"></i> کامنت هوشمند
+          <i data-lucide="message-square-text" class="nav-icon"></i> مدیریت کامنت هوشمند
+        </a>
+        <a href="{{ url_for('flows.flow_list') }}" class="nav-item {% if request.path.startswith('/flows') %}active{% endif %}">
+          <i data-lucide="git-branch" class="nav-icon"></i> فلوهای هوشمند
         </a>
         <a href="{{ url_for('followup.followup_list') }}" class="nav-item {% if request.path.startswith('/followup') %}active{% endif %}">
           <i data-lucide="clock" class="nav-icon"></i> فالوآپ
@@ -65,7 +67,7 @@
       <div class="nav-section">
         <div class="nav-section-title">حساب</div>
         <a href="{{ url_for('billing.pricing') }}" class="nav-item {% if request.path.startswith('/billing') %}active{% endif %}">
-          <i data-lucide="credit-card" class="nav-icon"></i> اشتراک و تعرفه
+          <i data-lucide="credit-card" class="nav-icon"></i> اشتراک و تعریف
         </a>
         <a href="{{ url_for('auth.pages') }}" class="nav-item {% if request.path.startswith('/pages') %}active{% endif %}">
           <i data-lucide="instagram" class="nav-icon"></i> اتصال به اینستاگرام
@@ -73,15 +75,6 @@
         <a href="{{ url_for('settings.settings') }}" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
           <i data-lucide="settings" class="nav-icon"></i> تنظیمات
         </a>
-        <a href="{{ url_for('notifications.inbox') }}" class="nav-item {% if request.path.startswith('/notifications') %}active{% endif %}">
-          <i data-lucide="bell" class="nav-icon"></i> اعلان‌ها
-          {% if notif_unread %}<span class="nav-badge">{{ notif_unread }}</span>{% endif %}
-        </a>
-        {% if current_user.is_authenticated and current_user.is_admin %}
-        <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.path.startswith('/admin') %}active{% endif %}">
-          <i data-lucide="shield" class="nav-icon"></i> پنل ادمین
-        </a>
-        {% endif %}
       </div>
     </nav>
 
@@ -95,7 +88,7 @@
       </div>
       <form action="{{ url_for('auth.logout') }}" method="get">
         <button type="submit" class="btn-logout">
-          <i data-lucide="log-out" style="width:16px;height:16px"></i> خروج از حساب
+          <i data-lucide="log-out" style="width:16px;height:16px"></i> خروج
         </button>
       </form>
     </div>
@@ -108,7 +101,12 @@
       <button type="button" class="topbar-mobile-menu" onclick="openSidebar()" aria-label="منو">
         <i data-lucide="menu" style="width:22px;height:22px"></i>
       </button>
-      <div class="topbar-title">{% block topbar_title %}{% endblock %}</div>
+      <div class="topbar-title">
+        <span class="topbar-heading">
+          {% block topbar_icon %}{% endblock %}
+          <span class="topbar-heading-text">{% block topbar_title %}{% endblock %}</span>
+        </span>
+      </div>
       <div class="topbar-right">
         {% if current_user.is_authenticated %}
         <a href="{{ url_for('notifications.inbox') }}" class="icon-btn" title="اعلان‌ها" style="position:relative;text-decoration:none;">

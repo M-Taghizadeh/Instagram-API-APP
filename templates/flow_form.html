@@ -1,15 +1,9 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon %}
 {% block title %}{{ 'ویرایش' if flow else 'فلو جدید' }} — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('git-branch', 18) }}{% endblock %}
 {% block topbar_title %}{{ 'ویرایش فلو' if flow else 'فلو جدید' }}{% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('git-branch', 22) }} {{ 'ویرایش فلو' if flow else 'ساخت فلو جدید' }}</div>
-    <div class="page-sub">متن، ویدیو، ویس، دکمه، ویترین، فرم، نظرسنجی و فالوآپ — با ویرایشگر بصری</div>
-  </div>
-</div>
 
 <form method="post">
   <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start;">

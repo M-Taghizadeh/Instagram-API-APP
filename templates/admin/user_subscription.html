@@ -1,24 +1,22 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box, status_badge %}
 {% block title %}اشتراک {{ target.username }} — ادمین{% endblock %}
-{% block topbar_title %}مدیریت اشتراک کاربر{% endblock %}
-{% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('credit-card', 22) }} اشتراک — {{ target.username }}</div>
-    <div class="page-sub">
-      {% if ig %}@{{ ig.username }} · {{ "{:,}".format(followers) }} فالوور
-      {% if suggested_plan %} · پلن پیشنهادی: <b>{{ suggested_plan.name }}</b>{% endif %}
-      {% else %}بدون پیج متصل{% endif %}
-      {% if target.is_admin %} · <span class="badge ok">مدیر سامانه</span>{% endif %}
-    </div>
-  </div>
+{% block topbar_icon %}{{ icon('credit-card', 18) }}{% endblock %}
+{% block topbar_title %}اشتراک — {{ target.username }}{% endblock %}
+{% block topbar_right %}
   <a href="{{ url_for('admin.users') }}" class="btn secondary small">بازگشت به کاربران</a>
-</div>
+{% endblock %}
+{% block content %}
 
 {% set active = 'users' %}
 {% include "admin/_nav.html" %}
+
+{% if ig or target.is_admin %}
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;font-size:12.5px;color:var(--text-dim);align-items:center;">
+  {% if ig %}<span>@{{ ig.username }} · {{ "{:,}".format(followers) }} فالوور{% if suggested_plan %} · پلن پیشنهادی: <b>{{ suggested_plan.name }}</b>{% endif %}</span>{% else %}<span>بدون پیج متصل</span>{% endif %}
+  {% if target.is_admin %}<span class="badge ok">مدیر سامانه</span>{% endif %}
+</div>
+{% endif %}
 
 <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
   <div class="card" style="padding:22px;">

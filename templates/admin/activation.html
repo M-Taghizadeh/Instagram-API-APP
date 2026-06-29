@@ -1,29 +1,27 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon %}
 {% block title %}فعال‌سازی پیج‌ها — ادمین{% endblock %}
+{% block topbar_icon %}{{ icon('user-check', 18) }}{% endblock %}
 {% block topbar_title %}صف فعال‌سازی (بتا){% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('user-check', 22) }} فعال‌سازی Instagram Tester</div>
-    <div class="page-sub">
-      {% if beta_gate %}
-      <span class="badge purple">BETA_TESTER_GATE فعال</span>
-      {% else %}
-      <span class="badge ok">BETA_TESTER_GATE غیرفعال — مسیر Live</span>
-      {% endif %}
-      · {{ slots_used }} / {{ slots_max }} اسلات
-      {% if pending_count %} · <span class="badge pink">{{ pending_count }} در انتظار</span>{% endif %}
-    </div>
-  </div>
-</div>
 
 {% set active = 'activation' %}
 {% include "admin/_nav.html" %}
 
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+  {% if beta_gate %}
+  <span class="badge purple">BETA_TESTER_GATE فعال</span>
+  {% else %}
+  <span class="badge ok">BETA_TESTER_GATE غیرفعال — مسیر Live</span>
+  {% endif %}
+  <span class="badge">{{ slots_used }} / {{ slots_max }} اسلات</span>
+  {% if pending_count %}<span class="badge pink">{{ pending_count }} در انتظار</span>{% endif %}
+  {% if ready_count %}<span class="badge ok">{{ ready_count }} آماده اتصال (خارج از صف)</span>{% endif %}
+</div>
+
 <div class="card" style="padding:16px 18px;margin-bottom:20px;font-size:12.5px;line-height:2;color:var(--text-dim);">
   <strong style="color:var(--text);">روند کار (۲ دقیقه):</strong>
+  فقط کاربران «در انتظار» و «دعوت فرستاده» در این جدول هستند. بعد از «آماده اتصال»، کاربر خودش وصل می‌کند و اگر قطع کرد دوباره بدون اقدام ادمین می‌تواند وصل شود.<br>
   ۱. یوزرنیم را کپی کن → <a href="{{ meta_roles_url }}" target="_blank" rel="noopener"><strong>افزودن Tester در Meta</strong></a><br>
   ۲. کاربر اعلان «در انتظار تایید» می‌بیند — بعد از Add در Meta «دعوت فرستاده» بزن<br>
   ۳. کاربر Accept می‌کند و «اتصال پیج» را می‌زند
@@ -32,7 +30,10 @@
 {% if not queue %}
 <div class="card" style="padding:32px;text-align:center;color:var(--text-faint);">
   {{ icon('inbox', 32) }}
-  <div style="margin-top:12px;font-size:13px;">صف خالی است — {{ connected_count }} کاربر تا الان وصل شده‌اند.</div>
+  <div style="margin-top:12px;font-size:13px;">
+    صف خالی است — {{ connected_count }} کاربر وصل شده
+    {% if ready_count %} · {{ ready_count }} آماده اتصال مجدد{% endif %}
+  </div>
 </div>
 {% else %}
 <div class="card" style="padding:0;overflow:hidden;">
@@ -59,8 +60,6 @@
         <span class="badge pink">در انتظار</span>
         {% elif u.tester_status == 'invited' %}
         <span class="badge purple">دعوت فرستاده</span>
-        {% elif u.tester_status == 'ready' %}
-        <span class="badge ok">آماده اتصال</span>
         {% endif %}
       </td>
       <td style="color:var(--text-faint);font-size:11px;">

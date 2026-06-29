@@ -1,15 +1,9 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box %}
 {% block title %}پیامک — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('smartphone', 18) }}{% endblock %}
 {% block topbar_title %}پیامک هوشمند{% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('smartphone', 22) }} پیامک هوشمند</div>
-    <div class="page-sub">{{ phone_count }} شماره در CRM · ارسال تکی و انبوه</div>
-  </div>
-</div>
 
 <div class="sms-layout">
   <form method="post" action="{{ url_for('sms.sms_settings') }}" class="card sms-card sms-card--settings">

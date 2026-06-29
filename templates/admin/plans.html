@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon %}
 {% block title %}مدیریت قیمت‌ها — ادمین{% endblock %}
-{% block topbar_title %}ویرایش قیمت پلن‌ها{% endblock %}
-{% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">💰 قیمت پلن‌ها</div>
-    <div class="page-sub">فقط ادمین اصلی — تغییرات بلافاصله در صفحه تعرفه اعمال می‌شود</div>
-  </div>
+{% block topbar_icon %}{{ icon('coins', 18) }}{% endblock %}
+{% block topbar_title %}قیمت پلن‌ها{% endblock %}
+{% block topbar_right %}
   <a href="{{ url_for('admin.dashboard') }}" class="btn secondary small">بازگشت</a>
-</div>
+{% endblock %}
+{% block content %}
 
 {% set active = 'plans' %}
 {% include "admin/_nav.html" %}

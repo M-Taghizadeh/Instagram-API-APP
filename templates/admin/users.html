@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon %}
 {% block title %}کاربران — ادمین{% endblock %}
+{% block topbar_icon %}{{ icon('users', 18) }}{% endblock %}
 {% block topbar_title %}مدیریت کاربران{% endblock %}
-{% block content %}
-
-<div class="page-header">
-  <div class="page-title">{{ icon('users', 22) }} کاربران</div>
+{% block topbar_right %}
   <a href="{{ url_for('admin.dashboard') }}" class="btn secondary small">بازگشت</a>
-</div>
+{% endblock %}
+{% block content %}
 
 {% set active = 'users' %}
 {% include "admin/_nav.html" %}

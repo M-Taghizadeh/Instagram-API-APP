@@ -1,22 +1,16 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon %}
 {% block title %}فالوآپ — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('clock', 18) }}{% endblock %}
 {% block topbar_title %}فالوآپ هوشمند{% endblock %}
 {% block topbar_right %}
   <a href="{{ url_for('followup.new_followup') }}" class="btn small">{{ icon('plus', 14) }} زمان‌بندی جدید</a>
 {% endblock %}
 {% block content %}
 
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('clock', 22) }} فالوآپ و پیگیری</div>
-    <div class="page-sub">{{ pending }} پیام در صف · ارسال طبق زمان‌بندی (در پنجره ۲۴ ساعته)</div>
-  </div>
-</div>
-
 <div style="display:flex;gap:8px;margin-bottom:16px;">
   <a href="{{ url_for('followup.followup_list') }}" class="btn {{ 'secondary' if not status else 'ghost' }} small">همه</a>
-  <a href="{{ url_for('followup.followup_list', status='pending') }}" class="btn {{ 'secondary' if status == 'pending' else 'ghost' }} small">در انتظار</a>
+  <a href="{{ url_for('followup.followup_list', status='pending') }}" class="btn {{ 'secondary' if status == 'pending' else 'ghost' }} small">در انتظار{% if pending %} ({{ pending }}){% endif %}</a>
   <a href="{{ url_for('followup.followup_list', status='sent') }}" class="btn {{ 'secondary' if status == 'sent' else 'ghost' }} small">ارسال‌شده</a>
 </div>
 

@@ -75,6 +75,9 @@ def _connect_checks():
 @bp.route("/connect")
 @login_required
 def connect():
+  from insta_agent.services.tester_gate import needs_beta_onboarding
+  if needs_beta_onboarding(current_user):
+    return redirect(url_for("auth.onboarding"))
   blocked = _connect_checks()
   if blocked:
     return blocked

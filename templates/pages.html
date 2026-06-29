@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box %}
 {% block title %}اتصال به اینستاگرام — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('instagram', 18) }}{% endblock %}
 {% block topbar_title %}اتصال به اینستاگرام{% endblock %}
 {% block topbar_right %}
   {% if accounts %}
@@ -9,17 +10,17 @@
   </form>
   {% endif %}
   {% if oauth_ready and (not accounts or current_user.is_admin) %}
-  <a href="{{ url_for('oauth.connect') }}" class="btn small">{{ icon('plus', 14) }} اتصال پیج</a>
+  <a href="{{ url_for('auth.onboarding') if needs_beta else url_for('oauth.connect') }}" class="btn small">{{ icon('plus', 14) }} {% if needs_beta %}فعال‌سازی پیج{% else %}اتصال پیج{% endif %}</a>
   {% endif %}
 {% endblock %}
 {% block content %}
 
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('instagram', 22) }} اتصال به اینستاگرام</div>
-    <div class="page-sub">پیج متصل‌شده — اطلاعات پروفایل از Instagram API ذخیره می‌شود{% if current_user.is_admin %} · مدیر سامانه: بدون محدودیت تعداد پیج{% endif %}</div>
-  </div>
+{% if beta_gate or current_user.is_admin %}
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+  {% if beta_gate %}<span class="badge purple">حالت بتا</span>{% else %}<span class="badge ok">اتصال مستقیم</span>{% endif %}
+  {% if current_user.is_admin %}<span class="badge">مدیر — بدون محدودیت پیج</span>{% endif %}
 </div>
+{% endif %}
 
 {% if accounts %}
 <div class="grid">
@@ -99,9 +100,21 @@
 {% else %}
 <div class="empty">
   <div class="empty-icon">{{ icon('instagram', 24) }}</div>
+  {% if needs_beta and onboarding_ctx.phase == 'username' %}
+  <div style="font-size:14px;margin-bottom:8px;">برای اتصال پیج، یوزرنیم اینستاگرامت را ثبت کن</div>
+  <div style="font-size:12px;color:var(--text-faint);margin-bottom:16px;">حالت بتا — ابتدا تایید سامانه، بعد اتصال</div>
+  {% elif needs_beta and onboarding_ctx.phase == 'activate' %}
+  <div style="font-size:14px;margin-bottom:8px;">پیج <code dir="ltr">@{{ onboarding_ctx.ig_username_requested }}</code> در انتظار تایید سامانه</div>
+  <div style="font-size:12px;color:var(--text-faint);margin-bottom:16px;">بعد از فعال‌سازی می‌توانی وصل کنی</div>
+  {% else %}
   هنوز پیجی وصل نکردی.
+  {% endif %}
   {% if oauth_ready %}
-  <div style="margin-top:16px;"><a href="{{ url_for('oauth.connect') }}" class="btn">اتصال اولین پیج</a></div>
+  <div style="margin-top:16px;">
+    <a href="{{ url_for('auth.onboarding') if needs_beta else url_for('oauth.connect') }}" class="btn">
+      {% if needs_beta %}ادامه فعال‌سازی{% else %}اتصال اولین پیج{% endif %}
+    </a>
+  </div>
   {% endif %}
 </div>
 {% endif %}

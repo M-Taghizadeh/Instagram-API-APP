@@ -1,15 +1,9 @@
 {% extends "base.html" %}
 {% from "macros/ui.html" import icon, icon_box, status_badge %}
 {% block title %}تعرفه‌ها — محتوام{% endblock %}
+{% block topbar_icon %}{{ icon('gem', 18) }}{% endblock %}
 {% block topbar_title %}تعرفه و اشتراک{% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <div>
-    <div class="page-title">{{ icon('gem', 22) }} تعرفه‌ها</div>
-    <div class="page-sub">دسترسی کامل به تمام امکانات — قیمت بر اساس فالوور پیج شما</div>
-  </div>
-</div>
 
 {% if sub_info %}
 <div class="card pricing-status-bar">
