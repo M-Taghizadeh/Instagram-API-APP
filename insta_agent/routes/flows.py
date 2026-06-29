@@ -106,6 +106,25 @@ def _parse_nodes_from_form(raw: str) -> list | None:
   return None
 
 
+def _apply_flow_fields(flow: Flow, nodes: list):
+  flow.name = request.form.get("name", "فلو جدید").strip()
+  flow.description = request.form.get("description", "").strip()
+  flow.channel = request.form.get("channel", "dm")
+  flow.flow_kind = request.form.get("flow_kind", "automation")
+  flow.trigger = request.form.get("trigger", "").strip()
+  flow.match_type = request.form.get("match_type", "contains")
+  flow.post_id = request.form.get("post_id", "").strip()
+  flow.nodes_json = json.dumps(nodes, ensure_ascii=False)
+
+
+def _validate_flow_nodes(nodes: list | None) -> str | None:
+  if nodes is None:
+    return "فرمت نودهای فلو نامعتبر است."
+  if not nodes:
+    return "حداقل یک نود در ویرایشگر بسازید."
+  return None
+
+
 @bp.route("/new", methods=["GET", "POST"])
 @login_required
 def new_flow():
@@ -113,23 +132,15 @@ def new_flow():
     kind = request.form.get("flow_kind", "automation")
     channel = request.form.get("channel", "dm")
     nodes = _parse_nodes_from_form(request.form.get("nodes_json", "[]"))
-    if nodes is None:
-      flash("فرمت نودهای فلو نامعتبر است.", "error")
+    err = _validate_flow_nodes(nodes)
+    if err:
+      flash(err, "error")
       return render_template(
         "flow_form.html",
         flow=None,
         flow_kinds=FLOW_KINDS,
         channels=CHANNELS,
-        nodes_for_editor=[],
-      )
-    if not nodes:
-      flash("حداقل یک نود در ویرایشگر بسازید.", "error")
-      return render_template(
-        "flow_form.html",
-        flow=None,
-        flow_kinds=FLOW_KINDS,
-        channels=CHANNELS,
-        nodes_for_editor=[],
+        nodes_for_editor=nodes or [],
       )
     flow = Flow(
       user_id=current_user.id,
@@ -161,34 +172,19 @@ def new_flow():
 def edit_flow(flow_id):
   flow = Flow.query.filter_by(id=flow_id, user_id=current_user.id).first_or_404()
   if request.method == "POST":
-    flow.name = request.form.get("name", "").strip()
-    flow.description = request.form.get("description", "").strip()
-    flow.channel = request.form.get("channel", "dm")
-    flow.flow_kind = request.form.get("flow_kind", "automation")
-    flow.trigger = request.form.get("trigger", "").strip()
-    flow.match_type = request.form.get("match_type", "contains")
-    flow.post_id = request.form.get("post_id", "").strip()
     nodes_raw = request.form.get("nodes_json", "[]")
     nodes = _parse_nodes_from_form(nodes_raw)
-    if nodes is None:
-      flash("فرمت JSON نودها نامعتبر است.", "error")
+    err = _validate_flow_nodes(nodes)
+    if err:
+      flash(err, "error")
       return render_template(
         "flow_form.html",
         flow=flow,
         flow_kinds=FLOW_KINDS,
         channels=CHANNELS,
-        nodes_for_editor=parse_nodes(flow),
+        nodes_for_editor=parse_nodes(flow) if nodes is None else nodes,
       )
-    if not nodes:
-      flash("حداقل یک نود در ویرایشگر بسازید.", "error")
-      return render_template(
-        "flow_form.html",
-        flow=flow,
-        flow_kinds=FLOW_KINDS,
-        channels=CHANNELS,
-        nodes_for_editor=parse_nodes(flow),
-      )
-    flow.nodes_json = json.dumps(nodes, ensure_ascii=False)
+    _apply_flow_fields(flow, nodes)
     db.session.commit()
     flash("فلو ذخیره شد.", "success")
     return redirect(url_for("flows.flow_list"))
@@ -199,6 +195,71 @@ def edit_flow(flow_id):
     flow_kinds=FLOW_KINDS,
     channels=CHANNELS,
     nodes_for_editor=nodes,
+  )
+
+
+@bp.route("/new/canvas", methods=["GET", "POST"])
+@login_required
+def new_flow_canvas():
+  if request.method == "POST":
+    nodes = _parse_nodes_from_form(request.form.get("nodes_json", "[]"))
+    err = _validate_flow_nodes(nodes)
+    if err:
+      flash(err, "error")
+      return render_template(
+        "flow_canvas.html",
+        flow=None,
+        flow_kinds=FLOW_KINDS,
+        channels=CHANNELS,
+        nodes_for_editor=nodes or [],
+        back_url=url_for("flows.new_flow"),
+      )
+    flow = Flow(user_id=current_user.id, is_active=True)
+    db.session.add(flow)
+    _apply_flow_fields(flow, nodes)
+    db.session.commit()
+    flash("فلو ذخیره شد.", "success")
+    return redirect(url_for("flows.flow_canvas", flow_id=flow.id))
+
+  return render_template(
+    "flow_canvas.html",
+    flow=None,
+    flow_kinds=FLOW_KINDS,
+    channels=CHANNELS,
+    nodes_for_editor=[],
+    back_url=url_for("flows.new_flow"),
+  )
+
+
+@bp.route("/<flow_id>/canvas", methods=["GET", "POST"])
+@login_required
+def flow_canvas(flow_id):
+  flow = Flow.query.filter_by(id=flow_id, user_id=current_user.id).first_or_404()
+  if request.method == "POST":
+    nodes = _parse_nodes_from_form(request.form.get("nodes_json", "[]"))
+    err = _validate_flow_nodes(nodes)
+    if err:
+      flash(err, "error")
+      return render_template(
+        "flow_canvas.html",
+        flow=flow,
+        flow_kinds=FLOW_KINDS,
+        channels=CHANNELS,
+        nodes_for_editor=parse_nodes(flow) if nodes is None else nodes,
+        back_url=url_for("flows.edit_flow", flow_id=flow.id),
+      )
+    _apply_flow_fields(flow, nodes)
+    db.session.commit()
+    flash("فلو ذخیره شد.", "success")
+    return redirect(url_for("flows.flow_canvas", flow_id=flow.id))
+
+  return render_template(
+    "flow_canvas.html",
+    flow=flow,
+    flow_kinds=FLOW_KINDS,
+    channels=CHANNELS,
+    nodes_for_editor=parse_nodes(flow),
+    back_url=url_for("flows.edit_flow", flow_id=flow.id),
   )
 
 

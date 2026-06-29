@@ -48,19 +48,32 @@
         <input type="text" name="post_id" value="{{ flow.post_id if flow else '' }}" placeholder="خالی = همه پست‌ها">
       </div>
       <p style="font-size:11px;color:var(--text-faint);line-height:1.7;margin-top:8px;">
-        نودها را از پالت اضافه کنید، با درگ به هم وصل کنید و روی هر نود کلیک کنید تا تنظیماتش را ویرایش کنید.
+        نودها را در ویرایشگر تمام‌صفحه بسازید و به هم وصل کنید.
       </p>
     </div>
 
-    <div class="card" style="padding:16px;">
-      <div style="font-weight:800;margin-bottom:12px;">ویرایشگر فلو</div>
-      <script type="application/json" id="flow-editor-nodes-data">{{ nodes_for_editor | tojson }}</script>
-      <div id="flow-editor-root"></div>
-      <textarea id="nodes_json" name="nodes_json" style="display:none">{{ flow.nodes_json if flow else '[]' }}</textarea>
-      <details style="margin-top:12px;">
-        <summary style="font-size:11px;color:var(--text-faint);cursor:pointer;">نمایش JSON (پیشرفته)</summary>
-        <pre id="nodes_json_preview" style="margin-top:8px;font-size:11px;direction:ltr;overflow:auto;max-height:180px;color:var(--text-faint);"></pre>
-      </details>
+    <div class="card" style="padding:20px;">
+      <div class="flow-editor-shell" id="flowEditorShell">
+        <div class="flow-editor-shell-header">
+          <div style="font-weight:800;">ویرایشگر فلو</div>
+          <div class="flow-editor-shell-actions">
+            {% if flow %}
+            <a href="{{ url_for('flows.flow_canvas', flow_id=flow.id) }}" class="btn small">{{ icon('maximize-2', 14) }} صفحه ویرایشگر</a>
+            {% else %}
+            <a href="{{ url_for('flows.new_flow_canvas') }}" class="btn small">{{ icon('maximize-2', 14) }} صفحه ویرایشگر</a>
+            {% endif %}
+            <button type="button" class="btn secondary small" onclick="openFlowEditorFullscreen()">{{ icon('expand', 14) }} تمام‌صفحه</button>
+            <button type="button" class="btn ghost small flow-editor-exit-fs" style="display:none;" onclick="closeFlowEditorFullscreen()">{{ icon('minimize-2', 14) }} خروج</button>
+          </div>
+        </div>
+        <script type="application/json" id="flow-editor-nodes-data">{{ nodes_for_editor | tojson }}</script>
+        <div id="flow-editor-root"></div>
+        <textarea id="nodes_json" name="nodes_json" style="display:none">{{ flow.nodes_json if flow else '[]' }}</textarea>
+        <details style="margin-top:12px;">
+          <summary style="font-size:11px;color:var(--text-faint);cursor:pointer;">نمایش JSON (پیشرفته)</summary>
+          <pre id="nodes_json_preview" style="margin-top:8px;font-size:11px;direction:ltr;overflow:auto;max-height:180px;color:var(--text-faint);"></pre>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -81,5 +94,15 @@ document.getElementById('nodes_json').addEventListener('input', function() {
   if (pre) pre.textContent = this.value;
 });
 document.getElementById('nodes_json').dispatchEvent(new Event('input'));
+
+const shell = document.getElementById('flowEditorShell');
+if (shell) {
+  const observer = new MutationObserver(() => {
+    const fs = shell.classList.contains('is-fullscreen');
+    const exitBtn = shell.querySelector('.flow-editor-exit-fs');
+    if (exitBtn) exitBtn.style.display = fs ? 'inline-flex' : 'none';
+  });
+  observer.observe(shell, { attributes: true, attributeFilter: ['class'] });
+}
 </script>
 {% endblock %}

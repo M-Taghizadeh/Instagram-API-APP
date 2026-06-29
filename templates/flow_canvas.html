@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import icon %}
+{% block title %}ویرایشگر فلو{% if flow %} — {{ flow.name }}{% endif %} — محتوام{% endblock %}
+{% block body_class %}flow-canvas-page{% endblock %}
+{% block topbar_icon %}{{ icon('git-branch', 18) }}{% endblock %}
+{% block topbar_title %}ویرایشگر فلو{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='flow-editor/flow-editor.css') }}">
+{% endblock %}
+
+{% block content %}
+<form method="post" id="flow-canvas-form">
+  <div class="flow-canvas-toolbar">
+    <div class="flow-canvas-toolbar-title">
+      {% if flow %}{{ flow.name }}{% else %}فلو جدید{% endif %}
+    </div>
+    <div class="flow-canvas-toolbar-actions">
+      <button type="button" class="btn secondary small" onclick="toggleFlowCanvasSettings()">{{ icon('settings', 14) }} تنظیمات فلو</button>
+      <a href="{{ back_url }}" class="btn ghost small">{{ icon('arrow-right', 14) }} بازگشت</a>
+      <button type="submit" class="btn small">{{ icon('save', 14) }} ذخیره</button>
+    </div>
+  </div>
+
+  <div class="flow-canvas-settings-backdrop" id="flowCanvasSettingsBackdrop" onclick="toggleFlowCanvasSettings(false)"></div>
+  <aside class="flow-canvas-settings" id="flowCanvasSettings">
+    <div style="font-weight:800;margin-bottom:14px;font-size:14px;">تنظیمات فلو</div>
+    <div class="field">
+      <label>نام فلو</label>
+      <input type="text" name="name" value="{{ flow.name if flow else '' }}" required placeholder="مثلاً: فرم ثبت‌نام">
+    </div>
+    <div class="field">
+      <label>توضیحات</label>
+      <input type="text" name="description" value="{{ flow.description if flow else '' }}">
+    </div>
+    <div class="field">
+      <label>نوع فلو</label>
+      <select name="flow_kind">
+        {% for k, label in flow_kinds.items() %}
+        <option value="{{ k }}" {{ 'selected' if flow and flow.flow_kind == k }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>کانال</label>
+      <select name="channel">
+        {% for k, label in channels.items() %}
+        <option value="{{ k }}" {{ 'selected' if flow and flow.channel == k }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>کلمه کلیدی (trigger)</label>
+      <input type="text" name="trigger" value="{{ flow.trigger if flow else '' }}" placeholder="قیمت، سلام، ...">
+    </div>
+    <div class="field">
+      <label>نوع تطبیق</label>
+      <select name="match_type">
+        <option value="contains" {{ 'selected' if flow and flow.match_type == 'contains' }}>شامل (contains)</option>
+        <option value="exact" {{ 'selected' if flow and flow.match_type == 'exact' }}>دقیق (exact)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>شناسه پست (فقط کامنت)</label>
+      <input type="text" name="post_id" value="{{ flow.post_id if flow else '' }}" placeholder="خالی = همه پست‌ها">
+    </div>
+    <button type="button" class="btn secondary small" style="width:100%;" onclick="toggleFlowCanvasSettings(false)">بستن</button>
+  </aside>
+
+  <div class="flow-canvas-body">
+    <script type="application/json" id="flow-editor-nodes-data">{{ nodes_for_editor | tojson }}</script>
+    <div id="flow-editor-root" class="flow-editor-root--canvas"></div>
+    <textarea id="nodes_json" name="nodes_json" style="display:none">{{ flow.nodes_json if flow else '[]' }}</textarea>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script type="module" src="{{ url_for('static', filename='flow-editor/flow-editor.js') }}"></script>
+<script>
+document.documentElement.classList.add('sidebar-collapsed');
+function toggleFlowCanvasSettings(force) {
+  const open = force === true ? true : force === false ? false : !document.getElementById('flowCanvasSettings').classList.contains('is-open');
+  document.getElementById('flowCanvasSettings').classList.toggle('is-open', open);
+  document.getElementById('flowCanvasSettingsBackdrop').classList.toggle('is-open', open);
+}
+</script>
+{% endblock %}

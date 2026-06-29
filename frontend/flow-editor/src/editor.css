@@ -51,11 +51,28 @@
   direction: ltr;
 }
 
+#flow-editor-root.flow-editor-root--canvas {
+  min-height: 0;
+  border-radius: 0;
+  border: none;
+}
+
+.flow-editor-shell.is-fullscreen #flow-editor-root {
+  min-height: 0;
+  border-radius: 12px;
+}
+
 .fe-layout {
   display: grid;
   grid-template-columns: 180px 1fr 260px;
   height: 560px;
   font-family: 'Vazirmatn', sans-serif;
+}
+
+.flow-canvas-body .fe-layout,
+.flow-editor-shell.is-fullscreen .fe-layout {
+  height: 100%;
+  min-height: 0;
 }
 
 .fe-palette {
