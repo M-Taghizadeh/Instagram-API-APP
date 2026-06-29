@@ -21,9 +21,9 @@
 
 <div class="card" style="padding:16px 18px;margin-bottom:20px;font-size:12.5px;line-height:2;color:var(--text-dim);">
   <strong style="color:var(--text);">روند کار (۲ دقیقه):</strong>
-  فقط کاربران «در انتظار» و «دعوت فرستاده» در این جدول هستند. بعد از «آماده اتصال»، کاربر خودش وصل می‌کند؛ اگر پیج را قطع کند از لیست تأییدشده حذف می‌شود و باید دوباره درخواست دهد.<br>
+  فقط کاربران «در انتظار» در این جدول هستند. بعد از Add در Meta، «آماده اتصال» بزن — کاربر دعوت را Accept می‌کند و خودش پیج را وصل می‌کند.<br>
   ۱. یوزرنیم را کپی کن → <a href="{{ meta_roles_url }}" target="_blank" rel="noopener"><strong>افزودن Tester در Meta</strong></a><br>
-  ۲. کاربر اعلان «در انتظار تایید» می‌بیند — بعد از Add در Meta «دعوت فرستاده» بزن<br>
+  ۲. در Meta دعوت را بفرست و «آماده اتصال» بزن<br>
   ۳. کاربر Accept می‌کند و «اتصال پیج» را می‌زند
 </div>
 
@@ -60,11 +60,7 @@
             </button>
           </td>
           <td>
-            {% if u.tester_status == 'pending' %}
             <span class="badge pink">در انتظار</span>
-            {% elif u.tester_status == 'invited' %}
-            <span class="badge purple">دعوت فرستاده</span>
-            {% endif %}
           </td>
           <td style="color:var(--text-faint);font-size:11px;">
             {{ u.tester_requested_at.strftime('%Y/%m/%d %H:%M') if u.tester_requested_at else '—' }}
@@ -73,12 +69,7 @@
             <a href="{{ meta_roles_url }}" target="_blank" rel="noopener" class="btn ghost small" title="Meta Tester">{{ icon('external-link', 12) }}</a>
             <form method="post" style="display:inline;">
               <input type="hidden" name="user_id" value="{{ u.id }}">
-              {% if u.tester_status == 'pending' %}
-              <button type="submit" name="action" value="invited" class="btn secondary small">دعوت فرستاده</button>
-              {% endif %}
-              {% if u.tester_status in ('pending', 'invited') %}
               <button type="submit" name="action" value="ready" class="btn small">آماده اتصال</button>
-              {% endif %}
               <button type="submit" name="action" value="reset" class="btn ghost small" title="ریست"
                       onclick="return confirm('درخواست ریست شود؟')">×</button>
             </form>

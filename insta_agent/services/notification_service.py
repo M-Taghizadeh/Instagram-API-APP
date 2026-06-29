@@ -44,7 +44,7 @@ def notify_admins_new_tester_request(requester: User, ig_username: str):
   meta_url = meta_roles_url()
   body = (
     f"کاربر {uname} درخواست اتصال @{ig} را ثبت کرد. "
-    f"در Meta → Instagram Tester اضافه کن، بعد در صف فعال‌سازی «دعوت فرستاده» بزن."
+    f"در Meta → Instagram Tester اضافه کن، بعد در صف فعال‌سازی «آماده اتصال» بزن."
   )
   for admin in _admin_users():
     create_notification(
@@ -93,7 +93,10 @@ def notify_user_tester_ready(user_id: int, ig_username: str):
     user_id,
     kind="user_ready",
     title="پیجت آماده اتصال است",
-    body=f"می‌توانی @{ig} را به محتوام وصل کنی.",
+    body=(
+      f"دعوت @{ig} در اینستاگرام ارسال شده. "
+      f"اول در تنظیمات اینستاگرام Accept کن، بعد «اتصال پیج» را بزن."
+    ),
     action_url="",
     action_label="",
     ig_username=ig,

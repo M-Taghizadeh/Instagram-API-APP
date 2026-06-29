@@ -125,6 +125,11 @@ def register():
 def onboarding():
   if user_has_connection(current_user):
     return redirect(url_for("dashboard.dashboard"))
+  if (current_user.tester_status or "") == "invited":
+    current_user.tester_status = "ready"
+    if not current_user.tester_ready_at:
+      current_user.tester_ready_at = now_tehran()
+    db.session.commit()
   ctx = onboarding_context(current_user)
   return render_template(
     "onboarding.html",

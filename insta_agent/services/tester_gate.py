@@ -17,7 +17,7 @@ def needs_beta_onboarding(user) -> bool:
   if not beta_gate_enabled():
     return False
   status = (user.tester_status or "none").lower()
-  return status in ("none", "pending", "invited")
+  return status in ("none", "pending")
 
 
 def normalize_ig_username(raw: str) -> str:
@@ -56,11 +56,6 @@ def can_start_oauth(user) -> tuple[bool, str]:
       "درخواستت ثبت شده — تیم محتوام داره پیجت رو فعال می‌کنه. "
       "معمولاً تا چند ساعت آماده می‌شه."
     )
-  if status == "invited":
-    return False, (
-      "دعوت اینستاگرام ارسال شده — اول در اینستاگرام دعوت را Accept کن. "
-      "بعد از تأیید نهایی سامانه می‌توانی پیج را وصل کنی."
-    )
   return False, "اول یوزرنیم پیج اینستاگرامت را ثبت کن تا فعال‌سازی انجام شود."
 
 
@@ -74,7 +69,7 @@ def onboarding_context(user) -> dict:
     phase = "connect"
   elif status == "none":
     phase = "username"
-  elif status in ("pending", "invited"):
+  elif status == "pending":
     phase = "activate"
   else:
     phase = "connect"
@@ -95,14 +90,13 @@ def _beta_timeline(status: str) -> list:
   steps = [
     ("submitted", "ثبت درخواست"),
     ("review", "تایید سامانه"),
-    ("invite", "قبول دعوت"),
     ("connect", "اتصال پیج"),
   ]
-  mapping = {"none": 0, "pending": 1, "invited": 2, "ready": 3, "connected": 4}
+  mapping = {"none": 0, "pending": 1, "invited": 2, "ready": 2, "connected": 3}
   cur = mapping.get((status or "none").lower(), 0)
   out = []
   for i, (key, label) in enumerate(steps):
-    if cur >= 4:
+    if cur >= 3:
       out.append({"key": key, "label": label, "done": True, "active": False})
     elif i < cur:
       out.append({"key": key, "label": label, "done": True, "active": False})

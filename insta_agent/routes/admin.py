@@ -19,7 +19,7 @@ from insta_agent.services.instagram_oauth import oauth_configured, oauth_status
 from insta_agent.services.tester_gate import count_tester_slots_used, beta_gate_enabled
 from insta_agent.services.app_settings_service import set_beta_tester_gate
 from insta_agent.services.notification_service import (
-  meta_roles_url, notify_user_tester_invited, notify_user_tester_ready,
+  meta_roles_url, notify_user_tester_ready,
 )
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -278,17 +278,9 @@ def activation():
       flash("کاربر یافت نشد.", "error")
       return redirect(url_for("admin.activation"))
 
-    if action == "invited":
+    if action == "ready":
       if (target.tester_status or "") not in ("pending",):
-        flash("فقط درخواست‌های در انتظار را می‌توان به «دعوت فرستاده» تغییر داد.", "error")
-      else:
-        target.tester_status = "invited"
-        db.session.commit()
-        notify_user_tester_invited(target.id, target.ig_username_requested or "")
-        flash(f"@{target.ig_username_requested} — وضعیت به «دعوت فرستاده» تغییر کرد.", "success")
-    elif action == "ready":
-      if (target.tester_status or "") not in ("pending", "invited"):
-        flash("این وضعیت قابل تأیید نیست.", "error")
+        flash("فقط درخواست‌های در انتظار را می‌توان تأیید کرد.", "error")
       else:
         target.tester_status = "ready"
         target.tester_ready_at = now_tehran()
@@ -304,9 +296,17 @@ def activation():
       flash("درخواست ریست شد.", "success")
     return redirect(url_for("admin.activation"))
 
+  legacy_invited = User.query.filter_by(tester_status="invited", is_admin=False).all()
+  for u in legacy_invited:
+    u.tester_status = "ready"
+    if not u.tester_ready_at:
+      u.tester_ready_at = now_tehran()
+  if legacy_invited:
+    db.session.commit()
+
   queue = User.query.filter(
     User.is_admin == False,
-    User.tester_status.in_(("pending", "invited")),
+    User.tester_status == "pending",
   ).order_by(User.tester_requested_at.asc(), User.id.asc()).all()
 
   connected = User.query.filter_by(tester_status="connected", is_admin=False).count()
