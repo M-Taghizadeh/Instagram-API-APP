@@ -44,7 +44,7 @@
 
   <div class="auth-form-head">
     <div class="auth-form-title">پیج اینستاگرامت را وصل کن</div>
-    <div class="auth-form-sub">مرحله ۲ از ۲ — با یک کلیک وارد اینستاگرام می‌شی و توکن اتوماتیک ساخته می‌شه.</div>
+    <div class="auth-form-sub">مرحله ۲ از ۲ — لینک‌ها را در Chrome کپی می‌کنی و دسترسی Allow را می‌دهی.</div>
   </div>
 
   <div class="user">سلام {{ current_user.username }}</div>
@@ -79,7 +79,7 @@
   {% endif %}
   {% endif %}
 
-  <p class="note">بعد از اتصال، به داشبورد هدایت می‌شی و می‌تونی قوانین اتومیشن بسازی.</p>
+  <p class="note">اتصال با کپی لینک در Chrome انجام می‌شود — اگر VPN داری، راهنمای صفحه بعد را بخوان.</p>
   <a href="{{ url_for('auth.logout') }}" style="font-size:12px;color:var(--text-muted);">خروج از حساب</a>
 </div>
 

@@ -4,8 +4,9 @@ from urllib.parse import urlencode
 from insta_agent.config import Config
 from insta_agent.services.instagram_http import GRAPH_API, api_message, get_no_redirect, post_no_redirect
 
-AUTH_URL = "https://www.instagram.com/oauth/authorize"
+AUTH_URL = "https://www.instagram.com/oauth/authorize/third_party"
 TOKEN_URL = "https://api.instagram.com/oauth/access_token"
+INSTAGRAM_LOGIN_URL = Config.INSTAGRAM_LOGIN_URL
 ALLOWED_ACCOUNT_TYPES = {"BUSINESS", "MEDIA_CREATOR", "CREATOR"}
 LONG_LIVED_MIN_EXPIRES = 86400  # > 1 day => long-lived exchange worked
 
@@ -18,7 +19,7 @@ def _unwrap_payload(data) -> dict:
   return data if isinstance(data, dict) else {}
 
 
-def build_authorize_url(state: str = "", force_reauth: bool = True) -> str:
+def build_authorize_url(state: str = "", force_reauth: bool | None = None) -> str:
   redirect = Config.OAUTH_REDIRECT_URI or ""
   params = {
     "client_id": Config.META_APP_ID,
@@ -26,7 +27,7 @@ def build_authorize_url(state: str = "", force_reauth: bool = True) -> str:
     "response_type": "code",
     "scope": Config.OAUTH_SCOPES,
   }
-  if force_reauth:
+  if (force_reauth if force_reauth is not None else Config.OAUTH_FORCE_REAUTH):
     params["force_reauth"] = "true"
   if state:
     params["state"] = state

@@ -44,7 +44,7 @@ def require_ig_connection_for_panel():
   ep = request.endpoint or ""
   if ep in PUBLIC_ENDPOINTS or ep.startswith("webhook."):
     return
-  if ep in ("auth.logout", "auth.onboarding", "auth.pages", "oauth.connect", "oauth.disconnect", "settings.settings"):
+  if ep in ("auth.logout", "auth.onboarding", "auth.pages", "oauth.connect", "oauth.connect_direct", "oauth.disconnect", "settings.settings"):
     return
   try:
     if user_has_connection(current_user):

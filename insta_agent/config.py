@@ -47,6 +47,8 @@ class Config:
     "OAUTH_SCOPES",
     "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments",
   )
+  OAUTH_FORCE_REAUTH = os.getenv("OAUTH_FORCE_REAUTH", "false").lower() in ("1", "true", "yes")
+  INSTAGRAM_LOGIN_URL = os.getenv("INSTAGRAM_LOGIN_URL", "https://www.instagram.com/")
 
   # Media uploads
   UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(_BASE, "uploads"))

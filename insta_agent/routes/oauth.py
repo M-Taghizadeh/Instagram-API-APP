@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Blueprint, redirect, url_for, request, flash, session
+from flask import Blueprint, redirect, url_for, request, flash, session, render_template
 from flask_login import login_required, current_user, login_user
 from sqlalchemy.exc import DBAPIError, OperationalError
 
@@ -10,7 +10,7 @@ from insta_agent.db_retry import db_retry, is_disconnect_error
 from insta_agent.models import User, IgAccount, Settings
 from insta_agent.services.instagram_oauth import (
   build_authorize_url, exchange_code_for_token, resolve_access_token,
-  is_professional_account, oauth_configured, oauth_status,
+  is_professional_account, oauth_configured, oauth_status, INSTAGRAM_LOGIN_URL,
 )
 from insta_agent.services.instagram_profile import (
   sync_ig_account_profile, fetch_ig_profile_fast, apply_profile_to_account,
@@ -21,7 +21,7 @@ from insta_agent.services.subscription_service import maybe_start_trial
 from insta_agent.services.instagram_webhooks import subscribe_instagram_webhooks
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
-OAUTH_FLOW_VERSION = "2025-06-28d"
+OAUTH_FLOW_VERSION = "2025-06-29-manual"
 
 
 def _user_has_page(user_id: int) -> bool:
@@ -57,15 +57,40 @@ def oauth_debug_status():
   }
 
 
-@bp.route("/connect")
-@login_required
-def connect():
+def _connect_checks():
   if not oauth_configured():
     flash("OAuth تنظیم نشده — META_APP_ID، META_APP_SECRET و OAUTH_REDIRECT_URI را در Render تنظیم کن.", "error")
     return redirect(url_for("auth.onboarding"))
   if not current_user.is_admin and IgAccount.query.filter_by(user_id=current_user.id).count() >= 1:
     flash("هر اشتراک فقط یک پیج دارد. برای تعویض، ابتدا پیج فعلی را قطع کن.", "error")
     return redirect(url_for("auth.pages"))
+  return None
+
+
+@bp.route("/connect")
+@login_required
+def connect():
+  blocked = _connect_checks()
+  if blocked:
+    return blocked
+  state = str(current_user.id)
+  session["oauth_state"] = state
+  has_page = IgAccount.query.filter_by(user_id=current_user.id).count() > 0
+  return render_template(
+    "oauth_manual.html",
+    instagram_login_url=INSTAGRAM_LOGIN_URL,
+    oauth_url=build_authorize_url(state=state),
+    back_url=url_for("auth.pages") if has_page else url_for("auth.onboarding"),
+  )
+
+
+@bp.route("/connect/direct")
+@login_required
+def connect_direct():
+  """Redirect مستقیم به اینستاگرام — فقط اگر VPN پایدار دارید."""
+  blocked = _connect_checks()
+  if blocked:
+    return blocked
   state = str(current_user.id)
   session["oauth_state"] = state
   return redirect(build_authorize_url(state=state))

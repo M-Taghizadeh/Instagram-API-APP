@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اتصال اینستاگرام — محتوام</title>
+<script>(function(){var t=localStorage.getItem('mohtavam-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/vazirmatn/vazirmatn.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+<style>
+.manual-card { max-width: 560px; width: 100%; }
+.manual-head { text-align: center; margin-bottom: 28px; }
+.manual-head h1 { font-size: 20px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+.manual-head p { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+.manual-step {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.manual-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 99px;
+  background: var(--primary-muted);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.manual-step-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.manual-step-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 14px; }
+.copy-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--tr), border-color var(--tr);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.copy-btn:hover { background: var(--bg); border-color: var(--primary); }
+.copy-btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.copy-btn.primary:hover { background: var(--primary-hover); }
+.copy-btn.copied { background: rgba(52,211,153,.12); border-color: #34d399; color: #34d399; }
+.vpn-note {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(251,191,36,.08);
+  border: 1px solid rgba(251,191,36,.25);
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+.vpn-note strong { color: var(--text); }
+.manual-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.manual-footer a { color: var(--primary); text-decoration: none; font-weight: 500; }
+.manual-footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body class="auth-page">
+
+<button type="button" class="icon-btn auth-theme-toggle" onclick="toggleTheme()" aria-label="تغییر تم">
+  <i data-theme-icon="sun" data-lucide="sun" style="width:18px;height:18px;display:none"></i>
+  <i data-theme-icon="moon" data-lucide="moon" style="width:18px;height:18px"></i>
+</button>
+
+<div class="register-card manual-card">
+  <div class="manual-head">
+    <div class="auth-brand" style="justify-content:center;margin-bottom:16px;">
+      <div class="auth-brand-mark"><i data-lucide="instagram" style="width:20px;height:20px"></i></div>
+    </div>
+    <h1>اتصال اینستاگرام به محتوام</h1>
+    <p>لطفاً تمام مراحل را در مرورگر Chrome یا Safari انجام بده — نه داخل اپ اینستاگرام.</p>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">
+        <i data-lucide="{% if category == 'error' %}alert-circle{% else %}check-circle{% endif %}" style="width:16px;height:16px"></i>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="manual-step">
+    <div class="manual-step-num">۱</div>
+    <div class="manual-step-title">ورود به اینستاگرام</div>
+    <div class="manual-step-desc">
+      با دکمه زیر لینک اینستاگرام را کپی کن. در همین مرورگر یک تب جدید باز کن، لینک را در نوار آدرس paste کن
+      و وارد پیجی شو که می‌خواهی وصل کنی. بعد از لاگین به این صفحه برگرد.
+    </div>
+    <button type="button" class="copy-btn" data-copy="{{ instagram_login_url }}" data-label="کپی لینک instagram.com">
+      <i data-lucide="copy" style="width:16px;height:16px"></i>
+      <span>کپی لینک instagram.com</span>
+    </button>
+  </div>
+
+  <div class="manual-step">
+    <div class="manual-step-num">۲</div>
+    <div class="manual-step-title">تأیید دسترسی (Allow)</div>
+    <div class="manual-step-desc">
+      بعد از لاگین، لینک اتصال را کپی کن. در همین مرورگر تب جدید باز کن و لینک را paste کن.
+      در صفحه Allow هر <strong>۳ toggle</strong> را روشن کن (مخصوصاً View profile) و Allow را بزن.
+    </div>
+    <button type="button" class="copy-btn primary" data-copy="{{ oauth_url }}" data-label="کپی لینک اتصال">
+      <i data-lucide="link" style="width:16px;height:16px"></i>
+      <span>کپی لینک اتصال</span>
+    </button>
+    <div class="vpn-note">
+      <strong>VPN:</strong> برای باز شدن صفحه Allow معمولاً VPN باید روشن باشد.
+      اگر بعد از Allow صفحه سفید دیدی، VPN را خاموش کن و دوباره لینک اتصال را در تب جدید باز کن.
+    </div>
+  </div>
+
+  <div class="manual-footer">
+    بعد از Allow به‌صورت خودکار به محتوام برمی‌گردی.<br>
+    <a href="{{ back_url }}">بازگشت</a>
+    ·
+    <a href="{{ url_for('oauth.connect_direct') }}">اتصال مستقیم (بدون کپی لینک)</a>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/lucide/lucide.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+<script>
+document.querySelectorAll('.copy-btn').forEach(function(btn) {
+  btn.addEventListener('click', async function() {
+    var text = btn.getAttribute('data-copy') || '';
+    var label = btn.getAttribute('data-label') || 'کپی شد';
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    btn.classList.add('copied');
+    var span = btn.querySelector('span');
+    if (span) span.textContent = label + ' ✓';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      if (span) span.textContent = btn.getAttribute('data-label');
+    }, 2200);
+  });
+});
+</script>
+</body>
+</html>
