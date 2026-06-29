@@ -2,6 +2,7 @@ import datetime
 
 from insta_agent.config import Config
 from insta_agent.extensions import db
+from insta_agent.services.app_settings_service import trial_enabled
 from insta_agent.models import Plan, Subscription, Payment, TrialUsage, IgAccount, User
 from insta_agent.utils import now_tehran
 
@@ -111,7 +112,7 @@ def subscription_status(user_id: int) -> dict:
       "days_left": 0,
       "followers": followers,
       "suggested_plan": suggested,
-      "trial_available": not trial_used and ig is not None,
+      "trial_available": not trial_used and ig is not None and trial_enabled(),
       "label": "بدون اشتراک فعال",
     }
 
@@ -155,10 +156,13 @@ def subscription_banner(user_id: int) -> dict | None:
     return None
 
   if not ig and not trial_record:
-    message = (
-      "اشتراک فعال نیست — در حال استفاده رایگان هستید"
-      f" · با اتصال اولین پیج اینستاگرام، {TRIAL_DAYS} روز استفاده رایگان فعال می‌شود"
-    )
+    if trial_enabled():
+      message = (
+        "اشتراک فعال نیست — در حال استفاده رایگان هستید"
+        f" · با اتصال اولین پیج اینستاگرام، {TRIAL_DAYS} روز استفاده رایگان فعال می‌شود"
+      )
+    else:
+      message = "اشتراک فعال نیست — برای ادامه، اشتراک تهیه کنید"
     return {"message": message, "tone": "danger"}
 
   if trial_record:
@@ -173,6 +177,8 @@ def subscription_banner(user_id: int) -> dict | None:
 
 
 def maybe_start_trial(user_id: int, ig_user_id: str) -> Subscription | None:
+  if not trial_enabled():
+    return None
   if get_active_subscription(user_id):
     return None
   if TrialUsage.query.filter_by(user_id=user_id).first():

@@ -17,7 +17,7 @@ from insta_agent.services.accounting_service import build_report, export_csv, MO
 from insta_agent.config import Config
 from insta_agent.services.instagram_oauth import oauth_configured, oauth_status
 from insta_agent.services.tester_gate import count_tester_slots_used, beta_gate_enabled
-from insta_agent.services.app_settings_service import set_beta_tester_gate
+from insta_agent.services.app_settings_service import set_beta_tester_gate, trial_enabled as trial_feature_enabled, set_trial_enabled
 from insta_agent.services.notification_service import (
   meta_roles_url, notify_user_tester_ready,
 )
@@ -250,6 +250,9 @@ def integrations():
     beta_gate=beta_gate_enabled(),
     beta_tester_slots=Config.BETA_TESTER_SLOTS,
     env_beta_default=Config.BETA_TESTER_GATE,
+    trial_enabled=trial_feature_enabled(),
+    trial_days=Config.TRIAL_DAYS,
+    env_trial_default=Config.TRIAL_ENABLED,
   )
 
 
@@ -263,6 +266,19 @@ def toggle_beta_gate():
     flash("حالت بتا فعال شد — کاربران از صف Tester و ویزارد ۳ مرحله‌ای استفاده می‌کنند.", "success")
   else:
     flash("اتصال مستقیم فعال شد — کاربران مستقیم دکمه «اتصال پیج اینستاگرام» را می‌بینند.", "success")
+  return redirect(url_for("admin.integrations"))
+
+
+@bp.route("/integrations/trial", methods=["POST"])
+@login_required
+@admin_required
+def toggle_trial():
+  enabled = request.form.get("enabled") == "1"
+  set_trial_enabled(enabled)
+  if enabled:
+    flash(f"تریال {Config.TRIAL_DAYS} روزه فعال شد — با اتصال اولین پیج برای کاربران جدید فعال می‌شود.", "success")
+  else:
+    flash("تریال غیرفعال شد — کاربران جدید باید مستقیم اشتراک بخرند.", "success")
   return redirect(url_for("admin.integrations"))
 
 

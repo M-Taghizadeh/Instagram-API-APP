@@ -9,7 +9,7 @@ def get_app_settings() -> AppSettings:
   s = db.session.get(AppSettings, 1)
   if s:
     return s
-  s = AppSettings(id=1, beta_tester_gate=Config.BETA_TESTER_GATE)
+  s = AppSettings(id=1, beta_tester_gate=Config.BETA_TESTER_GATE, trial_enabled=Config.TRIAL_ENABLED)
   if Config.ZARINPAL_MERCHANT_ID:
     s.zarinpal_merchant_id = Config.ZARINPAL_MERCHANT_ID
     s.zarinpal_sandbox = Config.ZARINPAL_SANDBOX
@@ -49,5 +49,19 @@ def beta_tester_gate_enabled() -> bool:
 def set_beta_tester_gate(enabled: bool) -> AppSettings:
   s = get_app_settings()
   s.beta_tester_gate = bool(enabled)
+  db.session.commit()
+  return s
+
+
+def trial_enabled() -> bool:
+  s = get_app_settings()
+  if s.trial_enabled is None:
+    return Config.TRIAL_ENABLED
+  return bool(s.trial_enabled)
+
+
+def set_trial_enabled(enabled: bool) -> AppSettings:
+  s = get_app_settings()
+  s.trial_enabled = bool(enabled)
   db.session.commit()
   return s

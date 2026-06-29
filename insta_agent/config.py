@@ -68,6 +68,7 @@ class Config:
   ZARINPAL_MERCHANT_ID = os.getenv("ZARINPAL_MERCHANT_ID", "")
   ZARINPAL_SANDBOX = os.getenv("ZARINPAL_SANDBOX", "true").lower() in ("1", "true", "yes")
   TRIAL_DAYS = int(os.getenv("TRIAL_DAYS", "7"))
+  TRIAL_ENABLED = os.getenv("TRIAL_ENABLED", "true").lower() in ("1", "true", "yes")
 
   # Beta: require Instagram Tester approval before OAuth (set false after Meta Live)
   BETA_TESTER_GATE = os.getenv("BETA_TESTER_GATE", "true").lower() in ("1", "true", "yes")

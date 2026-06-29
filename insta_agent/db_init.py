@@ -148,9 +148,12 @@ def _run_migrations():
                   "ALTER TABLE ig_accounts ADD COLUMN profile_synced_at TIMESTAMP")
       _add_column(conn, "app_settings", "beta_tester_gate",
                   "ALTER TABLE app_settings ADD COLUMN beta_tester_gate BOOLEAN DEFAULT TRUE")
+      _add_column(conn, "app_settings", "trial_enabled",
+                  "ALTER TABLE app_settings ADD COLUMN trial_enabled BOOLEAN DEFAULT TRUE")
 
       for stmt in [
         "UPDATE app_settings SET beta_tester_gate=TRUE WHERE beta_tester_gate IS NULL",
+        "UPDATE app_settings SET trial_enabled=TRUE WHERE trial_enabled IS NULL",
         "UPDATE dm_rules SET is_active=TRUE WHERE is_active IS NULL",
         "UPDATE dm_rules SET fire_count=0 WHERE fire_count IS NULL",
         "UPDATE comment_rules SET is_active=TRUE WHERE is_active IS NULL",

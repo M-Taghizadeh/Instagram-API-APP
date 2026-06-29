@@ -83,6 +83,38 @@
   </div>
 </div>
 
+<div class="card" style="padding:20px 22px;margin-top:20px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <div>
+      <div style="font-weight:800;margin-bottom:8px;font-size:14px;">{{ icon('gift', 18) }} تریال {{ trial_days }} روزه رایگان</div>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:1.9;max-width:520px;">
+        {% if trial_enabled %}
+        <span class="badge ok">فعال</span> — با اتصال اولین پیج، {{ trial_days }} روز استفاده رایگان
+        {% else %}
+        <span class="badge">غیرفعال</span> — کاربران جدید بدون تریال وارد می‌شوند
+        {% endif %}
+        <div class="hint" style="margin-top:8px;">پیش‌فرض env: <code dir="ltr">TRIAL_ENABLED={{ 'true' if env_trial_default else 'false' }}</code> — این دکمه از پنل override می‌کند.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <form method="post" action="{{ url_for('admin.toggle_trial') }}">
+        <input type="hidden" name="enabled" value="1">
+        <button type="submit" class="btn small {% if trial_enabled %}active{% else %}secondary{% endif %}"
+                {% if trial_enabled %}disabled{% endif %}>
+          {{ icon('check', 14) }} فعال
+        </button>
+      </form>
+      <form method="post" action="{{ url_for('admin.toggle_trial') }}">
+        <input type="hidden" name="enabled" value="0">
+        <button type="submit" class="btn small {% if not trial_enabled %}active{% else %}secondary{% endif %}"
+                {% if not trial_enabled %}disabled{% endif %}>
+          {{ icon('x', 14) }} غیرفعال
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="card" style="padding:20px 22px;margin-top:20px;border-color:var(--primary);">
   <div style="font-weight:800;margin-bottom:12px;font-size:14px;">مسیر بیزینس محتوام (مهم)</div>
   <div style="font-size:12.5px;color:var(--text-dim);line-height:2;">
