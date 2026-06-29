@@ -97,27 +97,28 @@ from insta_agent.services.instagram_profile import (
 )
 
 
-def resolve_access_token(short_token: str) -> tuple[str, int, str]:
-  """Prefer 60-day token; fall back to short-lived if long-lived probe fails."""
+def resolve_access_token(short_token: str, ig_user_id: str = "") -> tuple[str, int, str]:
+  """Prefer 60-day token; fall back to short-lived. Never raises — caller validates."""
   long = exchange_long_lived_token(short_token)
   token = long.get("access_token", short_token)
   expires = int(long.get("expires_in", 0))
   exchange_err = long.get("error", "")
+  last_err = exchange_err
 
   if expires >= LONG_LIVED_MIN_EXPIRES:
-    ok, err = probe_me(token)
+    ok, err = probe_me(token, ig_user_id)
     print(f"[IG OAuth] long token probe ok={ok} expires_in={expires} err={err}", flush=True)
     if ok:
       return token, expires, exchange_err
+    last_err = err or exchange_err
     print("[IG OAuth] long token probe failed — trying short-lived token", flush=True)
 
-  ok, err = probe_me(short_token)
+  ok, err = probe_me(short_token, ig_user_id)
   print(f"[IG OAuth] short token probe ok={ok} err={err}", flush=True)
   if ok:
     return short_token, 3600, exchange_err or err
 
-  dbg = debug_user_token(short_token)
-  raise ValueError(format_token_error(dbg, err))
+  return short_token, 3600, last_err or err
 
 
 def get_me_optional(access_token: str, ig_user_id: str = "") -> dict:

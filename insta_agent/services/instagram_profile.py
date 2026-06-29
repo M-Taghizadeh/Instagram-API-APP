@@ -71,11 +71,23 @@ def debug_user_token(access_token: str) -> dict:
   }
 
 
-def probe_me(access_token: str) -> tuple[bool, str]:
+def probe_me(access_token: str, ig_user_id: str = "") -> tuple[bool, str]:
   if not access_token:
     return False, "no token"
   min_fields = {"fields": "user_id,username"}
-  me_urls = [f"{GRAPH_API}/me", f"{GRAPH_BASE}/me"]
+  version = (Config.GRAPH_API or "").rstrip("/").split("/")[-1]
+  versions = [v for v in (version, "v25.0", "v22.0", "v21.0", "v20.0") if v.startswith("v")]
+  seen: set[str] = set()
+  me_urls: list[str] = []
+  for v in versions:
+    if v not in seen:
+      seen.add(v)
+      me_urls.append(f"{GRAPH_BASE}/{v}/me")
+  me_urls.append(f"{GRAPH_BASE}/me")
+  if ig_user_id:
+    for v in versions:
+      me_urls.append(f"{GRAPH_BASE}/{v}/{ig_user_id}")
+      me_urls.append(f"{GRAPH_BASE}/{ig_user_id}")
   last_err = ""
   for url in me_urls:
     for headers, params in (
@@ -126,7 +138,9 @@ def format_token_error(debug: dict, me_err: str = "") -> str:
       return "توکن منقضی شده — دوباره «اتصال پیج اینستاگرام» را بزن."
     if "429" in me_err or "rate" in me_err.lower():
       return "محدودیت موقت اینستاگرام — چند دقیقه بعد دوباره تلاش کن."
-    return f"Instagram API موقتاً پاسخ نداد: {me_err}"
+    if "method type" in me_err.lower():
+      return explain_meta_api_error(me_err)
+    return f"Instagram API: {me_err}"
   if debug.get("debug_error") and not debug.get("debug_unreliable"):
     return f"خطا در بررسی توکن: {debug['debug_error']}"
   if debug.get("is_valid") is False:

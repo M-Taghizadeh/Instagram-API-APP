@@ -15,13 +15,13 @@ from insta_agent.services.instagram_oauth import (
 from insta_agent.services.instagram_profile import (
   sync_ig_account_profile, fetch_ig_profile_fast, apply_profile_to_account,
   fetch_ig_profile_with_debug, debug_user_token, explain_profile_failure,
-  token_health_report, explain_meta_api_error, probe_me,
+  token_health_report, explain_meta_api_error, probe_me, format_token_error,
 )
 from insta_agent.services.subscription_service import maybe_start_trial
 from insta_agent.services.instagram_webhooks import subscribe_instagram_webhooks
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
-OAUTH_FLOW_VERSION = "2025-06-29b"
+OAUTH_FLOW_VERSION = "2025-06-29c"
 
 
 def _user_has_page(user_id: int) -> bool:
@@ -125,12 +125,16 @@ def callback():
   user_is_admin = bool(user.is_admin)
   profile_err = ""
   token_err = ""
+  profile_probe_ok = True
+  oauth_perms = ""
   db.session.remove()
 
   try:
     short = exchange_code_for_token(code)
     short_token = short.get("access_token", "")
     ig_user_id = str(short.get("user_id", ""))
+    oauth_perms = str(short.get("permissions") or "")
+    print(f"[IG OAuth] token exchange ok user_id={ig_user_id} perms={oauth_perms}", flush=True)
     if not short_token or not ig_user_id:
       raise ValueError("پاسخ اینستاگرام ناقص بود — توکن یا شناسه کاربر دریافت نشد.")
 
@@ -138,7 +142,7 @@ def callback():
     if not profile:
       profile = {"user_id": ig_user_id, "username": ""}
 
-    access_token, expires_in, token_err = resolve_access_token(short_token)
+    access_token, expires_in, token_err = resolve_access_token(short_token, ig_user_id)
     if not profile.get("username"):
       retry, err2 = fetch_ig_profile_fast(access_token, ig_user_id)
       if retry:
@@ -173,9 +177,9 @@ def callback():
     if expires_in < 86400:
       print(f"[IG OAuth] WARNING: short-lived token only expires_in={expires_in}", flush=True)
 
-    token_ok, probe_err = probe_me(access_token)
+    token_ok, probe_err = probe_me(access_token, ig_id)
     if not token_ok and short_token != access_token:
-      token_ok, probe_err = probe_me(short_token)
+      token_ok, probe_err = probe_me(short_token, ig_id)
       if token_ok:
         access_token = short_token
         expires_in = min(expires_in, 3600)
@@ -183,9 +187,24 @@ def callback():
 
     if not token_ok:
       api_err = profile_err or probe_err or token_err
-      print(f"[IG OAuth] connect failed token_ok=False ig_id={ig_id} err={api_err}", flush=True)
-      detail = explain_meta_api_error(api_err)
-      raise ValueError(f"اتصال کامل نشد — Instagram API پاسخ نداد. {detail}")
+      dbg = debug_user_token(short_token)
+      print(
+        f"[IG OAuth] probe failed ig_id={ig_id} perms={oauth_perms} "
+        f"app_id_match={dbg.get('app_id_match')} scopes={dbg.get('scopes')} err={api_err}",
+        flush=True,
+      )
+      if short_token and ig_user_id:
+        access_token = short_token
+        expires_in = 3600
+        profile_probe_ok = False
+        print("[IG OAuth] soft connect — saving token from OAuth exchange despite API probe failure", flush=True)
+      else:
+        detail = explain_meta_api_error(api_err)
+        if dbg.get("app_id_match") is False:
+          detail = format_token_error(dbg, api_err)
+        elif dbg.get("scopes"):
+          detail += f" Scopes توکن: {dbg.get('scopes')}."
+        raise ValueError(f"اتصال کامل نشد — Instagram API پاسخ نداد. {detail}")
 
   except ValueError as e:
     flash(str(e), "error")
@@ -254,6 +273,13 @@ def callback():
       flash(f"پیج @{ig_username} وصل شد — ۷ روز تریال رایگان فعال شد!", "success")
     else:
       flash(f"پیج @{ig_username} وصل شد و توکن به‌صورت خودکار ذخیره شد!", "success")
+    if not profile_probe_ok:
+      flash(
+        "توکن ذخیره شد ولی Instagram API هنوز پروفایل را برنگرداند (method type / دسترسی Advanced). "
+        "در Meta: App Review → Advanced Access برای instagram_business_basic + Business Verification. "
+        "بعد «به‌روزرسانی اطلاعات» را در صفحه پیج‌ها بزن.",
+        "error",
+      )
     if not wh_ok:
       flash(f"ثبت Webhook ناموفق: {wh_err}", "error")
     return redirect(url_for("dashboard.dashboard"))
