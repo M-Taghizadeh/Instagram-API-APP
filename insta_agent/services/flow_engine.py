@@ -27,7 +27,16 @@ def _flow_triggered(flows: list, text: str) -> Flow | None:
   return None
 
 
+def _resolve_ig_username(owner_id: int, ig_user_id: str, token: str) -> str:
+  contact = Contact.query.filter_by(user_id=owner_id, ig_user_id=ig_user_id).first()
+  if contact and contact.ig_username:
+    return contact.ig_username
+  return get_ig_username(ig_user_id, token)
+
+
 def _start_flow_session(owner_id: int, flow: Flow, ig_user_id: str, username: str, token: str) -> bool:
+  if not username:
+    username = _resolve_ig_username(owner_id, ig_user_id, token)
   _abandon_active_sessions(owner_id, ig_user_id)
   clear_flow_cooldowns(owner_id, ig_user_id, flow.id)
   session = FlowSession(
@@ -274,7 +283,7 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
   if triggered:
     return _start_flow_session(owner_id, triggered, ig_user_id, "", token)
 
-  username = get_ig_username(ig_user_id, token)
+  username = _resolve_ig_username(owner_id, ig_user_id, token)
 
   # ادامه session فعال
   active = FlowSession.query.filter_by(
