@@ -24,6 +24,12 @@
     </div>
   </div>
 
+  {% if beta_gate %}
+  <div class="mode-badge mode-beta">حالت بتا{% if phase == 'username' %} · ثبت یوزرنیم{% elif phase == 'activate' %} · فعال‌سازی{% else %} · اتصال{% endif %}</div>
+  {% else %}
+  <div class="mode-badge mode-direct">اتصال مستقیم — صف Tester غیرفعال</div>
+  {% endif %}
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
       <div class="flash {{ category }}">

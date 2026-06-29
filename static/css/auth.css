@@ -276,6 +276,13 @@ input:focus {
 .connect-link:hover { color: var(--primary); }
 .connect-foot { margin-top: 20px; font-size: 12px; color: var(--text-muted); }
 .connect-hint { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 12px; }
+.mode-badge {
+  font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 99px;
+  margin: -8px 0 16px; display: inline-block;
+}
+.mode-beta { background: var(--primary-muted); color: var(--primary); }
+.mode-direct { background: rgba(52,211,153,.12); color: #059669; }
+[data-theme="dark"] .mode-direct { color: #34d399; }
 
 @media (max-width: 800px) {
   .auth-card { grid-template-columns: 1fr; max-width: 420px; }
