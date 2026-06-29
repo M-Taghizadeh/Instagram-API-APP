@@ -134,7 +134,13 @@ def send_media(user_id: str, media_type: str, url: str, token: str, ig_account_i
   if media_type == "audio":
     return send_text(user_id, f"🎵 پیام صوتی:\n{media_url}", token, ig_account_id)
 
-  ig_type = media_type if media_type in ("image", "video") else "file"
+  if media_type == "video":
+    return send_text(user_id, f"📎 ویدیو:\n{media_url}", token, ig_account_id)
+
+  if media_type != "image":
+    return False
+
+  ig_type = "image"
   payload = {
     "recipient": {"id": str(user_id)},
     "message": {
@@ -154,17 +160,15 @@ def send_media(user_id: str, media_type: str, url: str, token: str, ig_account_i
   )
   if not ok:
     print(f"SEND_MEDIA FAILED type={media_type} url={media_url[:80]}: {err}", flush=True)
-    if media_type in ("image", "video"):
-      label = "تصویر" if media_type == "image" else "ویدیو"
-      ok, _ = _post_messages(
-        token,
-        {"recipient": {"id": str(user_id)}, "message": {"text": f"📎 {label}:\n{media_url}"}},
-        "SEND_MEDIA_FALLBACK",
-        ig_account_id,
-        timeout=TEXT_TIMEOUT,
-        bearer_only=True,
-      )
-      return ok
+    ok, _ = _post_messages(
+      token,
+      {"recipient": {"id": str(user_id)}, "message": {"text": f"📎 تصویر:\n{media_url}"}},
+      "SEND_MEDIA_FALLBACK",
+      ig_account_id,
+      timeout=TEXT_TIMEOUT,
+      bearer_only=True,
+    )
+    return ok
   return ok
 
 

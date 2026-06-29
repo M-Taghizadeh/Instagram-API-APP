@@ -1,7 +1,6 @@
 export const NODE_TYPES = [
   { type: 'text', icon: '💬', label: 'متن' },
   { type: 'image', icon: '🖼️', label: 'تصویر' },
-  { type: 'video', icon: '🎬', label: 'ویدیو' },
   { type: 'audio', icon: '🎵', label: 'صوت' },
   { type: 'carousel', icon: '🛍️', label: 'ویترین' },
   { type: 'buttons', icon: '🔘', label: 'دکمه‌ها' },

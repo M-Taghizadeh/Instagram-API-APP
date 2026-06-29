@@ -91,14 +91,18 @@ export default function NodePanel({ node, onChange, onDelete, onSetStart }) {
         </Field>
       )}
 
-      {(nodeType === 'image' || nodeType === 'video' || nodeType === 'audio') && (
-        <Field label={nodeType === 'image' ? 'تصویر' : nodeType === 'video' ? 'ویدیو' : 'صوت'}>
+      {(nodeType === 'image' || nodeType === 'audio') && (
+        <Field label={nodeType === 'image' ? 'تصویر' : 'صوت'}>
           <MediaField
             mediaType={nodeType}
             url={data.url || ''}
             onChange={(value) => setData('url', value)}
           />
         </Field>
+      )}
+
+      {nodeType === 'video' && (
+        <p className="fe-hint">نود ویدیو دیگر پشتیبانی نمی‌شود. این نود را حذف کنید.</p>
       )}
 
       {nodeType === 'carousel' && (

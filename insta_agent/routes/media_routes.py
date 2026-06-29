@@ -10,7 +10,6 @@ bp = Blueprint("media", __name__, url_prefix="/media")
 
 ALLOWED = {
   "image": {"png", "jpg", "jpeg", "gif", "webp"},
-  "video": {"mp4", "mov", "webm", "avi"},
   "audio": {"mp3", "wav", "m4a", "aac", "ogg"},
 }
 
