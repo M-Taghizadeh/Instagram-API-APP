@@ -6,6 +6,16 @@ from insta_agent.services.media_storage import normalize_public_media_url
 
 GRAPH_API = Config.GRAPH_API.rstrip("/")
 FB_GRAPH = "https://graph.facebook.com/v25.0"
+TEXT_TIMEOUT = 12
+MEDIA_TIMEOUT = 40
+
+
+def _ig_dm_endpoints(ig_account_id: str) -> list[str]:
+  urls: list[str] = []
+  if ig_account_id:
+    urls.append(f"{GRAPH_API}/{ig_account_id}/messages")
+  urls.append(f"{GRAPH_API}/me/messages")
+  return urls
 
 
 def apply_placeholders(text: str, comment: dict | None = None, username: str = "") -> str:
@@ -31,23 +41,32 @@ def _api_error_text(r: requests.Response) -> str:
   return (r.text or "")[:240]
 
 
-def _post_json(url: str, token: str, payload: dict, label: str) -> tuple[bool, str]:
+def _post_json(
+  url: str,
+  token: str,
+  payload: dict,
+  label: str,
+  *,
+  timeout: int = TEXT_TIMEOUT,
+  bearer_only: bool = False,
+) -> tuple[bool, str]:
   last_err = "request_failed"
-  for mode in ("bearer", "query"):
+  modes = ("bearer",) if bearer_only else ("bearer", "query")
+  for mode in modes:
     try:
       if mode == "bearer":
         r = requests.post(
           url,
           headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
           json=payload,
-          timeout=12,
+          timeout=timeout,
         )
       else:
         r = requests.post(
           url,
           params={"access_token": token},
           json=payload,
-          timeout=12,
+          timeout=timeout,
         )
       print(f"[{label}:{mode}] url={url} status={r.status_code} {r.text[:300]}", flush=True)
       if r.status_code == 200:
@@ -60,24 +79,31 @@ def _post_json(url: str, token: str, payload: dict, label: str) -> tuple[bool, s
           pass
         return True, ""
       last_err = _api_error_text(r)
+      if r.status_code in (400, 401, 403, 404):
+        break
+    except requests.Timeout:
+      last_err = "timeout"
+      print(f"{label} TIMEOUT url={url}", flush=True)
     except Exception as e:
       last_err = str(e)
       print(f"{label} ERROR: {e}", flush=True)
   return False, last_err
 
 
-def _post_messages(token: str, payload: dict, label: str = "MESSAGE", ig_account_id: str = "") -> tuple[bool, str]:
+def _post_messages(
+  token: str,
+  payload: dict,
+  label: str = "MESSAGE",
+  ig_account_id: str = "",
+  *,
+  timeout: int = TEXT_TIMEOUT,
+  bearer_only: bool = False,
+) -> tuple[bool, str]:
   if not token:
     return False, "no_token"
-  endpoints: list[str] = []
-  if ig_account_id:
-    endpoints.append(f"{GRAPH_API}/{ig_account_id}/messages")
-    endpoints.append(f"{FB_GRAPH}/{ig_account_id}/messages")
-  endpoints.append(f"{GRAPH_API}/me/messages")
-  endpoints.append(f"{FB_GRAPH}/me/messages")
   last_err = "request_failed"
-  for url in endpoints:
-    ok, err = _post_json(url, token, payload, label)
+  for url in _ig_dm_endpoints(ig_account_id):
+    ok, err = _post_json(url, token, payload, label, timeout=timeout, bearer_only=bearer_only)
     if ok:
       return True, ""
     last_err = err
@@ -92,6 +118,7 @@ def send_text(user_id: str, text: str, token: str, ig_account_id: str = "") -> b
     {"recipient": {"id": str(user_id)}, "message": {"text": text}},
     "SEND_TEXT",
     ig_account_id,
+    bearer_only=True,
   )
   return ok
 
@@ -117,12 +144,27 @@ def send_media(user_id: str, media_type: str, url: str, token: str, ig_account_i
       }
     },
   }
-  ok, err = _post_messages(token, payload, f"SEND_MEDIA_{media_type}", ig_account_id)
+  ok, err = _post_messages(
+    token,
+    payload,
+    f"SEND_MEDIA_{media_type}",
+    ig_account_id,
+    timeout=MEDIA_TIMEOUT,
+    bearer_only=True,
+  )
   if not ok:
     print(f"SEND_MEDIA FAILED type={media_type} url={media_url[:80]}: {err}", flush=True)
     if media_type in ("image", "video"):
       label = "تصویر" if media_type == "image" else "ویدیو"
-      return send_text(user_id, f"📎 {label}:\n{media_url}", token, ig_account_id)
+      ok, _ = _post_messages(
+        token,
+        {"recipient": {"id": str(user_id)}, "message": {"text": f"📎 {label}:\n{media_url}"}},
+        "SEND_MEDIA_FALLBACK",
+        ig_account_id,
+        timeout=TEXT_TIMEOUT,
+        bearer_only=True,
+      )
+      return ok
   return ok
 
 

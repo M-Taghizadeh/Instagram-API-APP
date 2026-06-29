@@ -1,9 +1,13 @@
 import re
+import time
 import requests
 
 from insta_agent.config import Config
 
 GRAPH_API = Config.GRAPH_API
+
+_PAGE_ID_CACHE: dict[str, tuple[str, float]] = {}
+_PAGE_ID_TTL_SEC = 300
 
 _MEDIA_FIELDS = (
   "id,shortcode,caption,thumbnail_url,media_url,media_type,permalink,timestamp,"
@@ -31,6 +35,12 @@ def get_ig_username(ig_user_id: str, access_token: str) -> str:
 
 
 def get_page_ig_id(token: str) -> str:
+  if not token:
+    return ""
+  cache_key = token[-24:]
+  cached = _PAGE_ID_CACHE.get(cache_key)
+  if cached and (time.time() - cached[1]) < _PAGE_ID_TTL_SEC:
+    return cached[0]
   try:
     r = requests.get(
       f"{GRAPH_API}/me",
@@ -38,7 +48,10 @@ def get_page_ig_id(token: str) -> str:
       params={"fields": "id"},
       timeout=8,
     )
-    return r.json().get("id", "")
+    page_id = r.json().get("id", "")
+    if page_id:
+      _PAGE_ID_CACHE[cache_key] = (str(page_id), time.time())
+    return page_id
   except Exception:
     return ""
 

@@ -268,12 +268,13 @@ def run_from_node(flow: Flow, session: FlowSession, token: str, start_id: str | 
 
 def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) -> bool:
   """فلوهای فعال را بررسی و اجرا کن"""
-  username = get_ig_username(ig_user_id, token)
   flows = Flow.query.filter_by(user_id=owner_id, is_active=True, channel="dm").all()
 
   triggered = _flow_triggered(flows, text)
   if triggered:
-    return _start_flow_session(owner_id, triggered, ig_user_id, username, token)
+    return _start_flow_session(owner_id, triggered, ig_user_id, "", token)
+
+  username = get_ig_username(ig_user_id, token)
 
   # ادامه session فعال
   active = FlowSession.query.filter_by(

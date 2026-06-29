@@ -1,7 +1,8 @@
 import json
 import os
+import threading
 
-from flask import Blueprint, request, jsonify, abort
+from flask import Blueprint, request, jsonify, abort, current_app
 from flask_login import login_required, current_user
 
 from insta_agent.extensions import db
@@ -92,7 +93,7 @@ def webhook():
       messaging_events = entry.get("messaging") or []
       messaging_had_message = any("message" in e for e in messaging_events)
       for event in messaging_events:
-        _handle_messaging(event, dm_rules, token, ig.user_id, page_ids)
+        _enqueue_messaging(event, dm_rules, token, ig.user_id, page_ids)
 
       for change in entry.get("changes", []):
         field = change.get("field", "")
@@ -110,7 +111,7 @@ def webhook():
             "timestamp": value.get("timestamp"),
             "is_echo": value.get("is_echo"),
           }
-          _handle_messaging(fake_event, dm_rules, token, ig.user_id, page_ids)
+          _enqueue_messaging(fake_event, dm_rules, token, ig.user_id, page_ids)
 
     return jsonify(ok=True), 200
   except Exception as e:
@@ -118,6 +119,24 @@ def webhook():
     print("WEBHOOK ERROR:", e, flush=True)
     print(traceback.format_exc(), flush=True)
     return jsonify(ok=False), 200
+
+
+def _enqueue_messaging(event, dm_rules, token, owner_id, page_ids: set[str]):
+  """Run DM handling off the webhook request thread so Meta gets a fast 200."""
+  app = current_app._get_current_object()
+
+  def worker():
+    with app.app_context():
+      try:
+        _handle_messaging(event, dm_rules, token, owner_id, page_ids)
+      except Exception as e:
+        import traceback
+        print(f"WEBHOOK worker ERROR: {e}", flush=True)
+        print(traceback.format_exc(), flush=True)
+      finally:
+        db.session.remove()
+
+  threading.Thread(target=worker, daemon=True, name="ig-webhook-dm").start()
 
 
 def _handle_messaging(event, dm_rules, token, owner_id, page_ids: set[str]):
