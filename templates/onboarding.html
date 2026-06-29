@@ -131,28 +131,30 @@
   </form>
   <p class="note">بعد از ثبت، معمولاً تا چند ساعت (یا کمتر) آماده می‌شود.</p>
 
-  {% elif beta_gate and tester_step == 'waiting' %}
+  {% elif beta_gate and tester_step in ('waiting', 'accept') %}
   <div class="wait-box">
-    <strong>@{{ ig_username_requested }}</strong> در صف فعال‌سازی است.<br>
-    وقتی دعوت اینستاگرام ارسال شد، این صفحه به‌روز می‌شود و بهت خبر می‌دیم.
-  </div>
-  <p class="note">صفحه را رفرش کن یا بعداً دوباره سر بزن.</p>
-
-  {% elif beta_gate and tester_step == 'accept' %}
-  <div class="wait-box">
-    دعوت برای <strong>@{{ ig_username_requested }}</strong> ارسال شد.<br><br>
-    ۱. لینک زیر را باز کن<br>
-    ۲. تب <strong>Tester Invites</strong> → <strong>Accept</strong><br>
+    {% if tester_step == 'accept' %}
+    دعوت برای <strong>@{{ ig_username_requested }}</strong> ارسال شد.
+    {% else %}
+    <strong>@{{ ig_username_requested }}</strong> در صف فعال‌سازی است — به محض ارسال دعوت از Meta، اینجا ظاهر می‌شود.
+    {% endif %}
+    <br><br>
+    <strong>کار تو (با اکانت @{{ ig_username_requested }}):</strong><br>
+    ۱. لینک زیر را در <strong>Chrome</strong> باز کن (VPN روشن باشد)<br>
+    ۲. تب <strong>Tester Invites</strong> → دعوت <strong>Mohtavam</strong> → <strong>Accept</strong><br>
     ۳. برگرد اینجا و «قبول کردم» را بزن
   </div>
-  <a href="{{ instagram_invite_url }}" target="_blank" rel="noopener" class="btn-secondary-full">
-    <i data-lucide="external-link" style="width:16px;height:16px"></i> باز کردن دعوت‌های اینستاگرام
+  <a href="{{ instagram_invite_url }}" target="_blank" rel="noopener" class="btn-secondary-full"
+     style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;border:none;">
+    <i data-lucide="instagram" style="width:16px;height:16px"></i> قبول دعوت در اینستاگرام
   </a>
+  <p class="note" style="margin:0 0 12px;direction:ltr;font-size:11px;word-break:break-all;">{{ instagram_invite_url }}</p>
   <form method="post" action="{{ url_for('auth.confirm_tester_invite') }}">
     <button type="submit" class="ig-btn" style="background:var(--primary);">
       <i data-lucide="check" style="width:18px;height:18px"></i> دعوت را قبول کردم
     </button>
   </form>
+  <p class="note">اگر دعوت را نمی‌بینی، چند دقیقه صبر کن و صفحه را رفرش کن — باید با همان اکانتی وارد شوی که پیج را مدیریت می‌کند.</p>
 
   {% else %}
   <div class="checklist">

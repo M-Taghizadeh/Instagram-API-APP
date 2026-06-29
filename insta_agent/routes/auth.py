@@ -171,7 +171,7 @@ def request_tester_access():
   current_user.tester_requested_at = now_tehran()
   db.session.commit()
   flash(
-    f"درخواست @{ig_user} ثبت شد. معمولاً تا چند ساعت (یا کمتر) پیام می‌گیری که آماده‌ای.",
+    f"درخواست @{ig_user} ثبت شد. وقتی دعوت Meta آمد، از لینک «قبول دعوت در اینستاگرام» Accept کن.",
     "success",
   )
   return redirect(url_for("auth.onboarding"))
@@ -185,8 +185,9 @@ def confirm_tester_invite():
   if not beta_gate_enabled() or current_user.is_admin:
     return redirect(url_for("auth.onboarding"))
 
-  if (current_user.tester_status or "").lower() != "invited":
-    flash("هنوز دعوت اینستاگرام برایت ارسال نشده.", "error")
+  status = (current_user.tester_status or "").lower()
+  if status not in ("pending", "invited"):
+    flash("اول یوزرنیم پیج را ثبت کن.", "error")
     return redirect(url_for("auth.onboarding"))
 
   current_user.tester_status = "ready"
