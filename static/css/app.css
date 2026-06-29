@@ -1197,6 +1197,11 @@ table.data-table td {
 }
 table.data-table tr:last-child td { border-bottom: none; }
 table.data-table tr:hover td { background: var(--surface-hover); }
+table.data-table th.col-actions,
+table.data-table td.col-actions {
+  text-align: left;
+  white-space: nowrap;
+}
 
 /* ── Overlay ── */
 .sidebar-overlay {

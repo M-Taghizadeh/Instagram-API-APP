@@ -131,8 +131,13 @@ def mark_connected(user):
 
 
 def reset_for_reconnect(user):
-  """After disconnect — user remains a Meta tester; allow OAuth again."""
-  if not user or not beta_gate_enabled():
+  """After disconnect — leave admin ready list and require fresh beta onboarding."""
+  if not user or not beta_gate_enabled() or user.is_admin:
     return
-  if (user.tester_status or "") == "connected":
-    user.tester_status = "ready"
+  status = (user.tester_status or "none").lower()
+  if status not in ("ready", "connected"):
+    return
+  user.tester_status = "none"
+  user.ig_username_requested = ""
+  user.tester_requested_at = None
+  user.tester_ready_at = None
