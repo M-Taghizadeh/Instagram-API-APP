@@ -5,7 +5,8 @@ from insta_agent.extensions import db
 from insta_agent.models import Notification
 from insta_agent.utils import now_tehran
 from insta_agent.services.notification_service import (
-  list_notifications, unread_count, mark_all_read, meta_roles_url,
+  list_notifications, unread_count, mark_all_read, delete_notification,
+  delete_all_notifications, meta_roles_url,
 )
 
 bp = Blueprint("notifications", __name__, url_prefix="/notifications")
@@ -44,4 +45,22 @@ def read_one(nid: int):
 def read_all():
   n = mark_all_read(current_user.id)
   flash(f"{n} اعلان خوانده شد.", "success")
+  return redirect(url_for("notifications.inbox"))
+
+
+@bp.route("/<int:nid>/delete", methods=["POST"])
+@login_required
+def delete_one(nid: int):
+  if delete_notification(nid, current_user.id):
+    flash("اعلان پاک شد.", "success")
+  else:
+    flash("اعلان یافت نشد.", "error")
+  return redirect(url_for("notifications.inbox"))
+
+
+@bp.route("/delete-all", methods=["POST"])
+@login_required
+def delete_all():
+  n = delete_all_notifications(current_user.id)
+  flash(f"{n} اعلان پاک شد.", "success")
   return redirect(url_for("notifications.inbox"))

@@ -4,6 +4,12 @@
 {% block topbar_icon %}{{ icon('bell', 18) }}{% endblock %}
 {% block topbar_title %}اعلان‌ها{% if unread %} <span class="badge pink" style="font-size:10px;padding:2px 7px;vertical-align:middle">{{ unread }}</span>{% endif %}{% endblock %}
 {% block topbar_right %}
+  {% if items %}
+  <form method="post" action="{{ url_for('notifications.delete_all') }}" style="display:inline;"
+        onsubmit="return confirm('همه اعلان‌ها پاک شوند؟')">
+    <button type="submit" class="btn ghost small">پاک کردن همه</button>
+  </form>
+  {% endif %}
   {% if unread %}
   <form method="post" action="{{ url_for('notifications.read_all') }}" style="display:inline;">
     <button type="submit" class="btn secondary small">همه خوانده شد</button>
@@ -42,6 +48,10 @@
         {% elif not n.read_at %}
         <a href="{{ url_for('notifications.read_one', nid=n.id) }}" class="btn ghost small">خواندم</a>
         {% endif %}
+        <form method="post" action="{{ url_for('notifications.delete_one', nid=n.id) }}" style="display:inline;"
+              onsubmit="return confirm('این اعلان پاک شود؟')">
+          <button type="submit" class="btn ghost small">پاک کردن</button>
+        </form>
       </div>
     </div>
   </div>

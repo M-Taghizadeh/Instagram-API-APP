@@ -133,3 +133,18 @@ def mark_all_read(user_id: int) -> int:
     n.read_at = now
   db.session.commit()
   return len(rows)
+
+
+def delete_notification(notification_id: int, user_id: int) -> bool:
+  n = Notification.query.filter_by(id=notification_id, user_id=user_id).first()
+  if not n:
+    return False
+  db.session.delete(n)
+  db.session.commit()
+  return True
+
+
+def delete_all_notifications(user_id: int) -> int:
+  count = Notification.query.filter_by(user_id=user_id).delete()
+  db.session.commit()
+  return count
