@@ -52,19 +52,50 @@ def page_sender_ids(token: str, *known_ids: str) -> set[str]:
   return ids
 
 
+def page_sender_ids_for_user(user_id: int, token: str, *known_ids: str) -> set[str]:
+  from insta_agent.models import IgAccount
+
+  ids = page_sender_ids(token, *known_ids)
+  for acc in IgAccount.query.filter_by(user_id=user_id).all():
+    if acc.ig_user_id:
+      ids.add(str(acc.ig_user_id))
+  return ids
+
+
 def is_page_sender(sender_id: str, page_ids: set[str]) -> bool:
   return bool(sender_id) and str(sender_id) in page_ids
 
 
-def is_outbound_dm_event(event: dict, page_ids: set[str]) -> bool:
-  """True when the message was sent by our page (echo/outbound) — never run DM rules."""
+def should_process_inbound_dm(event: dict, page_ids: set[str]) -> tuple[bool, str]:
+  """Only customer messages addressed TO our page should run DM rules/flows."""
   message = event.get("message") or {}
   if message.get("is_echo") or message.get("is_self") or event.get("is_echo"):
-    return True
+    return False, "echo"
+
   sender_id = str((event.get("sender") or {}).get("id", ""))
   if is_page_sender(sender_id, page_ids):
-    return True
-  return False
+    return False, "page_sender"
+
+  if page_ids:
+    recipient_id = str((event.get("recipient") or {}).get("id", ""))
+    if recipient_id and recipient_id not in page_ids:
+      return False, "outbound_not_to_page"
+
+  return True, ""
+
+
+def extract_dm_text(event: dict) -> str:
+  message = event.get("message") or {}
+  text = (message.get("text") or "").strip()
+  if text:
+    return text
+  qr = message.get("quick_reply") or {}
+  if qr:
+    return (qr.get("payload") or qr.get("title") or "").strip()
+  postback = event.get("postback") or {}
+  if postback:
+    return (postback.get("payload") or postback.get("title") or "").strip()
+  return ""
 
 
 def resolve_post_id(post_link: str, access_token: str) -> str:

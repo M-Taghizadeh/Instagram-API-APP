@@ -24,3 +24,10 @@ class CooldownEntry(db.Model):
   rule_id = db.Column(db.String(36), nullable=False)
   ig_user_id = db.Column(db.String(100), nullable=False)
   last_fired = db.Column(db.DateTime, default=now_tehran)
+
+
+class WebhookMessage(db.Model):
+  """Processed Instagram message ids — prevents duplicate webhook handling across workers."""
+  __tablename__ = "webhook_messages"
+  mid = db.Column(db.String(200), primary_key=True)
+  created_at = db.Column(db.DateTime, default=now_tehran)

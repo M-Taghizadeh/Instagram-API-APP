@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from insta_agent.config import Config
 from insta_agent.extensions import db
 from insta_agent.models import (
-  User, Settings, ActivityLog, CooldownEntry,
+  User, Settings, ActivityLog, CooldownEntry, WebhookMessage,
 )
 from insta_agent.utils import now_tehran
 
@@ -75,6 +75,31 @@ def update_cooldown(user_id: int, rule_id: str, ig_user_id: str):
     entry = CooldownEntry(user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id)
     db.session.add(entry)
   db.session.commit()
+
+
+def is_within_cooldown(user_id: int, rule_id: str, ig_user_id: str, seconds: int) -> bool:
+  entry = CooldownEntry.query.filter_by(
+    user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id
+  ).first()
+  if not entry:
+    return False
+  return (now_tehran() - entry.last_fired).total_seconds() < seconds
+
+
+def claim_webhook_message(dedup_key: str) -> bool:
+  """Return True only the first time we see this webhook message key."""
+  key = (dedup_key or "").strip()[:200]
+  if not key:
+    return True
+  if WebhookMessage.query.get(key):
+    return False
+  try:
+    db.session.add(WebhookMessage(mid=key))
+    db.session.commit()
+    return True
+  except IntegrityError:
+    db.session.rollback()
+    return False
 
 
 def log_activity(user_id, rule_type, rule_id, rule_name, ig_user_id, action,

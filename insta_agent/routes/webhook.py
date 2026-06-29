@@ -1,13 +1,15 @@
 import json
 import os
-import time
 
 from flask import Blueprint, request, jsonify, abort
 from flask_login import login_required, current_user
 
 from insta_agent.extensions import db
 from insta_agent.models import User, IgAccount, DmRule, CommentRule, Settings
-from insta_agent.db_init import get_settings_for, get_access_token, is_on_cooldown, update_cooldown, log_activity
+from insta_agent.db_init import (
+  get_settings_for, get_access_token, is_on_cooldown, update_cooldown,
+  log_activity, claim_webhook_message,
+)
 from insta_agent.services.match import match_text
 from insta_agent.services import messaging, instagram_api, flow_engine
 from insta_agent.services.subscription_service import has_automation_access
@@ -15,10 +17,9 @@ from insta_agent.config import Config
 
 bp = Blueprint("webhook", __name__)
 _last_webhook_payload = []
-_seen_message_keys: dict[str, float] = {}
 
 
-def _webhook_message_key(event: dict) -> str:
+def _webhook_dedup_key(event: dict) -> str:
   msg = event.get("message") or {}
   mid = msg.get("mid") or msg.get("id") or ""
   if mid:
@@ -26,25 +27,7 @@ def _webhook_message_key(event: dict) -> str:
   sender = (event.get("sender") or {}).get("id", "")
   ts = str(event.get("timestamp", ""))
   text = (msg.get("text") or "")[:120]
-  return f"{sender}:{ts}:{text}"
-
-
-def _is_duplicate_webhook_event(key: str) -> bool:
-  if not key:
-    return False
-  now = time.time()
-  cutoff = now - 300
-  stale = [k for k, t in _seen_message_keys.items() if t < cutoff]
-  for k in stale:
-    del _seen_message_keys[k]
-  if key in _seen_message_keys:
-    return True
-  _seen_message_keys[key] = now
-  if len(_seen_message_keys) > 2000:
-    oldest = sorted(_seen_message_keys, key=_seen_message_keys.get)[:500]
-    for k in oldest:
-      del _seen_message_keys[k]
-  return False
+  return f"hash:{sender}:{ts}:{text}"
 
 
 @bp.route("/webhook", methods=["GET"])
@@ -104,9 +87,10 @@ def webhook():
       print(f"WEBHOOK route → user={ig.user_id} @{ig.username} entry={entry_id}", flush=True)
       dm_rules = DmRule.query.filter_by(user_id=ig.user_id, is_active=True).all()
       com_rules = CommentRule.query.filter_by(user_id=ig.user_id, is_active=True).all()
-      page_ids = instagram_api.page_sender_ids(token, ig.ig_user_id, entry_id)
+      page_ids = instagram_api.page_sender_ids_for_user(ig.user_id, token, ig.ig_user_id, entry_id)
 
-      for event in entry.get("messaging", []):
+      messaging_events = entry.get("messaging") or []
+      for event in messaging_events:
         _handle_messaging(event, dm_rules, token, ig.user_id, page_ids)
 
       for change in entry.get("changes", []):
@@ -115,6 +99,9 @@ def webhook():
         if field == "comments":
           _handle_comment(value, com_rules, token, ig.user_id)
         elif field in ("messages", "messaging"):
+          if messaging_events:
+            print("WEBHOOK skip changes/messages (already handled via messaging)", flush=True)
+            continue
           fake_event = {
             "sender": value.get("sender", {}),
             "recipient": value.get("recipient", {}),
@@ -133,25 +120,29 @@ def webhook():
 
 
 def _handle_messaging(event, dm_rules, token, owner_id, page_ids: set[str]):
-  if "message" not in event:
+  if "message" not in event and "postback" not in event:
     return
-  if instagram_api.is_outbound_dm_event(event, page_ids):
+
+  ok, reason = instagram_api.should_process_inbound_dm(event, page_ids)
+  if not ok:
     sender_id = (event.get("sender") or {}).get("id", "")
-    print(f"WEBHOOK skip outbound/page sender={sender_id}", flush=True)
+    print(f"WEBHOOK skip inbound filter reason={reason} sender={sender_id}", flush=True)
     return
 
   sender_id = (event.get("sender") or {}).get("id")
   if not sender_id:
     return
 
-  msg_key = _webhook_message_key(event)
-  if _is_duplicate_webhook_event(msg_key):
-    print(f"WEBHOOK skip duplicate message key={msg_key[:80]}", flush=True)
+  dedup_key = _webhook_dedup_key(event)
+  if not claim_webhook_message(dedup_key):
+    print(f"WEBHOOK skip duplicate key={dedup_key[:80]}", flush=True)
     return
 
-  text = (event.get("message") or {}).get("text", "") or ""
+  text = instagram_api.extract_dm_text(event)
+  if not text:
+    print(f"WEBHOOK skip empty text sender={sender_id}", flush=True)
+    return
 
-  # اول فلوهای پیشرفته
   if flow_engine.handle_incoming_dm(owner_id, sender_id, text, token):
     return
 
@@ -200,7 +191,6 @@ def _handle_comment(comment, rules, token, owner_id):
       dm_text = messaging.apply_placeholders((rule.dm_response or "").strip(), comment, ig_username)
       comment_text = messaging.apply_placeholders((rule.comment_reply or "").strip(), comment, ig_username)
 
-      # Private reply first — Meta allows one DM per comment via comment_id.
       if dm_text:
         ok2, dm_err = messaging.private_reply(comment_id, dm_text, token, page_id or "")
         if ok2:

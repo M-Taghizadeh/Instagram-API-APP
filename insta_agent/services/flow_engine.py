@@ -1,6 +1,5 @@
 import json
 import re
-import time
 import uuid
 from datetime import timedelta
 
@@ -9,30 +8,10 @@ from insta_agent.models import Flow, FlowSession, Contact, ScheduledMessage, Act
 from insta_agent.services.match import match_text
 from insta_agent.services import messaging
 from insta_agent.services.instagram_api import get_ig_username, get_page_ig_id
+from insta_agent.db_init import is_within_cooldown, update_cooldown
 from insta_agent.utils import now_tehran
 
-_FLOW_START_COOLDOWN_SEC = 20
-_flow_start_times: dict[str, float] = {}
-
-
-def _flow_start_key(owner_id: int, flow_id: str, ig_user_id: str) -> str:
-  return f"{owner_id}:{flow_id}:{ig_user_id}"
-
-
-def _flow_start_blocked(owner_id: int, flow_id: str, ig_user_id: str) -> bool:
-  key = _flow_start_key(owner_id, flow_id, ig_user_id)
-  last = _flow_start_times.get(key, 0)
-  return (time.time() - last) < _FLOW_START_COOLDOWN_SEC
-
-
-def _mark_flow_started(owner_id: int, flow_id: str, ig_user_id: str):
-  key = _flow_start_key(owner_id, flow_id, ig_user_id)
-  _flow_start_times[key] = time.time()
-  if len(_flow_start_times) > 5000:
-    cutoff = time.time() - _FLOW_START_COOLDOWN_SEC
-    stale = [k for k, t in _flow_start_times.items() if t < cutoff]
-    for k in stale:
-      del _flow_start_times[k]
+FLOW_RESTART_COOLDOWN_SEC = 60
 
 
 def parse_nodes(flow: Flow) -> list:
@@ -317,7 +296,7 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
       continue
     if not match_text(trigger, text, flow.match_type):
       continue
-    if _flow_start_blocked(owner_id, flow.id, ig_user_id):
+    if is_within_cooldown(owner_id, f"flow:{flow.id}", ig_user_id, FLOW_RESTART_COOLDOWN_SEC):
       print(f"FLOW skip cooldown flow={flow.id} user={ig_user_id}", flush=True)
       continue
     session = FlowSession(
@@ -335,8 +314,8 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
     if start:
       session.current_node_id = start["id"]
       db.session.commit()
+      update_cooldown(owner_id, f"flow:{flow.id}", ig_user_id)
       actions = run_from_node(flow, session, token, start["id"])
-      _mark_flow_started(owner_id, flow.id, ig_user_id)
       log_flow_activity(owner_id, flow, ig_user_id, "+".join(actions), ig_username=username)
       return True
   return False
