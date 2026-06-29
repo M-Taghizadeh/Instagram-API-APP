@@ -67,7 +67,7 @@ def is_page_sender(sender_id: str, page_ids: set[str]) -> bool:
 
 
 def should_process_inbound_dm(event: dict, page_ids: set[str]) -> tuple[bool, str]:
-  """Only customer messages addressed TO our page should run DM rules/flows."""
+  """Ignore echoes and messages sent by our own page — allow real customer DMs."""
   message = event.get("message") or {}
   if message.get("is_echo") or message.get("is_self") or event.get("is_echo"):
     return False, "echo"
@@ -75,11 +75,6 @@ def should_process_inbound_dm(event: dict, page_ids: set[str]) -> tuple[bool, st
   sender_id = str((event.get("sender") or {}).get("id", ""))
   if is_page_sender(sender_id, page_ids):
     return False, "page_sender"
-
-  if page_ids:
-    recipient_id = str((event.get("recipient") or {}).get("id", ""))
-    if recipient_id and recipient_id not in page_ids:
-      return False, "outbound_not_to_page"
 
   return True, ""
 

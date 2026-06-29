@@ -11,7 +11,22 @@ from insta_agent.services.instagram_api import get_ig_username, get_page_ig_id
 from insta_agent.db_init import is_within_cooldown, update_cooldown
 from insta_agent.utils import now_tehran
 
-FLOW_RESTART_COOLDOWN_SEC = 60
+FLOW_RESTART_COOLDOWN_SEC = 15
+
+
+def _abandon_active_sessions(owner_id: int, ig_user_id: str):
+  FlowSession.query.filter_by(
+    user_id=owner_id, ig_user_id=ig_user_id, status="active"
+  ).update({"status": "completed", "current_node_id": ""})
+  db.session.commit()
+
+
+def _flow_triggered(flows: list, text: str) -> bool:
+  for flow in flows:
+    trigger = (flow.trigger or "").strip()
+    if trigger and match_text(trigger, text, flow.match_type):
+      return True
+  return False
 
 
 def parse_nodes(flow: Flow) -> list:
@@ -229,6 +244,10 @@ def run_from_node(flow: Flow, session: FlowSession, token: str, start_id: str | 
 def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) -> bool:
   """فلوهای فعال را بررسی و اجرا کن"""
   username = get_ig_username(ig_user_id, token)
+  flows = Flow.query.filter_by(user_id=owner_id, is_active=True, channel="dm").all()
+
+  if _flow_triggered(flows, text):
+    _abandon_active_sessions(owner_id, ig_user_id)
 
   # ادامه session فعال
   active = FlowSession.query.filter_by(
@@ -289,7 +308,6 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
     db.session.commit()
 
   # شروع فلو جدید
-  flows = Flow.query.filter_by(user_id=owner_id, is_active=True, channel="dm").all()
   for flow in flows:
     trigger = (flow.trigger or "").strip()
     if not trigger:

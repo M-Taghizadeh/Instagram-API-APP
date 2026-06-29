@@ -91,15 +91,19 @@ def claim_webhook_message(dedup_key: str) -> bool:
   key = (dedup_key or "").strip()[:200]
   if not key:
     return True
-  if WebhookMessage.query.get(key):
-    return False
   try:
+    if WebhookMessage.query.get(key):
+      return False
     db.session.add(WebhookMessage(mid=key))
     db.session.commit()
     return True
   except IntegrityError:
     db.session.rollback()
     return False
+  except Exception as e:
+    db.session.rollback()
+    print(f"[WEBHOOK DEDUP] fallback allow key={key[:40]} err={e}", flush=True)
+    return True
 
 
 def log_activity(user_id, rule_type, rule_id, rule_name, ig_user_id, action,

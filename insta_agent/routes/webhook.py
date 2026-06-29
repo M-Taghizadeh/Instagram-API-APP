@@ -90,6 +90,7 @@ def webhook():
       page_ids = instagram_api.page_sender_ids_for_user(ig.user_id, token, ig.ig_user_id, entry_id)
 
       messaging_events = entry.get("messaging") or []
+      messaging_had_message = any("message" in e for e in messaging_events)
       for event in messaging_events:
         _handle_messaging(event, dm_rules, token, ig.user_id, page_ids)
 
@@ -99,8 +100,8 @@ def webhook():
         if field == "comments":
           _handle_comment(value, com_rules, token, ig.user_id)
         elif field in ("messages", "messaging"):
-          if messaging_events:
-            print("WEBHOOK skip changes/messages (already handled via messaging)", flush=True)
+          if messaging_had_message:
+            print("WEBHOOK skip changes/messages (messaging array had message)", flush=True)
             continue
           fake_event = {
             "sender": value.get("sender", {}),
@@ -133,14 +134,14 @@ def _handle_messaging(event, dm_rules, token, owner_id, page_ids: set[str]):
   if not sender_id:
     return
 
-  dedup_key = _webhook_dedup_key(event)
-  if not claim_webhook_message(dedup_key):
-    print(f"WEBHOOK skip duplicate key={dedup_key[:80]}", flush=True)
-    return
-
   text = instagram_api.extract_dm_text(event)
   if not text:
     print(f"WEBHOOK skip empty text sender={sender_id}", flush=True)
+    return
+
+  dedup_key = _webhook_dedup_key(event)
+  if not claim_webhook_message(dedup_key):
+    print(f"WEBHOOK skip duplicate key={dedup_key[:80]}", flush=True)
     return
 
   if flow_engine.handle_incoming_dm(owner_id, sender_id, text, token):
