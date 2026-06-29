@@ -152,16 +152,23 @@ def _handle_comment(comment, rules, token, owner_id):
       if is_on_cooldown(owner_id, rule.id, ig_user_id or ""):
         break
       actions = []
+      dm_note = ""
       if rule.comment_reply:
         ok = messaging.reply_comment(comment_id, rule.comment_reply, token)
         actions.append("replied_comment" if ok else "comment_failed")
       if rule.dm_response:
-        ok2 = messaging.private_reply(comment_id, rule.dm_response, token)
+        ok2, dm_err = messaging.private_reply(
+          comment_id, rule.dm_response, token, page_id or ""
+        )
         if ok2:
           actions.append("sent_private_reply")
         else:
-          ok3 = messaging.send_text(ig_user_id, rule.dm_response, token)
-          actions.append("sent_dm_fallback" if ok3 else "dm_failed")
+          actions.append("dm_failed")
+          dm_note = dm_err
+          print(
+            f"COMMENT DM FAILED rule={rule.id} comment={comment_id} user={ig_user_id}: {dm_err}",
+            flush=True,
+          )
       rule.fire_count = (rule.fire_count or 0) + 1
       db.session.commit()
       if ig_user_id:
@@ -169,5 +176,6 @@ def _handle_comment(comment, rules, token, owner_id):
       username = instagram_api.get_ig_username(ig_user_id, token) if ig_user_id else ""
       log_activity(owner_id, "comment", rule.id, rule.trigger, ig_user_id or "",
                    "+".join(actions) if actions else "no_action",
-                   "ok" if actions else "error", ig_username=username)
+                   "ok" if actions and "dm_failed" not in actions and "comment_failed" not in actions else "error",
+                   note=dm_note, ig_username=username)
       break

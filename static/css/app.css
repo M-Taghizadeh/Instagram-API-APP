@@ -301,7 +301,16 @@ a { color: inherit; text-decoration: none; }
   border-radius: var(--radius-sm);
   background: var(--surface-hover);
   border: 1px solid var(--border-subtle);
-  margin-bottom: 8px;
+}
+a.user-card-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--tr), border-color var(--tr);
+}
+a.user-card-link:hover {
+  background: var(--primary-muted);
+  border-color: var(--primary-border);
 }
 .user-avatar {
   width: 32px;

@@ -82,18 +82,13 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="user-card">
+      <a href="{{ url_for('settings.profile') }}" class="user-card user-card-link">
         <div class="user-avatar">{{ current_user.username[0].upper() if current_user.is_authenticated else 'A' }}</div>
         <div class="user-info">
           <div class="user-name">{{ current_user.username if current_user.is_authenticated else 'Admin' }}</div>
           <div class="user-role">{% if current_user.is_authenticated and current_user.primary_ig_account %}@{{ current_user.primary_ig_account.username }}{% else %}ادمین{% endif %}</div>
         </div>
-      </div>
-      <form action="{{ url_for('auth.logout') }}" method="get">
-        <button type="submit" class="btn-logout">
-          <i data-lucide="log-out" style="width:16px;height:16px"></i> خروج
-        </button>
-      </form>
+      </a>
     </div>
   </aside>
 

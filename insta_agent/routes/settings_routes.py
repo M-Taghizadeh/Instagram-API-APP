@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 
 from insta_agent.extensions import db
 from insta_agent.db_init import get_settings
+from insta_agent.models import User
 from insta_agent.services.instagram_oauth import oauth_configured
 from insta_agent.services.app_settings_service import get_app_settings
 
@@ -49,22 +50,48 @@ def settings():
   )
 
 
+@bp.route("/settings/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+  if request.method == "POST":
+    form_type = request.form.get("form_type", "")
+
+    if form_type == "profile":
+      username = request.form.get("username", "").strip()
+      email = request.form.get("email", "").strip()
+      if len(username) < 3:
+        flash("نام کاربری باید حداقل ۳ کاراکتر باشد.", "error")
+      elif User.query.filter(User.username == username, User.id != current_user.id).first():
+        flash("این نام کاربری قبلاً استفاده شده.", "error")
+      else:
+        current_user.username = username
+        current_user.email = email
+        db.session.commit()
+        flash("اطلاعات پروفایل ذخیره شد.", "success")
+      return redirect(url_for("settings.profile"))
+
+    if form_type == "password":
+      cur = request.form.get("current_password", "")
+      new = request.form.get("new_password", "")
+      cfm = request.form.get("confirm_password", "")
+      if not current_user.check_password(cur):
+        flash("رمز فعلی اشتباه است.", "error")
+      elif len(new) < 6:
+        flash("رمز جدید باید حداقل ۶ کاراکتر باشد.", "error")
+      elif new != cfm:
+        flash("تکرار رمز مطابقت ندارد.", "error")
+      else:
+        current_user.set_password(new)
+        db.session.commit()
+        flash("رمز عبور تغییر کرد.", "success")
+      return redirect(url_for("settings.profile"))
+
+    abort(400)
+
+  return render_template("profile.html")
+
+
 @bp.route("/change-password", methods=["GET", "POST"])
 @login_required
 def change_password():
-  if request.method == "POST":
-    cur = request.form.get("current_password", "")
-    new = request.form.get("new_password", "")
-    cfm = request.form.get("confirm_password", "")
-    if not current_user.check_password(cur):
-      flash("رمز فعلی اشتباه است.", "error")
-    elif len(new) < 6:
-      flash("رمز جدید باید حداقل ۶ کاراکتر باشد.", "error")
-    elif new != cfm:
-      flash("تکرار رمز مطابقت ندارد.", "error")
-    else:
-      current_user.set_password(new)
-      db.session.commit()
-      flash("رمز عبور تغییر کرد.", "success")
-      return redirect(url_for("settings.settings"))
-  return render_template("change_password.html")
+  return redirect(url_for("settings.profile"))

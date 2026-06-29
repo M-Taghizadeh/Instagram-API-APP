@@ -106,7 +106,10 @@
         <div style="font-size:11px;color:var(--text-faint);">{% if current_user.is_admin %}مدیر سامانه{% else %}کاربر{% endif %}</div>
       </div>
     </div>
-    <a href="{{ url_for('settings.change_password') }}" class="btn secondary" style="width:100%;justify-content:center;">{{ icon('key-round', 16) }} تغییر رمز عبور</a>
+    <a href="{{ url_for('settings.profile') }}" class="btn secondary" style="width:100%;justify-content:center;margin-bottom:10px;">{{ icon('user', 16) }} ویرایش پروفایل</a>
+    <form action="{{ url_for('auth.logout') }}" method="get" style="margin-top:4px;">
+      <button type="submit" class="btn-logout" style="width:100%;">{{ icon('log-out', 16) }} خروج از حساب</button>
+    </form>
     {% if current_user.is_admin %}
     <a href="{{ url_for('admin.integrations') }}" class="btn ghost small" style="width:100%;margin-top:10px;justify-content:center;">{{ icon('plug', 14) }} تنظیمات Meta / Webhook (ادمین)</a>
     {% endif %}

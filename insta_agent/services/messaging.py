@@ -3,24 +3,44 @@ import requests
 
 from insta_agent.config import Config
 
-GRAPH_API = Config.GRAPH_API
+GRAPH_API = Config.GRAPH_API.rstrip("/")
+
+
+def _post_messages(token: str, payload: dict, label: str = "MESSAGE") -> tuple[bool, str]:
+  if not token:
+    return False, "no_token"
+  try:
+    r = requests.post(
+      f"{GRAPH_API}/me/messages",
+      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+      json=payload,
+      timeout=12,
+    )
+    print(f"[{label}] status={r.status_code} {r.text[:300]}", flush=True)
+    if r.status_code == 200:
+      return True, ""
+    try:
+      err = r.json().get("error", {})
+      msg = err.get("message") or r.text[:200]
+      code = err.get("code")
+      sub = err.get("error_subcode")
+      return False, f"{msg} (code={code}, sub={sub})"
+    except Exception:
+      return False, r.text[:200]
+  except Exception as e:
+    print(f"{label} ERROR: {e}", flush=True)
+    return False, str(e)
 
 
 def send_text(user_id: str, text: str, token: str) -> bool:
   if not user_id or not token or not text:
     return False
-  try:
-    r = requests.post(
-      f"{GRAPH_API}/me/messages",
-      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-      json={"recipient": {"id": user_id}, "message": {"text": text}},
-      timeout=10,
-    )
-    print(f"[SEND_TEXT] status={r.status_code} {r.text[:200]}", flush=True)
-    return r.status_code == 200
-  except Exception as e:
-    print(f"DM ERROR: {e}", flush=True)
-    return False
+  ok, _ = _post_messages(
+    token,
+    {"recipient": {"id": str(user_id)}, "message": {"text": text}},
+    "SEND_TEXT",
+  )
+  return ok
 
 
 def send_media(user_id: str, media_type: str, url: str, token: str) -> bool:
@@ -167,18 +187,59 @@ def reply_comment(comment_id: str, text: str, token: str) -> bool:
     return False
 
 
-def private_reply(comment_id: str, text: str, token: str) -> bool:
-  if not comment_id or not token:
-    return False
+def private_reply(comment_id: str, text: str, token: str, ig_account_id: str = "") -> tuple[bool, str]:
+  """DM in response to a comment — must use comment_id recipient (not user id)."""
+  if not comment_id or not token or not text:
+    return False, "missing_comment_or_text"
+
+  payload = {
+    "recipient": {"comment_id": str(comment_id)},
+    "message": {"text": text},
+  }
+
+  # Meta docs: POST /<IG_PROFESSIONAL_ID>/messages with comment_id recipient.
+  urls = []
+  if ig_account_id:
+    urls.append(f"{GRAPH_API}/{ig_account_id}/messages")
+  urls.append(f"{GRAPH_API}/me/messages")
+
+  last_err = ""
+  for url in urls:
+    try:
+      r = requests.post(
+        url,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        json=payload,
+        timeout=12,
+      )
+      print(f"[PRIVATE_REPLY] url={url} status={r.status_code} {r.text[:300]}", flush=True)
+      if r.status_code == 200:
+        return True, ""
+      try:
+        err = r.json().get("error", {})
+        last_err = err.get("message") or r.text[:200]
+      except Exception:
+        last_err = r.text[:200]
+    except Exception as e:
+      last_err = str(e)
+      print(f"PRIVATE_REPLY ERROR: {e}", flush=True)
+
+  # Legacy endpoint (older Graph versions)
   try:
     r = requests.post(
       f"{GRAPH_API}/{comment_id}/private_replies",
       headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
       json={"message": text},
-      timeout=10,
+      timeout=12,
     )
-    print(f"[PRIVATE_REPLY] status={r.status_code} {r.text[:200]}", flush=True)
-    return r.status_code == 200
+    print(f"[PRIVATE_REPLY:legacy] status={r.status_code} {r.text[:300]}", flush=True)
+    if r.status_code == 200:
+      return True, ""
+    try:
+      last_err = r.json().get("error", {}).get("message") or r.text[:200]
+    except Exception:
+      last_err = r.text[:200]
   except Exception as e:
-    print(f"PRIVATE_REPLY ERROR: {e}", flush=True)
-    return False
+    last_err = str(e)
+
+  return False, last_err or "private_reply_failed"

@@ -334,15 +334,18 @@ def handle_incoming_comment(owner_id: int, comment: dict, token: str) -> bool:
         ok = messaging.reply_comment(comment_id, data.get("text", ""), token)
         actions.append("replied_comment" if ok else "comment_failed")
       elif ntype in ("text", "dm"):
-        ok = messaging.private_reply(comment_id, data.get("text", ""), token)
-        if not ok:
-          ok = messaging.send_text(ig_user_id, data.get("text", ""), token)
+        ok, dm_err = messaging.private_reply(
+          comment_id, data.get("text", ""), token, page_id or ""
+        )
         actions.append("sent_private_reply" if ok else "dm_failed")
+        if not ok:
+          print(f"FLOW COMMENT DM FAILED flow={flow.id} comment={comment_id}: {dm_err}", flush=True)
       elif ntype == "carousel":
-        # private reply فقط متن — carousel از DM بعد از reply
-        messaging.private_reply(comment_id, data.get("intro", "محصولات ما:"), token)
-        messaging.send_generic_carousel(ig_user_id, data.get("elements", []), token)
-        actions.append("sent_showcase")
+        intro = data.get("intro", "محصولات ما:")
+        ok, _ = messaging.private_reply(comment_id, intro, token, page_id or "")
+        if ok and ig_user_id:
+          messaging.send_generic_carousel(ig_user_id, data.get("elements", []), token)
+        actions.append("sent_showcase" if ok else "dm_failed")
 
     flow.fire_count = (flow.fire_count or 0) + 1
     db.session.commit()
