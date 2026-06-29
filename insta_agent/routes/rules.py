@@ -126,6 +126,14 @@ def new_comment_rule():
   if request.method == "POST":
     post_link = request.form.get("post_link", "").strip()
     meta = _resolve_post_meta(post_link)
+    comment_reply = request.form.get("comment_reply", "").strip()
+    dm_response = request.form.get("dm_response", "").strip()
+    if not comment_reply and not dm_response:
+      flash("حداقل یکی از پاسخ کامنت یا دایرکت را وارد کن.", "error")
+      return render_template("comment_rule_form.html", rule=None)
+    if comment_reply and not dm_response:
+      flash("پاسخ دایرکت خالی است — بدون آن پیام خصوصی ارسال نمی‌شود.", "error")
+      return render_template("comment_rule_form.html", rule=None)
     rule = CommentRule(
       user_id=current_user.id,
       post_link=post_link,
@@ -134,8 +142,8 @@ def new_comment_rule():
       post_thumb=meta.get("image", ""),
       trigger=request.form.get("trigger", "").strip(),
       match_type=request.form.get("match_type", "contains"),
-      comment_reply=request.form.get("comment_reply", "").strip(),
-      dm_response=request.form.get("dm_response", "").strip(),
+      comment_reply=comment_reply,
+      dm_response=dm_response,
       is_active=True,
     )
     db.session.add(rule)
@@ -152,6 +160,14 @@ def edit_comment_rule(rule_id):
   if request.method == "POST":
     post_link = request.form.get("post_link", "").strip()
     meta = _resolve_post_meta(post_link)
+    comment_reply = request.form.get("comment_reply", "").strip()
+    dm_response = request.form.get("dm_response", "").strip()
+    if not comment_reply and not dm_response:
+      flash("حداقل یکی از پاسخ کامنت یا دایرکت را وارد کن.", "error")
+      return render_template("comment_rule_form.html", rule=rule)
+    if comment_reply and not dm_response:
+      flash("پاسخ دایرکت خالی است — بدون آن پیام خصوصی ارسال نمی‌شود.", "error")
+      return render_template("comment_rule_form.html", rule=rule)
     if post_link != rule.post_link or not rule.post_thumb or meta.get("image"):
       rule.post_id = meta.get("id", rule.post_id or "")
       rule.post_caption = meta.get("caption", rule.post_caption or "")
@@ -160,8 +176,8 @@ def edit_comment_rule(rule_id):
     rule.post_link = post_link
     rule.trigger = request.form.get("trigger", "").strip()
     rule.match_type = request.form.get("match_type", "contains")
-    rule.comment_reply = request.form.get("comment_reply", "").strip()
-    rule.dm_response = request.form.get("dm_response", "").strip()
+    rule.comment_reply = comment_reply
+    rule.dm_response = dm_response
     db.session.commit()
     flash("قانون ویرایش شد.", "success")
     return redirect(url_for("rules.comment_rules"))

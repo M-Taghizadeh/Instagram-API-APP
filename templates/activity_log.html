@@ -74,11 +74,17 @@
             {% endif %}
           </td>
           <td style="white-space:nowrap;">
-            {% if 'sent_dm' in log.action %}
+            {% if 'sent_private_reply' in log.action or 'sent_dm' in log.action or 'sent_dm_fallback' in log.action %}
               <span class="badge purple" style="margin-left:4px;">DM</span>
+            {% endif %}
+            {% if 'dm_failed' in log.action %}
+              <span class="badge danger" style="margin-left:4px;" title="{{ log.note or '' }}">DM خطا</span>
             {% endif %}
             {% if 'replied_comment' in log.action %}
               <span class="badge pink">کامنت</span>
+            {% endif %}
+            {% if 'comment_failed' in log.action %}
+              <span class="badge danger">کامنت خطا</span>
             {% endif %}
             {% if log.action == 'no_action' %}
               <span class="badge">بدون عملیات</span>

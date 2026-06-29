@@ -327,16 +327,17 @@ def handle_incoming_comment(owner_id: int, comment: dict, token: str) -> bool:
 
     nodes = parse_nodes(flow)
     actions = []
+    ig_username = ((comment.get("from") or {}).get("username") or "").strip()
     for node in nodes:
       ntype = node.get("type", "")
       data = node.get("data", {})
       if ntype == "comment_reply":
-        ok = messaging.reply_comment(comment_id, data.get("text", ""), token)
+        body = messaging.apply_placeholders(data.get("text", ""), comment, ig_username)
+        ok = messaging.reply_comment(comment_id, body, token)
         actions.append("replied_comment" if ok else "comment_failed")
       elif ntype in ("text", "dm"):
-        ok, dm_err = messaging.private_reply(
-          comment_id, data.get("text", ""), token, page_id or ""
-        )
+        body = messaging.apply_placeholders(data.get("text", ""), comment, ig_username)
+        ok, dm_err = messaging.private_reply(comment_id, body, token, page_id or "")
         actions.append("sent_private_reply" if ok else "dm_failed")
         if not ok:
           print(f"FLOW COMMENT DM FAILED flow={flow.id} comment={comment_id}: {dm_err}", flush=True)

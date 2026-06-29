@@ -138,11 +138,15 @@ def _handle_comment(comment, rules, token, owner_id):
   comment_id = comment.get("id")
   parent_id = comment.get("parent_id")
   ig_user_id = (comment.get("from") or {}).get("id")
+  ig_username = ((comment.get("from") or {}).get("username") or "").strip()
 
   page_id = instagram_api.get_page_ig_id(token)
   if page_id and ig_user_id == page_id:
     return
   if parent_id:
+    return
+  if not comment_id:
+    print("COMMENT skip: missing comment_id", flush=True)
     return
 
   for rule in rules:
@@ -153,13 +157,12 @@ def _handle_comment(comment, rules, token, owner_id):
         break
       actions = []
       dm_note = ""
-      if rule.comment_reply:
-        ok = messaging.reply_comment(comment_id, rule.comment_reply, token)
-        actions.append("replied_comment" if ok else "comment_failed")
-      if rule.dm_response:
-        ok2, dm_err = messaging.private_reply(
-          comment_id, rule.dm_response, token, page_id or ""
-        )
+      dm_text = messaging.apply_placeholders((rule.dm_response or "").strip(), comment, ig_username)
+      comment_text = messaging.apply_placeholders((rule.comment_reply or "").strip(), comment, ig_username)
+
+      # Private reply first — Meta allows one DM per comment via comment_id.
+      if dm_text:
+        ok2, dm_err = messaging.private_reply(comment_id, dm_text, token, page_id or "")
         if ok2:
           actions.append("sent_private_reply")
         else:
@@ -169,13 +172,28 @@ def _handle_comment(comment, rules, token, owner_id):
             f"COMMENT DM FAILED rule={rule.id} comment={comment_id} user={ig_user_id}: {dm_err}",
             flush=True,
           )
+      elif (rule.dm_response or "").strip():
+        actions.append("dm_failed")
+        dm_note = "empty_dm_after_placeholders"
+
+      if comment_text:
+        ok = messaging.reply_comment(comment_id, comment_text, token)
+        actions.append("replied_comment" if ok else "comment_failed")
+
       rule.fire_count = (rule.fire_count or 0) + 1
       db.session.commit()
       if ig_user_id:
         update_cooldown(owner_id, rule.id, ig_user_id)
-      username = instagram_api.get_ig_username(ig_user_id, token) if ig_user_id else ""
+      if not ig_username and ig_user_id:
+        ig_username = instagram_api.get_ig_username(ig_user_id, token)
+
+      status = "ok"
+      if not actions or "comment_failed" in actions or "dm_failed" in actions:
+        status = "error"
+      elif dm_text and "sent_private_reply" not in actions:
+        status = "error"
+
       log_activity(owner_id, "comment", rule.id, rule.trigger, ig_user_id or "",
                    "+".join(actions) if actions else "no_action",
-                   "ok" if actions and "dm_failed" not in actions and "comment_failed" not in actions else "error",
-                   note=dm_note, ig_username=username)
+                   status, note=dm_note, ig_username=ig_username)
       break
