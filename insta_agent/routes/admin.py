@@ -16,6 +16,7 @@ from insta_agent.services.subscription_service import (
 from insta_agent.services.accounting_service import build_report, export_csv, MONTH_NAMES
 from insta_agent.config import Config
 from insta_agent.services.instagram_oauth import oauth_configured, oauth_status
+from insta_agent.services.tester_gate import count_tester_slots_used, beta_gate_enabled
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -242,6 +243,64 @@ def integrations():
     verify_token=Config.VERIFY_TOKEN,
     webhook_url=url_for("webhook.webhook", _external=True),
     oauth_status_url=url_for("oauth.oauth_debug_status"),
+    beta_gate=beta_gate_enabled(),
+    beta_tester_slots=Config.BETA_TESTER_SLOTS,
+  )
+
+
+@bp.route("/activation", methods=["GET", "POST"])
+@login_required
+@admin_required
+def activation():
+  if request.method == "POST":
+    user_id = request.form.get("user_id", type=int)
+    action = request.form.get("action", "")
+    target = User.query.get(user_id)
+    if not target or target.is_admin:
+      flash("کاربر یافت نشد.", "error")
+      return redirect(url_for("admin.activation"))
+
+    if action == "invited":
+      if (target.tester_status or "") not in ("pending",):
+        flash("فقط درخواست‌های در انتظار را می‌توان به «دعوت فرستاده» تغییر داد.", "error")
+      else:
+        target.tester_status = "invited"
+        db.session.commit()
+        flash(f"@{target.ig_username_requested} — وضعیت به «دعوت فرستاده» تغییر کرد.", "success")
+    elif action == "ready":
+      if (target.tester_status or "") not in ("pending", "invited"):
+        flash("این وضعیت قابل تأیید نیست.", "error")
+      else:
+        target.tester_status = "ready"
+        target.tester_ready_at = now_tehran()
+        db.session.commit()
+        flash(f"@{target.ig_username_requested} — آماده اتصال است.", "success")
+    elif action == "reset":
+      target.tester_status = "none"
+      target.ig_username_requested = ""
+      target.tester_requested_at = None
+      target.tester_ready_at = None
+      db.session.commit()
+      flash("درخواست ریست شد.", "success")
+    return redirect(url_for("admin.activation"))
+
+  queue = User.query.filter(
+    User.is_admin == False,
+    User.tester_status.in_(("pending", "invited", "ready")),
+  ).order_by(User.tester_requested_at.asc(), User.id.asc()).all()
+
+  connected = User.query.filter_by(tester_status="connected", is_admin=False).count()
+  pending_count = User.query.filter_by(tester_status="pending", is_admin=False).count()
+
+  return render_template(
+    "admin/activation.html",
+    queue=queue,
+    slots_used=count_tester_slots_used(),
+    slots_max=Config.BETA_TESTER_SLOTS,
+    pending_count=pending_count,
+    connected_count=connected,
+    beta_gate=beta_gate_enabled(),
+    meta_roles_url="https://developers.facebook.com/apps/",
   )
 
 

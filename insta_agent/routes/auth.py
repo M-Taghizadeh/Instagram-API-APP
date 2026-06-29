@@ -1,9 +1,15 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, logout_user, login_required, current_user
 
+from insta_agent.config import Config
 from insta_agent.extensions import db
 from insta_agent.models import User, Settings
 from insta_agent.services.instagram_oauth import oauth_configured, oauth_status
+from insta_agent.services.tester_gate import (
+  beta_gate_enabled, normalize_ig_username, onboarding_context,
+  count_tester_slots_used, can_start_oauth, mark_connected, reset_for_reconnect,
+)
+from insta_agent.utils import now_tehran
 
 bp = Blueprint("auth", __name__)
 
@@ -45,6 +51,8 @@ def require_ig_connection_for_panel():
   if ep in PUBLIC_ENDPOINTS or ep.startswith("webhook."):
     return
   if ep in ("auth.logout", "auth.onboarding", "auth.pages", "oauth.connect", "oauth.connect_direct", "oauth.disconnect", "settings.settings"):
+    return
+  if ep in ("auth.request_tester_access", "auth.confirm_tester_invite"):
     return
   try:
     if user_has_connection(current_user):
@@ -115,7 +123,77 @@ def register():
 def onboarding():
   if user_has_connection(current_user):
     return redirect(url_for("dashboard.dashboard"))
-  return render_template("onboarding.html", oauth_ready=oauth_configured(), oauth=oauth_status())
+  ctx = onboarding_context(current_user)
+  return render_template(
+    "onboarding.html",
+    oauth_ready=oauth_configured(),
+    oauth=oauth_status(),
+    **ctx,
+  )
+
+
+@bp.route("/onboarding/request-access", methods=["POST"])
+@login_required
+def request_tester_access():
+  if user_has_connection(current_user):
+    return redirect(url_for("dashboard.dashboard"))
+  if not beta_gate_enabled() or current_user.is_admin:
+    return redirect(url_for("auth.onboarding"))
+
+  ig_user = normalize_ig_username(request.form.get("ig_username", ""))
+  if not ig_user or len(ig_user) < 2:
+    flash("یوزرنیم اینستاگرام معتبر نیست.", "error")
+    return redirect(url_for("auth.onboarding"))
+  if not ig_user.replace(".", "").replace("_", "").isalnum():
+    flash("یوزرنیم فقط حروف، عدد، نقطه و زیرخط مجاز است.", "error")
+    return redirect(url_for("auth.onboarding"))
+
+  existing = User.query.filter(
+    User.id != current_user.id,
+    User.ig_username_requested == ig_user,
+    User.tester_status.in_(("pending", "invited", "ready", "connected")),
+  ).first()
+  if existing:
+    flash("این یوزرنیم قبلاً در صف فعال‌سازی ثبت شده.", "error")
+    return redirect(url_for("auth.onboarding"))
+
+  status = (current_user.tester_status or "none").lower()
+  if status in ("pending", "invited", "ready", "connected") and current_user.ig_username_requested:
+    flash("درخواستت قبلاً ثبت شده — منتظر فعال‌سازی بمان.", "error")
+    return redirect(url_for("auth.onboarding"))
+
+  if count_tester_slots_used() >= Config.BETA_TESTER_SLOTS:
+    flash("ظرفیت دسترسی زودهنگام پر شده — به زودی دوباره باز می‌شود.", "error")
+    return redirect(url_for("auth.onboarding"))
+
+  current_user.ig_username_requested = ig_user
+  current_user.tester_status = "pending"
+  current_user.tester_requested_at = now_tehran()
+  db.session.commit()
+  flash(
+    f"درخواست @{ig_user} ثبت شد. معمولاً تا چند ساعت (یا کمتر) پیام می‌گیری که آماده‌ای.",
+    "success",
+  )
+  return redirect(url_for("auth.onboarding"))
+
+
+@bp.route("/onboarding/confirm-invite", methods=["POST"])
+@login_required
+def confirm_tester_invite():
+  if user_has_connection(current_user):
+    return redirect(url_for("dashboard.dashboard"))
+  if not beta_gate_enabled() or current_user.is_admin:
+    return redirect(url_for("auth.onboarding"))
+
+  if (current_user.tester_status or "").lower() != "invited":
+    flash("هنوز دعوت اینستاگرام برایت ارسال نشده.", "error")
+    return redirect(url_for("auth.onboarding"))
+
+  current_user.tester_status = "ready"
+  current_user.tester_ready_at = now_tehran()
+  db.session.commit()
+  flash("عالی! حالا می‌توانی پیج را وصل کنی.", "success")
+  return redirect(url_for("auth.onboarding"))
 
 
 @bp.route("/pages")

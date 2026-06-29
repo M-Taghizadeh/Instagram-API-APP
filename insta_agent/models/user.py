@@ -16,6 +16,10 @@ class User(UserMixin, db.Model):
   email = db.Column(db.String(120), default="")
   is_admin = db.Column(db.Boolean, default=False)
   created_at = db.Column(db.DateTime, default=now_tehran)
+  ig_username_requested = db.Column(db.String(100), default="")
+  tester_status = db.Column(db.String(20), default="none")
+  tester_requested_at = db.Column(db.DateTime, nullable=True)
+  tester_ready_at = db.Column(db.DateTime, nullable=True)
 
   dm_rules = db.relationship("DmRule", backref="owner", lazy=True, cascade="all, delete-orphan")
   comment_rules = db.relationship("CommentRule", backref="owner", lazy=True, cascade="all, delete-orphan")

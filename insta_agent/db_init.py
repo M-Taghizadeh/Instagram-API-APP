@@ -128,6 +128,14 @@ def _run_migrations():
                   "ALTER TABLE users ADD COLUMN created_at TIMESTAMP")
       _add_column(conn, "users", "is_admin",
                   "ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
+      _add_column(conn, "users", "ig_username_requested",
+                  "ALTER TABLE users ADD COLUMN ig_username_requested VARCHAR(100) DEFAULT ''")
+      _add_column(conn, "users", "tester_status",
+                  "ALTER TABLE users ADD COLUMN tester_status VARCHAR(20) DEFAULT 'none'")
+      _add_column(conn, "users", "tester_requested_at",
+                  "ALTER TABLE users ADD COLUMN tester_requested_at TIMESTAMP")
+      _add_column(conn, "users", "tester_ready_at",
+                  "ALTER TABLE users ADD COLUMN tester_ready_at TIMESTAMP")
       _add_column(conn, "ig_accounts", "follower_count",
                   "ALTER TABLE ig_accounts ADD COLUMN follower_count INTEGER DEFAULT 0")
       _add_column(conn, "ig_accounts", "follows_count",

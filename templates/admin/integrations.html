@@ -63,7 +63,10 @@
     <p style="margin:0 0 12px;"><strong>الان در فاز بتا هستی</strong> — اپ Meta در حالت Development فقط برای Admin، Developer و Instagram Tester به‌طور پایدار کار می‌کند. ali وصل شد چون اکانتش eligible بود؛ بعضی پیج‌ها (مثل python_nevisan) تا Tester نشوند یا اپ Live نشود fail می‌کنند.</p>
     <p style="margin:0 0 8px;font-weight:700;color:var(--text);">فاز ۱ — بتا (همین الان):</p>
     <ul style="margin:0 0 12px;padding-right:18px;">
-      <li>هر مشتری تست → <strong>Roles → Instagram Testers</strong> → Accept دعوت</li>
+      <li>صف فعال‌سازی: <a href="{{ url_for('admin.activation') }}">ادمین → فعال‌سازی</a>
+        {% if beta_gate %}<span class="badge purple">BETA_TESTER_GATE=فعال</span>{% else %}<span class="badge ok">غیرفعال</span>{% endif %}
+        · سقف {{ beta_tester_slots }} Tester</li>
+      <li>هر مشتری → <strong>Roles → Instagram Testers</strong> → Accept دعوت</li>
       <li>روی Allow هر ۳ permission روشن (مخصوصاً View profile)</li>
     </ul>
     <p style="margin:0 0 8px;font-weight:700;color:var(--text);">فاز ۲ — فروش عمومی (باید انجام شود):</p>

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import icon %}
+{% block title %}فعال‌سازی پیج‌ها — ادمین{% endblock %}
+{% block topbar_title %}صف فعال‌سازی (بتا){% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ icon('user-check', 22) }} فعال‌سازی Instagram Tester</div>
+    <div class="page-sub">
+      {% if beta_gate %}
+      <span class="badge purple">BETA_TESTER_GATE فعال</span>
+      {% else %}
+      <span class="badge ok">BETA_TESTER_GATE غیرفعال — مسیر Live</span>
+      {% endif %}
+      · {{ slots_used }} / {{ slots_max }} اسلات
+      {% if pending_count %} · <span class="badge pink">{{ pending_count }} در انتظار</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% set active = 'activation' %}
+{% include "admin/_nav.html" %}
+
+<div class="card" style="padding:16px 18px;margin-bottom:20px;font-size:12.5px;line-height:2;color:var(--text-dim);">
+  <strong style="color:var(--text);">روند کار (۲ دقیقه):</strong>
+  ۱. یوزرنیم را از جدول کپی کن → Meta → App roles → <strong>Instagram Tester</strong> → Add People<br>
+  ۲. «دعوت فرستاده» را بزن — کاربر در اینستاگرام Accept می‌کند<br>
+  ۳. بعد از Accept، «آماده اتصال» را بزن (یا کاربر «قبول کردم» می‌زند)<br>
+  ۴. کاربر دکمه «اتصال پیج» را می‌بیند
+</div>
+
+{% if not queue %}
+<div class="card" style="padding:32px;text-align:center;color:var(--text-faint);">
+  {{ icon('inbox', 32) }}
+  <div style="margin-top:12px;font-size:13px;">صف خالی است — {{ connected_count }} کاربر تا الان وصل شده‌اند.</div>
+</div>
+{% else %}
+<div class="card" style="padding:0;overflow:hidden;">
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <tr style="background:var(--panel-2);color:var(--text-faint);">
+      <th style="padding:10px;text-align:right;">کاربر</th>
+      <th>اینستاگرام</th>
+      <th>وضعیت</th>
+      <th>درخواست</th>
+      <th style="text-align:left;">عملیات</th>
+    </tr>
+    {% for u in queue %}
+    <tr style="border-top:1px solid var(--border-soft);">
+      <td style="padding:10px;font-weight:700;">{{ u.username }}</td>
+      <td>
+        <code dir="ltr" id="ig-{{ u.id }}" style="font-size:12px;">{{ u.ig_username_requested }}</code>
+        <button type="button" class="btn ghost small" style="padding:2px 6px;margin-right:4px;"
+                onclick="navigator.clipboard.writeText('{{ u.ig_username_requested }}');this.textContent='✓'">
+          {{ icon('copy', 12) }}
+        </button>
+      </td>
+      <td>
+        {% if u.tester_status == 'pending' %}
+        <span class="badge pink">در انتظار</span>
+        {% elif u.tester_status == 'invited' %}
+        <span class="badge purple">دعوت فرستاده</span>
+        {% elif u.tester_status == 'ready' %}
+        <span class="badge ok">آماده اتصال</span>
+        {% endif %}
+      </td>
+      <td style="color:var(--text-faint);font-size:11px;">
+        {{ u.tester_requested_at.strftime('%Y/%m/%d %H:%M') if u.tester_requested_at else '—' }}
+      </td>
+      <td style="padding:10px;white-space:nowrap;">
+        <form method="post" style="display:inline;">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          {% if u.tester_status == 'pending' %}
+          <button type="submit" name="action" value="invited" class="btn secondary small">دعوت فرستاده</button>
+          {% endif %}
+          {% if u.tester_status in ('pending', 'invited') %}
+          <button type="submit" name="action" value="ready" class="btn small">آماده اتصال</button>
+          {% endif %}
+          <button type="submit" name="action" value="reset" class="btn ghost small" title="ریست"
+                  onclick="return confirm('درخواست ریست شود؟')">×</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

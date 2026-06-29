@@ -19,6 +19,7 @@ from insta_agent.services.instagram_profile import (
 )
 from insta_agent.services.subscription_service import maybe_start_trial
 from insta_agent.services.instagram_webhooks import subscribe_instagram_webhooks
+from insta_agent.services.tester_gate import can_start_oauth, reset_for_reconnect
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
 OAUTH_FLOW_VERSION = "2025-06-29c"
@@ -60,6 +61,10 @@ def oauth_debug_status():
 def _connect_checks():
   if not oauth_configured():
     flash("OAuth تنظیم نشده — META_APP_ID، META_APP_SECRET و OAUTH_REDIRECT_URI را در Render تنظیم کن.", "error")
+    return redirect(url_for("auth.onboarding"))
+  allowed, gate_msg = can_start_oauth(current_user)
+  if not allowed:
+    flash(gate_msg, "error")
     return redirect(url_for("auth.onboarding"))
   if not current_user.is_admin and IgAccount.query.filter_by(user_id=current_user.id).count() >= 1:
     flash("هر اشتراک فقط یک پیج دارد. برای تعویض، ابتدا پیج فعلی را قطع کن.", "error")
@@ -259,6 +264,7 @@ def callback():
         db.session.add(s)
       s.access_token = access_token
 
+      user.tester_status = "connected"
       db.session.commit()
       trial = maybe_start_trial(user.id, ig_id)
       return user, acc, trial
@@ -368,6 +374,7 @@ def disconnect(account_id):
   acc = IgAccount.query.filter_by(id=account_id, user_id=current_user.id).first_or_404()
   was_primary = acc.is_primary
   db.session.delete(acc)
+  reset_for_reconnect(current_user)
   db.session.commit()
 
   if was_primary:
@@ -392,6 +399,7 @@ def disconnect_all():
   s = Settings.query.filter_by(user_id=current_user.id).first()
   if s:
     s.access_token = ""
+  reset_for_reconnect(current_user)
   db.session.commit()
   flash("اتصال اینستاگرام قطع شد.", "success")
   return redirect(url_for("auth.onboarding"))

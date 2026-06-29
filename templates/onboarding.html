@@ -10,14 +10,18 @@
 <style>
 .onboard-card { max-width: 520px; width: 100%; text-align: center; }
 .steps { display: flex; gap: 6px; margin-bottom: 24px; }
-.step { flex: 1; height: 3px; border-radius: 99px; background: var(--border); }
+.step { flex: 1; height: 3px; border-radius: 99px; background: var(--border); transition: background .2s; }
 .step.active { background: var(--primary); }
+.step.done { background: var(--success, #22c55e); }
 .ig-btn {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   padding: 14px 20px; border-radius: var(--radius-sm); font-weight: 600; font-size: 15px;
-  color: #fff; text-decoration: none;
+  color: #fff; text-decoration: none; border: none; cursor: pointer; width: 100%;
   background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
   margin-bottom: 16px;
+}
+.ig-btn.disabled, .ig-btn[disabled] {
+  opacity: .45; cursor: not-allowed; pointer-events: none; filter: grayscale(.3);
 }
 .checklist {
   text-align: right; margin: 24px 0; padding: 16px;
@@ -26,6 +30,30 @@
 .checklist div { font-size: 13px; color: var(--text-secondary); padding: 6px 0; display: flex; align-items: center; gap: 8px; }
 .note { font-size: 12px; color: var(--text-muted); line-height: 1.7; margin-top: 18px; }
 .user { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+.step-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin: -16px 0 20px; }
+.step-labels span.active { color: var(--primary); font-weight: 700; }
+.wait-box {
+  text-align: right; padding: 16px; margin: 20px 0;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 13px; line-height: 1.8; color: var(--text-secondary);
+}
+.wait-box strong { color: var(--text); }
+.ig-input {
+  width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 15px; margin-bottom: 12px; direction: ltr; text-align: left;
+}
+.btn-secondary-full {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface-2);
+  color: var(--text); font-weight: 600; font-size: 14px; cursor: pointer;
+  text-decoration: none; margin-bottom: 10px;
+}
+.beta-badge {
+  display: inline-block; font-size: 11px; padding: 4px 10px; border-radius: 99px;
+  background: var(--primary-muted); color: var(--primary); margin-bottom: 12px;
+}
 </style>
 </head>
 <body class="auth-page">
@@ -36,18 +64,49 @@
 </button>
 
 <div class="register-card onboard-card">
+  {% if beta_gate %}
+  <div class="steps">
+    <div class="step {% if tester_step != 'request' %}done{% else %}active{% endif %}"></div>
+    <div class="step {% if tester_step in ('accept', 'connect') %}done{% elif tester_step == 'waiting' %}active{% endif %}"></div>
+    <div class="step {% if tester_step == 'connect' and can_connect %}active{% endif %}"></div>
+  </div>
+  <div class="step-labels">
+    <span class="{% if tester_step == 'request' %}active{% endif %}">ثبت پیج</span>
+    <span class="{% if tester_step in ('waiting', 'accept') %}active{% endif %}">فعال‌سازی</span>
+    <span class="{% if tester_step == 'connect' %}active{% endif %}">اتصال</span>
+  </div>
+  {% else %}
   <div class="steps"><div class="step active"></div><div class="step active"></div></div>
+  {% endif %}
 
   <div class="auth-brand" style="justify-content:center;margin-bottom:20px;">
     <div class="auth-brand-mark"><i data-lucide="instagram" style="width:20px;height:20px"></i></div>
   </div>
 
   <div class="auth-form-head">
+    {% if beta_gate and tester_step == 'request' %}
+    <div class="auth-form-title">پیجت را معرفی کن</div>
+    <div class="auth-form-sub">مرحله ۱ — یوزرنیم اینستاگرام برای فعال‌سازی دسترسی زودهنگام</div>
+    {% elif beta_gate and tester_step == 'waiting' %}
+    <div class="auth-form-title">در انتظار فعال‌سازی</div>
+    <div class="auth-form-sub">مرحله ۲ — تیم محتوام داره پیجت رو آماده می‌کنه</div>
+    {% elif beta_gate and tester_step == 'accept' %}
+    <div class="auth-form-title">دعوت اینستاگرام</div>
+    <div class="auth-form-sub">مرحله ۲ — دعوت را در اینستاگرام قبول کن</div>
+    {% elif beta_gate and tester_step == 'connect' %}
+    <div class="auth-form-title">اتصال پیج</div>
+    <div class="auth-form-sub">مرحله ۳ — همه‌چیز آماده است</div>
+    {% else %}
     <div class="auth-form-title">پیج اینستاگرامت را وصل کن</div>
     <div class="auth-form-sub">مرحله ۲ از ۲ — لینک‌ها را در Chrome کپی می‌کنی و دسترسی Allow را می‌دهی.</div>
+    {% endif %}
   </div>
 
   <div class="user">سلام {{ current_user.username }}</div>
+
+  {% if beta_gate %}
+  <div class="beta-badge">دسترسی زودهنگام · {{ tester_slots_used }} / {{ tester_slots_max }}</div>
+  {% endif %}
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
@@ -58,16 +117,58 @@
     {% endfor %}
   {% endwith %}
 
+  {% if beta_gate and tester_step == 'request' %}
+  <form method="post" action="{{ url_for('auth.request_tester_access') }}">
+    <input type="text" name="ig_username" class="ig-input" placeholder="@username" required
+           autocomplete="off" spellcheck="false" dir="ltr">
+    <div class="checklist" style="margin-top:0;margin-bottom:16px;">
+      <div><i data-lucide="check" style="width:16px;height:16px;color:var(--success)"></i> پیج باید <strong>Business</strong> یا <strong>Creator</strong> باشد</div>
+      <div><i data-lucide="info" style="width:16px;height:16px;color:var(--primary)"></i> همان اکانتی که پیج را مدیریت می‌کنی</div>
+    </div>
+    <button type="submit" class="ig-btn" style="background:var(--primary);">
+      <i data-lucide="send" style="width:18px;height:18px"></i> درخواست فعال‌سازی
+    </button>
+  </form>
+  <p class="note">بعد از ثبت، معمولاً تا چند ساعت (یا کمتر) آماده می‌شود.</p>
+
+  {% elif beta_gate and tester_step == 'waiting' %}
+  <div class="wait-box">
+    <strong>@{{ ig_username_requested }}</strong> در صف فعال‌سازی است.<br>
+    وقتی دعوت اینستاگرام ارسال شد، این صفحه به‌روز می‌شود و بهت خبر می‌دیم.
+  </div>
+  <p class="note">صفحه را رفرش کن یا بعداً دوباره سر بزن.</p>
+
+  {% elif beta_gate and tester_step == 'accept' %}
+  <div class="wait-box">
+    دعوت برای <strong>@{{ ig_username_requested }}</strong> ارسال شد.<br><br>
+    ۱. لینک زیر را باز کن<br>
+    ۲. تب <strong>Tester Invites</strong> → <strong>Accept</strong><br>
+    ۳. برگرد اینجا و «قبول کردم» را بزن
+  </div>
+  <a href="{{ instagram_invite_url }}" target="_blank" rel="noopener" class="btn-secondary-full">
+    <i data-lucide="external-link" style="width:16px;height:16px"></i> باز کردن دعوت‌های اینستاگرام
+  </a>
+  <form method="post" action="{{ url_for('auth.confirm_tester_invite') }}">
+    <button type="submit" class="ig-btn" style="background:var(--primary);">
+      <i data-lucide="check" style="width:18px;height:18px"></i> دعوت را قبول کردم
+    </button>
+  </form>
+
+  {% else %}
   <div class="checklist">
     <div><i data-lucide="check" style="width:16px;height:16px;color:var(--success)"></i> حساب باید <strong>Business</strong> یا <strong>Creator</strong> باشد</div>
     <div><i data-lucide="alert-circle" style="width:16px;height:16px;color:var(--danger)"></i> در صفحه Allow هر <strong>۳ toggle</strong> را روشن کن — مخصوصاً <strong>View profile and access media</strong></div>
     <div><i data-lucide="check" style="width:16px;height:16px;color:var(--success)"></i> comments و messages هم باید روشن باشند</div>
   </div>
 
-  {% if oauth_ready %}
+  {% if oauth_ready and (can_connect or not beta_gate) %}
   <a href="{{ url_for('oauth.connect') }}" class="ig-btn">
     <i data-lucide="instagram" style="width:18px;height:18px"></i> اتصال پیج اینستاگرام
   </a>
+  {% elif oauth_ready and beta_gate and not can_connect %}
+  <span class="ig-btn disabled">
+    <i data-lucide="lock" style="width:18px;height:18px"></i> اتصال — بعد از فعال‌سازی
+  </span>
   {% else %}
   {% if current_user.is_admin %}
   <div class="flash error" style="text-align:right;line-height:1.8;">
@@ -80,6 +181,8 @@
   {% endif %}
 
   <p class="note">اتصال با کپی لینک در Chrome انجام می‌شود — اگر VPN داری، راهنمای صفحه بعد را بخوان.</p>
+  {% endif %}
+
   <a href="{{ url_for('auth.logout') }}" style="font-size:12px;color:var(--text-muted);">خروج از حساب</a>
 </div>
 
