@@ -5,12 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}محتوام{% endblock %}</title>
 <script>
-(function(){
-  var t=localStorage.getItem('mohtavam-theme');
-  if(t)document.documentElement.setAttribute('data-theme',t);
-  if(localStorage.getItem('mohtavam-sidebar-collapsed')==='1')
-    document.documentElement.classList.add('sidebar-collapsed');
-})();
+(function(){var t=localStorage.getItem('mohtavam-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
 </script>
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/vazirmatn/vazirmatn.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
@@ -32,74 +27,62 @@
 
     <nav class="sidebar-nav">
       <div class="nav-section">
-        <a href="{{ url_for('dashboard.dashboard') }}" class="nav-item {% if request.path.startswith('/dashboard') %}active{% endif %}" title="داشبورد">
-          <i data-lucide="layout-dashboard" class="nav-icon"></i>
-          <span class="nav-label">داشبورد</span>
+        <a href="{{ url_for('dashboard.dashboard') }}" class="nav-item {% if request.path.startswith('/dashboard') %}active{% endif %}">
+          <i data-lucide="layout-dashboard" class="nav-icon"></i> داشبورد
         </a>
-        <a href="{{ url_for('notifications.inbox') }}" class="nav-item {% if request.path.startswith('/notifications') %}active{% endif %}" title="اعلان‌ها">
-          <i data-lucide="bell" class="nav-icon"></i>
-          <span class="nav-label">اعلان‌ها</span>
+        <a href="{{ url_for('notifications.inbox') }}" class="nav-item {% if request.path.startswith('/notifications') %}active{% endif %}">
+          <i data-lucide="bell" class="nav-icon"></i> اعلان‌ها
           {% if notif_unread %}<span class="nav-badge">{{ notif_unread }}</span>{% endif %}
         </a>
-        <a href="{{ url_for('activity.activity_log') }}" class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}" title="لاگ فعالیت">
-          <i data-lucide="scroll-text" class="nav-icon"></i>
-          <span class="nav-label">لاگ فعالیت</span>
+        <a href="{{ url_for('activity.activity_log') }}" class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}">
+          <i data-lucide="scroll-text" class="nav-icon"></i> لاگ فعالیت
         </a>
         {% if current_user.is_authenticated and current_user.is_admin %}
-        <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.path.startswith('/admin') %}active{% endif %}" title="پنل ادمین">
-          <i data-lucide="shield" class="nav-icon"></i>
-          <span class="nav-label">پنل ادمین</span>
+        <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.path.startswith('/admin') %}active{% endif %}">
+          <i data-lucide="shield" class="nav-icon"></i> پنل ادمین
         </a>
         {% endif %}
       </div>
 
       <div class="nav-section">
         <div class="nav-section-title">ایجنت‌های هوشمند</div>
-        <a href="{{ url_for('rules.dm_rules') }}" class="nav-item {% if request.path.startswith('/dm') %}active{% endif %}" title="مدیریت استوری و دایرکت">
-          <i data-lucide="message-circle" class="nav-icon"></i>
-          <span class="nav-label">مدیریت استوری و دایرکت</span>
+        <a href="{{ url_for('rules.dm_rules') }}" class="nav-item {% if request.path.startswith('/dm') %}active{% endif %}">
+          <i data-lucide="message-circle" class="nav-icon"></i> مدیریت استوری و دایرکت
         </a>
-        <a href="{{ url_for('rules.comment_rules') }}" class="nav-item {% if request.path.startswith('/comment') %}active{% endif %}" title="مدیریت کامنت هوشمند">
-          <i data-lucide="message-square-text" class="nav-icon"></i>
-          <span class="nav-label">مدیریت کامنت هوشمند</span>
+        <a href="{{ url_for('rules.comment_rules') }}" class="nav-item {% if request.path.startswith('/comment') %}active{% endif %}">
+          <i data-lucide="message-square-text" class="nav-icon"></i> مدیریت کامنت هوشمند
         </a>
-        <a href="{{ url_for('flows.flow_list') }}" class="nav-item {% if request.path.startswith('/flows') %}active{% endif %}" title="فلوهای هوشمند">
-          <i data-lucide="git-branch" class="nav-icon"></i>
-          <span class="nav-label">فلوهای هوشمند</span>
+        <a href="{{ url_for('flows.flow_list') }}" class="nav-item {% if request.path.startswith('/flows') %}active{% endif %}">
+          <i data-lucide="git-branch" class="nav-icon"></i> فلوهای هوشمند
         </a>
-        <a href="{{ url_for('followup.followup_list') }}" class="nav-item {% if request.path.startswith('/followup') %}active{% endif %}" title="فالوآپ">
-          <i data-lucide="clock" class="nav-icon"></i>
-          <span class="nav-label">فالوآپ</span>
+        <a href="{{ url_for('followup.followup_list') }}" class="nav-item {% if request.path.startswith('/followup') %}active{% endif %}">
+          <i data-lucide="clock" class="nav-icon"></i> فالوآپ
         </a>
       </div>
 
       <div class="nav-section">
         <div class="nav-section-title">فروش و ارتباط</div>
-        <a href="{{ url_for('sms.sms_panel') }}" class="nav-item {% if request.path.startswith('/sms') %}active{% endif %}" title="پیامک هوشمند">
-          <i data-lucide="smartphone" class="nav-icon"></i>
-          <span class="nav-label">پیامک هوشمند</span>
+        <a href="{{ url_for('sms.sms_panel') }}" class="nav-item {% if request.path.startswith('/sms') %}active{% endif %}">
+          <i data-lucide="smartphone" class="nav-icon"></i> پیامک هوشمند
         </a>
       </div>
 
       <div class="nav-section">
         <div class="nav-section-title">حساب</div>
-        <a href="{{ url_for('billing.pricing') }}" class="nav-item {% if request.path.startswith('/billing') %}active{% endif %}" title="اشتراک و تعرفه">
-          <i data-lucide="credit-card" class="nav-icon"></i>
-          <span class="nav-label">اشتراک و تعرفه</span>
+        <a href="{{ url_for('billing.pricing') }}" class="nav-item {% if request.path.startswith('/billing') %}active{% endif %}">
+          <i data-lucide="credit-card" class="nav-icon"></i> اشتراک و تعرفه
         </a>
-        <a href="{{ url_for('auth.pages') }}" class="nav-item {% if request.path.startswith('/pages') %}active{% endif %}" title="اتصال به اینستاگرام">
-          <i data-lucide="instagram" class="nav-icon"></i>
-          <span class="nav-label">اتصال به اینستاگرام</span>
+        <a href="{{ url_for('auth.pages') }}" class="nav-item {% if request.path.startswith('/pages') %}active{% endif %}">
+          <i data-lucide="instagram" class="nav-icon"></i> اتصال به اینستاگرام
         </a>
-        <a href="{{ url_for('settings.settings') }}" class="nav-item {% if request.path == '/settings' %}active{% endif %}" title="تنظیمات">
-          <i data-lucide="settings" class="nav-icon"></i>
-          <span class="nav-label">تنظیمات</span>
+        <a href="{{ url_for('settings.settings') }}" class="nav-item {% if request.path == '/settings' %}active{% endif %}">
+          <i data-lucide="settings" class="nav-icon"></i> تنظیمات
         </a>
       </div>
     </nav>
 
     <div class="sidebar-footer">
-      <a href="{{ url_for('settings.profile') }}" class="user-card user-card-link" title="{{ current_user.username if current_user.is_authenticated else 'Admin' }}">
+      <a href="{{ url_for('settings.profile') }}" class="user-card user-card-link">
         <div class="user-avatar">{{ current_user.username[0].upper() if current_user.is_authenticated else 'A' }}</div>
         <div class="user-info">
           <div class="user-name">{{ current_user.username if current_user.is_authenticated else 'Admin' }}</div>
@@ -115,10 +98,6 @@
     <div class="topbar">
       <button type="button" class="topbar-mobile-menu" onclick="openSidebar()" aria-label="منو">
         <i data-lucide="menu" style="width:22px;height:22px"></i>
-      </button>
-      <button type="button" class="topbar-collapse-btn icon-btn" onclick="toggleSidebarCollapse()" aria-label="جمع کردن منو" title="جمع کردن منو">
-        <i data-lucide="panel-right-close" class="topbar-collapse-icon topbar-collapse-icon--close"></i>
-        <i data-lucide="panel-right-open" class="topbar-collapse-icon topbar-collapse-icon--open"></i>
       </button>
       <div class="topbar-title">
         <span class="topbar-heading">

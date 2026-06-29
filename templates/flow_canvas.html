@@ -78,7 +78,6 @@
 {% block extra_js %}
 <script type="module" src="{{ url_for('static', filename='flow-editor/flow-editor.js') }}"></script>
 <script>
-document.documentElement.classList.add('sidebar-collapsed');
 function toggleFlowCanvasSettings(force) {
   const open = force === true ? true : force === false ? false : !document.getElementById('flowCanvasSettings').classList.contains('is-open');
   document.getElementById('flowCanvasSettings').classList.toggle('is-open', open);

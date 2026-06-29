@@ -40,22 +40,11 @@
     document.getElementById('sidebarOverlay')?.classList.remove('show');
   };
 
-  const SIDEBAR_COLLAPSED_KEY = 'mohtavam-sidebar-collapsed';
-
-  window.toggleSidebarCollapse = function () {
-    const collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
-    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
-    window.refreshIcons();
-  };
-
   window.openFlowEditorFullscreen = function () {
     const shell = document.getElementById('flowEditorShell');
     if (!shell) return;
     shell.classList.add('is-fullscreen');
     document.body.classList.add('flow-editor-fullscreen');
-    if (!document.documentElement.classList.contains('sidebar-collapsed')) {
-      window.toggleSidebarCollapse();
-    }
   };
 
   window.closeFlowEditorFullscreen = function () {
