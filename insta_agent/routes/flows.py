@@ -8,6 +8,7 @@ from insta_agent.extensions import db
 from insta_agent.models import Flow
 from insta_agent.config import Config
 from insta_agent.services.flow_engine import parse_nodes
+from insta_agent.services.media_storage import cleanup_after_flow_save, cleanup_flow_media
 
 bp = Blueprint("flows", __name__, url_prefix="/flows")
 PER_PAGE = Config.PER_PAGE
@@ -184,8 +185,10 @@ def edit_flow(flow_id):
         channels=CHANNELS,
         nodes_for_editor=parse_nodes(flow) if nodes is None else nodes,
       )
+    old_nodes = parse_nodes(flow)
     _apply_flow_fields(flow, nodes)
     db.session.commit()
+    cleanup_after_flow_save(current_user.id, old_nodes, nodes, flow_id=flow.id)
     flash("فلو ذخیره شد.", "success")
     return redirect(url_for("flows.flow_list"))
   nodes = parse_nodes(flow)
@@ -248,8 +251,10 @@ def flow_canvas(flow_id):
         nodes_for_editor=parse_nodes(flow) if nodes is None else nodes,
         back_url=url_for("flows.edit_flow", flow_id=flow.id),
       )
+    old_nodes = parse_nodes(flow)
     _apply_flow_fields(flow, nodes)
     db.session.commit()
+    cleanup_after_flow_save(current_user.id, old_nodes, nodes, flow_id=flow.id)
     flash("فلو ذخیره شد.", "success")
     return redirect(url_for("flows.flow_canvas", flow_id=flow.id))
 
@@ -276,7 +281,9 @@ def toggle_flow(flow_id):
 @login_required
 def delete_flow(flow_id):
   flow = Flow.query.filter_by(id=flow_id, user_id=current_user.id).first_or_404()
+  old_nodes = parse_nodes(flow)
   db.session.delete(flow)
   db.session.commit()
+  cleanup_flow_media(current_user.id, old_nodes)
   flash("فلو حذف شد.", "success")
   return redirect(url_for("flows.flow_list"))

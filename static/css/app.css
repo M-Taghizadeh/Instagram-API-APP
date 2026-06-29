@@ -1296,6 +1296,8 @@ table.data-table td.col-actions {
   flex-wrap: wrap;
 }
 .flow-editor-shell-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+#flowEditorFsBtn .fs-expand,
+#flowEditorFsBtn .fs-exit { display: inline-flex; align-items: center; gap: 6px; }
 body.flow-editor-fullscreen { overflow: hidden; }
 body.flow-editor-fullscreen .topbar,
 body.flow-editor-fullscreen .sidebar,

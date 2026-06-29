@@ -38,7 +38,9 @@ def process_pending_messages(app):
         continue
       try:
         payload = json.loads(job.payload_json or "{}")
-        ok = messaging.send_payload(job.ig_user_id, payload, token)
+        from insta_agent.services.instagram_api import get_page_ig_id
+        ig_id = get_page_ig_id(token) or ""
+        ok = messaging.send_payload(job.ig_user_id, payload, token, ig_id)
         job.status = "sent" if ok else "failed"
         job.sent_at = now_tehran()
         job.note = "ok" if ok else "send failed"

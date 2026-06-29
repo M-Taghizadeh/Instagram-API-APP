@@ -7,7 +7,7 @@ from insta_agent.extensions import db
 from insta_agent.models import Flow, FlowSession, Contact, ScheduledMessage, ActivityLog
 from insta_agent.services.match import match_text
 from insta_agent.services import messaging
-from insta_agent.services.instagram_api import get_ig_username
+from insta_agent.services.instagram_api import get_ig_username, get_page_ig_id
 from insta_agent.utils import now_tehran
 
 
@@ -75,7 +75,7 @@ def log_flow_activity(user_id, flow, ig_user_id, action, status="ok", ig_usernam
   db.session.commit()
 
 
-def execute_node(node: dict, ig_user_id: str, token: str, session: FlowSession) -> list:
+def execute_node(node: dict, ig_user_id: str, token: str, session: FlowSession, ig_account_id: str = "") -> list:
   """یک node را اجرا کن — لیست actionها برمی‌گرداند"""
   actions = []
   ntype = node.get("type", "text")
@@ -86,7 +86,7 @@ def execute_node(node: dict, ig_user_id: str, token: str, session: FlowSession) 
     actions.append("sent_text" if ok else "text_failed")
 
   elif ntype in ("image", "video", "audio"):
-    ok = messaging.send_media(ig_user_id, ntype, data.get("url", ""), token)
+    ok = messaging.send_media(ig_user_id, ntype, data.get("url", ""), token, ig_account_id)
     actions.append(f"sent_{ntype}" if ok else f"{ntype}_failed")
 
   elif ntype == "carousel":
@@ -179,6 +179,7 @@ def advance_session(session: FlowSession, nodes: list, branch: str = ""):
 
 def run_from_node(flow: Flow, session: FlowSession, token: str, start_id: str | None = None):
   nodes = parse_nodes(flow)
+  ig_account_id = get_page_ig_id(token) or ""
   node_id = start_id or session.current_node_id or (first_node(nodes) or {}).get("id", "")
   if not node_id:
     return []
@@ -193,7 +194,7 @@ def run_from_node(flow: Flow, session: FlowSession, token: str, start_id: str | 
       break
     session.current_node_id = current_id
     db.session.commit()
-    actions = execute_node(node, session.ig_user_id, token, session)
+    actions = execute_node(node, session.ig_user_id, token, session, ig_account_id)
     all_actions.extend(actions)
 
     # اگر منتظر ورودی کاربر هستیم، متوقف شو

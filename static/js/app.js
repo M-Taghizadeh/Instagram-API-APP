@@ -40,16 +40,36 @@
     document.getElementById('sidebarOverlay')?.classList.remove('show');
   };
 
-  window.openFlowEditorFullscreen = function () {
+  function updateFlowEditorFsBtn() {
+    const shell = document.getElementById('flowEditorShell');
+    const btn = document.getElementById('flowEditorFsBtn');
+    if (!shell || !btn) return;
+    const fs = shell.classList.contains('is-fullscreen');
+    const expand = btn.querySelector('.fs-expand');
+    const exit = btn.querySelector('.fs-exit');
+    if (expand) expand.style.display = fs ? 'none' : 'inline-flex';
+    if (exit) exit.style.display = fs ? 'inline-flex' : 'none';
+  }
+
+  window.toggleFlowEditorFullscreen = function () {
     const shell = document.getElementById('flowEditorShell');
     if (!shell) return;
-    shell.classList.add('is-fullscreen');
-    document.body.classList.add('flow-editor-fullscreen');
+    const fs = !shell.classList.contains('is-fullscreen');
+    shell.classList.toggle('is-fullscreen', fs);
+    document.body.classList.toggle('flow-editor-fullscreen', fs);
+    updateFlowEditorFsBtn();
+  };
+
+  window.openFlowEditorFullscreen = function () {
+    const shell = document.getElementById('flowEditorShell');
+    if (!shell || shell.classList.contains('is-fullscreen')) return;
+    window.toggleFlowEditorFullscreen();
   };
 
   window.closeFlowEditorFullscreen = function () {
-    document.getElementById('flowEditorShell')?.classList.remove('is-fullscreen');
-    document.body.classList.remove('flow-editor-fullscreen');
+    const shell = document.getElementById('flowEditorShell');
+    if (!shell || !shell.classList.contains('is-fullscreen')) return;
+    window.toggleFlowEditorFullscreen();
   };
 
   document.addEventListener('keydown', function (e) {

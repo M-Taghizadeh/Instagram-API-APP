@@ -1,7 +1,8 @@
+import mimetypes
 import os
 import uuid
 
-from flask import Blueprint, request, jsonify, current_app, send_from_directory
+from flask import Blueprint, request, jsonify, current_app, send_from_directory, make_response
 from flask_login import login_required
 from werkzeug.utils import secure_filename
 
@@ -48,10 +49,18 @@ def upload():
     url = f"{base}/media/files/{name}"
   else:
     url = request.url_root.rstrip("/") + f"/media/files/{name}"
+  if url.startswith("http://"):
+    url = "https://" + url[7:]
   return jsonify(url=url, filename=name, type=media_type)
 
 
 @bp.route("/files/<filename>")
 def serve_file(filename):
   upload_dir = current_app.config["UPLOAD_DIR"]
-  return send_from_directory(upload_dir, secure_filename(filename))
+  safe = secure_filename(filename)
+  resp = make_response(send_from_directory(upload_dir, safe))
+  mime, _ = mimetypes.guess_type(safe)
+  if mime:
+    resp.headers["Content-Type"] = mime
+  resp.headers["Cache-Control"] = "public, max-age=31536000"
+  return resp

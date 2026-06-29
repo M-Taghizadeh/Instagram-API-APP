@@ -2,6 +2,7 @@ import json
 import requests
 
 from insta_agent.config import Config
+from insta_agent.services.media_storage import normalize_public_media_url
 
 GRAPH_API = Config.GRAPH_API.rstrip("/")
 FB_GRAPH = "https://graph.facebook.com/v25.0"
@@ -65,42 +66,64 @@ def _post_json(url: str, token: str, payload: dict, label: str) -> tuple[bool, s
   return False, last_err
 
 
-def _post_messages(token: str, payload: dict, label: str = "MESSAGE") -> tuple[bool, str]:
+def _post_messages(token: str, payload: dict, label: str = "MESSAGE", ig_account_id: str = "") -> tuple[bool, str]:
   if not token:
     return False, "no_token"
-  return _post_json(f"{GRAPH_API}/me/messages", token, payload, label)
+  endpoints: list[str] = []
+  if ig_account_id:
+    endpoints.append(f"{GRAPH_API}/{ig_account_id}/messages")
+    endpoints.append(f"{FB_GRAPH}/{ig_account_id}/messages")
+  endpoints.append(f"{GRAPH_API}/me/messages")
+  endpoints.append(f"{FB_GRAPH}/me/messages")
+  last_err = "request_failed"
+  for url in endpoints:
+    ok, err = _post_json(url, token, payload, label)
+    if ok:
+      return True, ""
+    last_err = err
+  return False, last_err
 
 
-def send_text(user_id: str, text: str, token: str) -> bool:
+def send_text(user_id: str, text: str, token: str, ig_account_id: str = "") -> bool:
   if not user_id or not token or not text:
     return False
   ok, _ = _post_messages(
     token,
     {"recipient": {"id": str(user_id)}, "message": {"text": text}},
     "SEND_TEXT",
+    ig_account_id,
   )
   return ok
 
 
-def send_media(user_id: str, media_type: str, url: str, token: str) -> bool:
+def send_media(user_id: str, media_type: str, url: str, token: str, ig_account_id: str = "") -> bool:
   """media_type: image | video | audio"""
   if not user_id or not token or not url:
     return False
-  try:
-    r = requests.post(
-      f"{GRAPH_API}/me/messages",
-      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-      json={
-        "recipient": {"id": user_id},
-        "message": {"attachment": {"type": media_type, "payload": {"url": url}}},
-      },
-      timeout=30,
-    )
-    print(f"[SEND_MEDIA:{media_type}] status={r.status_code} {r.text[:200]}", flush=True)
-    return r.status_code == 200
-  except Exception as e:
-    print(f"MEDIA ERROR: {e}", flush=True)
+  media_url = normalize_public_media_url(url)
+  if not media_url:
     return False
+
+  if media_type == "audio":
+    return send_text(user_id, f"🎵 پیام صوتی:\n{media_url}", token, ig_account_id)
+
+  ig_type = media_type if media_type in ("image", "video") else "file"
+  payload = {
+    "recipient": {"id": str(user_id)},
+    "message": {
+      "attachment": {
+        "type": ig_type,
+        "payload": {"url": media_url, "is_reusable": True},
+      }
+    },
+  }
+  ok, err = _post_messages(token, payload, f"SEND_MEDIA_{media_type}", ig_account_id)
+  if not ok:
+    print(f"SEND_MEDIA FAILED type={media_type} url={media_url[:80]}: {err}", flush=True)
+    if media_type in ("image", "video"):
+      label = "تصویر" if media_type == "image" else "ویدیو"
+      return send_text(user_id, f"📎 {label}:\n{media_url}", token, ig_account_id)
+  return ok
 
 
 def send_quick_replies(user_id: str, text: str, options: list, token: str) -> bool:
@@ -194,13 +217,13 @@ def send_button_template(user_id: str, text: str, buttons: list, token: str) -> 
     return False
 
 
-def send_payload(user_id: str, payload: dict, token: str) -> bool:
+def send_payload(user_id: str, payload: dict, token: str, ig_account_id: str = "") -> bool:
   """ارسال بر اساس نوع node در فلو"""
   ptype = payload.get("type", "text")
   if ptype == "text":
-    return send_text(user_id, payload.get("text", ""), token)
+    return send_text(user_id, payload.get("text", ""), token, ig_account_id)
   if ptype in ("image", "video", "audio"):
-    return send_media(user_id, ptype, payload.get("url", ""), token)
+    return send_media(user_id, ptype, payload.get("url", ""), token, ig_account_id)
   if ptype == "carousel":
     return send_generic_carousel(user_id, payload.get("elements", []), token)
   if ptype == "buttons":
