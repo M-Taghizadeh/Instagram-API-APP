@@ -1,5 +1,6 @@
 import json
 import re
+import time
 import uuid
 from datetime import timedelta
 
@@ -9,6 +10,29 @@ from insta_agent.services.match import match_text
 from insta_agent.services import messaging
 from insta_agent.services.instagram_api import get_ig_username, get_page_ig_id
 from insta_agent.utils import now_tehran
+
+_FLOW_START_COOLDOWN_SEC = 20
+_flow_start_times: dict[str, float] = {}
+
+
+def _flow_start_key(owner_id: int, flow_id: str, ig_user_id: str) -> str:
+  return f"{owner_id}:{flow_id}:{ig_user_id}"
+
+
+def _flow_start_blocked(owner_id: int, flow_id: str, ig_user_id: str) -> bool:
+  key = _flow_start_key(owner_id, flow_id, ig_user_id)
+  last = _flow_start_times.get(key, 0)
+  return (time.time() - last) < _FLOW_START_COOLDOWN_SEC
+
+
+def _mark_flow_started(owner_id: int, flow_id: str, ig_user_id: str):
+  key = _flow_start_key(owner_id, flow_id, ig_user_id)
+  _flow_start_times[key] = time.time()
+  if len(_flow_start_times) > 5000:
+    cutoff = time.time() - _FLOW_START_COOLDOWN_SEC
+    stale = [k for k, t in _flow_start_times.items() if t < cutoff]
+    for k in stale:
+      del _flow_start_times[k]
 
 
 def parse_nodes(flow: Flow) -> list:
@@ -209,9 +233,14 @@ def run_from_node(flow: Flow, session: FlowSession, token: str, start_id: str | 
     current_id = next_node_id(nodes, current_id)
     if not current_id:
       session.status = "completed"
+      session.current_node_id = ""
       db.session.commit()
       break
     session.current_node_id = current_id
+
+  if session.status == "active" and not json.loads(session.context_json or "{}").get("awaiting"):
+    session.status = "completed"
+    session.current_node_id = ""
 
   flow.fire_count = (flow.fire_count or 0) + 1
   db.session.commit()
@@ -247,7 +276,6 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
             advance_session(active, parse_nodes(flow))
             if active.current_node_id:
               run_from_node(flow, active, token)
-          return True
       elif awaiting in ("text", "poll"):
         field = ctx.get("field") or ctx.get("poll_field", "answer")
         collected[field] = text
@@ -260,7 +288,6 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
           advance_session(active, parse_nodes(flow))
           if active.current_node_id:
             run_from_node(flow, active, token)
-        return True
       elif awaiting == "quiz":
         correct = ctx.get("quiz_answers", {})
         score = ctx.get("score", 0)
@@ -276,12 +303,22 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
           advance_session(active, parse_nodes(flow), branch=text)
           if active.current_node_id:
             run_from_node(flow, active, token)
-        return True
+      return True
+
+    active.status = "completed"
+    active.current_node_id = ""
+    db.session.commit()
 
   # شروع فلو جدید
   flows = Flow.query.filter_by(user_id=owner_id, is_active=True, channel="dm").all()
   for flow in flows:
-    if flow.trigger and not match_text(flow.trigger, text, flow.match_type):
+    trigger = (flow.trigger or "").strip()
+    if not trigger:
+      continue
+    if not match_text(trigger, text, flow.match_type):
+      continue
+    if _flow_start_blocked(owner_id, flow.id, ig_user_id):
+      print(f"FLOW skip cooldown flow={flow.id} user={ig_user_id}", flush=True)
       continue
     session = FlowSession(
       id=str(uuid.uuid4()),
@@ -299,6 +336,7 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
       session.current_node_id = start["id"]
       db.session.commit()
       actions = run_from_node(flow, session, token, start["id"])
+      _mark_flow_started(owner_id, flow.id, ig_user_id)
       log_flow_activity(owner_id, flow, ig_user_id, "+".join(actions), ig_username=username)
       return True
   return False

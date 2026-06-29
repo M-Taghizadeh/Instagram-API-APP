@@ -43,6 +43,30 @@ def get_page_ig_id(token: str) -> str:
     return ""
 
 
+def page_sender_ids(token: str, *known_ids: str) -> set[str]:
+  """Instagram professional account IDs that represent our connected page."""
+  ids = {str(i) for i in known_ids if i}
+  page_id = get_page_ig_id(token)
+  if page_id:
+    ids.add(str(page_id))
+  return ids
+
+
+def is_page_sender(sender_id: str, page_ids: set[str]) -> bool:
+  return bool(sender_id) and str(sender_id) in page_ids
+
+
+def is_outbound_dm_event(event: dict, page_ids: set[str]) -> bool:
+  """True when the message was sent by our page (echo/outbound) — never run DM rules."""
+  message = event.get("message") or {}
+  if message.get("is_echo") or message.get("is_self") or event.get("is_echo"):
+    return True
+  sender_id = str((event.get("sender") or {}).get("id", ""))
+  if is_page_sender(sender_id, page_ids):
+    return True
+  return False
+
+
 def resolve_post_id(post_link: str, access_token: str) -> str:
   try:
     m = re.search(r"instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)", post_link or "")
