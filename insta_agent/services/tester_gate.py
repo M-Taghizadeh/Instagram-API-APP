@@ -58,11 +58,11 @@ def can_start_oauth(user) -> tuple[bool, str]:
 
 def onboarding_context(user) -> dict:
   """Template context — phase: username | activate | connect."""
-  gate = beta_gate_enabled() and not user.is_admin
+  gate_on = beta_gate_enabled()
   status = (user.tester_status or "none").lower()
   ig_user = user.ig_username_requested or ""
 
-  if not gate:
+  if not gate_on:
     phase = "connect"
   elif status == "none":
     phase = "username"
@@ -72,12 +72,13 @@ def onboarding_context(user) -> dict:
     phase = "connect"
 
   return {
-    "beta_gate": gate,
+    "beta_gate": gate_on,
     "phase": phase,
     "tester_status": status,
     "ig_username_requested": ig_user,
     "instagram_invite_url": INSTAGRAM_INVITE_URL,
     "can_connect": can_start_oauth(user)[0],
+    "is_admin_preview": bool(user.is_admin and gate_on),
   }
 
 

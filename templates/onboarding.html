@@ -33,6 +33,12 @@
     {% endfor %}
   {% endwith %}
 
+  {% if is_admin_preview and phase == 'username' %}
+  <div class="flash" style="background:var(--primary-muted);color:var(--primary);border:1px solid var(--primary);font-size:12px;">
+    پیش‌نمایش حالت بتا — به‌عنوان ادمین OAuth بدون محدودیت است.
+  </div>
+  {% endif %}
+
   {% if phase == 'username' %}
   <div class="connect-title">یوزرنیم پیجت</div>
   <div class="connect-sub">پیج باید Business یا Creator باشد</div>

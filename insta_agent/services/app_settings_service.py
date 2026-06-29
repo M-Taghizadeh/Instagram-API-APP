@@ -40,7 +40,10 @@ def zarinpal_is_configured() -> bool:
 
 
 def beta_tester_gate_enabled() -> bool:
-  return bool(get_app_settings().beta_tester_gate)
+  s = get_app_settings()
+  if s.beta_tester_gate is None:
+    return Config.BETA_TESTER_GATE
+  return bool(s.beta_tester_gate)
 
 
 def set_beta_tester_gate(enabled: bool) -> AppSettings:

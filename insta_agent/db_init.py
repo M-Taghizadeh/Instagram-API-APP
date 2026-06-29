@@ -149,8 +149,8 @@ def _run_migrations():
       _add_column(conn, "app_settings", "beta_tester_gate",
                   "ALTER TABLE app_settings ADD COLUMN beta_tester_gate BOOLEAN DEFAULT TRUE")
 
-      # backfill nulls on existing rows
       for stmt in [
+        "UPDATE app_settings SET beta_tester_gate=TRUE WHERE beta_tester_gate IS NULL",
         "UPDATE dm_rules SET is_active=TRUE WHERE is_active IS NULL",
         "UPDATE dm_rules SET fire_count=0 WHERE fire_count IS NULL",
         "UPDATE comment_rules SET is_active=TRUE WHERE is_active IS NULL",
