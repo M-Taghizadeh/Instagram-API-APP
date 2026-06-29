@@ -8,10 +8,8 @@ from insta_agent.models import Flow, FlowSession, Contact, ScheduledMessage, Act
 from insta_agent.services.match import match_text
 from insta_agent.services import messaging
 from insta_agent.services.instagram_api import get_ig_username, get_page_ig_id
-from insta_agent.db_init import is_within_cooldown, update_cooldown
+from insta_agent.db_init import clear_flow_cooldowns
 from insta_agent.utils import now_tehran
-
-FLOW_RESTART_COOLDOWN_SEC = 15
 
 
 def _abandon_active_sessions(owner_id: int, ig_user_id: str):
@@ -21,12 +19,39 @@ def _abandon_active_sessions(owner_id: int, ig_user_id: str):
   db.session.commit()
 
 
-def _flow_triggered(flows: list, text: str) -> bool:
+def _flow_triggered(flows: list, text: str) -> Flow | None:
   for flow in flows:
     trigger = (flow.trigger or "").strip()
     if trigger and match_text(trigger, text, flow.match_type):
-      return True
-  return False
+      return flow
+  return None
+
+
+def _start_flow_session(owner_id: int, flow: Flow, ig_user_id: str, username: str, token: str) -> bool:
+  _abandon_active_sessions(owner_id, ig_user_id)
+  clear_flow_cooldowns(owner_id, ig_user_id, flow.id)
+  session = FlowSession(
+    id=str(uuid.uuid4()),
+    user_id=owner_id,
+    flow_id=flow.id,
+    ig_user_id=ig_user_id,
+    ig_username=username,
+    status="active",
+  )
+  db.session.add(session)
+  db.session.commit()
+  nodes = parse_nodes(flow)
+  start = first_node(nodes)
+  if not start:
+    session.status = "completed"
+    db.session.commit()
+    return False
+  session.current_node_id = start["id"]
+  db.session.commit()
+  actions = run_from_node(flow, session, token, start["id"])
+  log_flow_activity(owner_id, flow, ig_user_id, "+".join(actions), ig_username=username)
+  print(f"FLOW started flow={flow.id} user={ig_user_id} actions={'+'.join(actions)}", flush=True)
+  return True
 
 
 def parse_nodes(flow: Flow) -> list:
@@ -246,8 +271,9 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
   username = get_ig_username(ig_user_id, token)
   flows = Flow.query.filter_by(user_id=owner_id, is_active=True, channel="dm").all()
 
-  if _flow_triggered(flows, text):
-    _abandon_active_sessions(owner_id, ig_user_id)
+  triggered = _flow_triggered(flows, text)
+  if triggered:
+    return _start_flow_session(owner_id, triggered, ig_user_id, username, token)
 
   # ادامه session فعال
   active = FlowSession.query.filter_by(
@@ -307,35 +333,6 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
     active.current_node_id = ""
     db.session.commit()
 
-  # شروع فلو جدید
-  for flow in flows:
-    trigger = (flow.trigger or "").strip()
-    if not trigger:
-      continue
-    if not match_text(trigger, text, flow.match_type):
-      continue
-    if is_within_cooldown(owner_id, f"flow:{flow.id}", ig_user_id, FLOW_RESTART_COOLDOWN_SEC):
-      print(f"FLOW skip cooldown flow={flow.id} user={ig_user_id}", flush=True)
-      continue
-    session = FlowSession(
-      id=str(uuid.uuid4()),
-      user_id=owner_id,
-      flow_id=flow.id,
-      ig_user_id=ig_user_id,
-      ig_username=username,
-      status="active",
-    )
-    db.session.add(session)
-    db.session.commit()
-    nodes = parse_nodes(flow)
-    start = first_node(nodes)
-    if start:
-      session.current_node_id = start["id"]
-      db.session.commit()
-      update_cooldown(owner_id, f"flow:{flow.id}", ig_user_id)
-      actions = run_from_node(flow, session, token, start["id"])
-      log_flow_activity(owner_id, flow, ig_user_id, "+".join(actions), ig_username=username)
-      return True
   return False
 
 

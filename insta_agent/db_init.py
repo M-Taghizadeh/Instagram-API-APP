@@ -77,6 +77,18 @@ def update_cooldown(user_id: int, rule_id: str, ig_user_id: str):
   db.session.commit()
 
 
+def clear_flow_cooldowns(user_id: int, ig_user_id: str, flow_id: str | None = None):
+  q = CooldownEntry.query.filter(
+    CooldownEntry.user_id == user_id,
+    CooldownEntry.ig_user_id == ig_user_id,
+    CooldownEntry.rule_id.like("flow:%"),
+  )
+  if flow_id:
+    q = q.filter_by(rule_id=f"flow:{flow_id}")
+  q.delete(synchronize_session=False)
+  db.session.commit()
+
+
 def is_within_cooldown(user_id: int, rule_id: str, ig_user_id: str, seconds: int) -> bool:
   entry = CooldownEntry.query.filter_by(
     user_id=user_id, rule_id=rule_id, ig_user_id=ig_user_id
