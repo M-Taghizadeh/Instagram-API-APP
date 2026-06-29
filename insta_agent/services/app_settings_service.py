@@ -9,7 +9,7 @@ def get_app_settings() -> AppSettings:
   s = db.session.get(AppSettings, 1)
   if s:
     return s
-  s = AppSettings(id=1)
+  s = AppSettings(id=1, beta_tester_gate=Config.BETA_TESTER_GATE)
   if Config.ZARINPAL_MERCHANT_ID:
     s.zarinpal_merchant_id = Config.ZARINPAL_MERCHANT_ID
     s.zarinpal_sandbox = Config.ZARINPAL_SANDBOX
@@ -37,3 +37,14 @@ def zarinpal_sandbox_mode() -> bool:
 
 def zarinpal_is_configured() -> bool:
   return bool(zarinpal_merchant_id())
+
+
+def beta_tester_gate_enabled() -> bool:
+  return bool(get_app_settings().beta_tester_gate)
+
+
+def set_beta_tester_gate(enabled: bool) -> AppSettings:
+  s = get_app_settings()
+  s.beta_tester_gate = bool(enabled)
+  db.session.commit()
+  return s

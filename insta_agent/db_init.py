@@ -146,6 +146,8 @@ def _run_migrations():
                   "ALTER TABLE ig_accounts ADD COLUMN biography TEXT DEFAULT ''")
       _add_column(conn, "ig_accounts", "profile_synced_at",
                   "ALTER TABLE ig_accounts ADD COLUMN profile_synced_at TIMESTAMP")
+      _add_column(conn, "app_settings", "beta_tester_gate",
+                  "ALTER TABLE app_settings ADD COLUMN beta_tester_gate BOOLEAN DEFAULT TRUE")
 
       # backfill nulls on existing rows
       for stmt in [

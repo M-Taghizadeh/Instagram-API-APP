@@ -57,6 +57,38 @@
   </div>
 </div>
 
+<div class="card" style="padding:20px 22px;margin-top:20px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <div>
+      <div style="font-weight:800;margin-bottom:8px;font-size:14px;">{{ icon('toggle-right', 18) }} نحوه اتصال کاربران</div>
+      <div style="font-size:12.5px;color:var(--text-dim);line-height:1.9;max-width:520px;">
+        {% if beta_gate %}
+        <span class="badge purple">حالت بتا</span> — ویزارد ۳ مرحله + صف Tester (تا ۵۰ نفر)
+        {% else %}
+        <span class="badge ok">اتصال مستقیم</span> — فقط دکمه «اتصال پیج اینستاگرام» (مثل قبل)
+        {% endif %}
+        <div class="hint" style="margin-top:8px;">پیش‌فرض env: <code dir="ltr">BETA_TESTER_GATE={{ 'true' if env_beta_default else 'false' }}</code> — این دکمه از پنل override می‌کند.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <form method="post" action="{{ url_for('admin.toggle_beta_gate') }}">
+        <input type="hidden" name="enabled" value="1">
+        <button type="submit" class="btn small {% if beta_gate %}active{% else %}secondary{% endif %}"
+                {% if beta_gate %}disabled{% endif %}>
+          {{ icon('users', 14) }} حالت بتا (صف Tester)
+        </button>
+      </form>
+      <form method="post" action="{{ url_for('admin.toggle_beta_gate') }}">
+        <input type="hidden" name="enabled" value="0">
+        <button type="submit" class="btn small {% if not beta_gate %}active{% else %}secondary{% endif %}"
+                {% if not beta_gate %}disabled{% endif %}>
+          {{ icon('instagram', 14) }} اتصال مستقیم
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="card" style="padding:20px 22px;margin-top:20px;border-color:var(--primary);">
   <div style="font-weight:800;margin-bottom:12px;font-size:14px;">مسیر بیزینس محتوام (مهم)</div>
   <div style="font-size:12.5px;color:var(--text-dim);line-height:2;">
@@ -64,7 +96,7 @@
     <p style="margin:0 0 8px;font-weight:700;color:var(--text);">فاز ۱ — بتا (همین الان):</p>
     <ul style="margin:0 0 12px;padding-right:18px;">
       <li>صف فعال‌سازی: <a href="{{ url_for('admin.activation') }}">ادمین → فعال‌سازی</a>
-        {% if beta_gate %}<span class="badge purple">BETA_TESTER_GATE=فعال</span>{% else %}<span class="badge ok">غیرفعال</span>{% endif %}
+        {% if beta_gate %}<span class="badge purple">فعال از پنل</span>{% else %}<span class="badge ok">اتصال مستقیم</span>{% endif %}
         · سقف {{ beta_tester_slots }} Tester</li>
       <li>هر مشتری → <strong>Roles → Instagram Testers</strong> → Accept دعوت</li>
       <li>روی Allow هر ۳ permission روشن (مخصوصاً View profile)</li>

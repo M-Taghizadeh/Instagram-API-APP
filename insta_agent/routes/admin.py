@@ -17,6 +17,7 @@ from insta_agent.services.accounting_service import build_report, export_csv, MO
 from insta_agent.config import Config
 from insta_agent.services.instagram_oauth import oauth_configured, oauth_status
 from insta_agent.services.tester_gate import count_tester_slots_used, beta_gate_enabled
+from insta_agent.services.app_settings_service import set_beta_tester_gate
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -245,7 +246,21 @@ def integrations():
     oauth_status_url=url_for("oauth.oauth_debug_status"),
     beta_gate=beta_gate_enabled(),
     beta_tester_slots=Config.BETA_TESTER_SLOTS,
+    env_beta_default=Config.BETA_TESTER_GATE,
   )
+
+
+@bp.route("/integrations/beta-gate", methods=["POST"])
+@login_required
+@admin_required
+def toggle_beta_gate():
+  enabled = request.form.get("enabled") == "1"
+  set_beta_tester_gate(enabled)
+  if enabled:
+    flash("حالت بتا فعال شد — کاربران از صف Tester و ویزارد ۳ مرحله‌ای استفاده می‌کنند.", "success")
+  else:
+    flash("اتصال مستقیم فعال شد — کاربران مستقیم دکمه «اتصال پیج اینستاگرام» را می‌بینند.", "success")
+  return redirect(url_for("admin.integrations"))
 
 
 @bp.route("/activation", methods=["GET", "POST"])

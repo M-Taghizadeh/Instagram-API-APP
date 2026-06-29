@@ -8,7 +8,8 @@ INSTAGRAM_INVITE_URL = "https://www.instagram.com/accounts/manage_access/"
 
 
 def beta_gate_enabled() -> bool:
-  return Config.BETA_TESTER_GATE
+  from insta_agent.services.app_settings_service import beta_tester_gate_enabled
+  return beta_tester_gate_enabled()
 
 
 def normalize_ig_username(raw: str) -> str:
