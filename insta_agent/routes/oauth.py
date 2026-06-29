@@ -21,7 +21,7 @@ from insta_agent.services.subscription_service import maybe_start_trial
 from insta_agent.services.instagram_webhooks import subscribe_instagram_webhooks
 
 bp = Blueprint("oauth", __name__, url_prefix="/auth/instagram")
-OAUTH_FLOW_VERSION = "2025-06-29-manual"
+OAUTH_FLOW_VERSION = "2025-06-29b"
 
 
 def _user_has_page(user_id: int) -> bool:
@@ -165,6 +165,7 @@ def callback():
       retry_profile, retry_err = fetch_ig_profile_fast(access_token, ig_id)
       if retry_profile.get("username"):
         stored_profile = retry_profile
+        profile = retry_profile
         ig_username = retry_profile["username"]
       elif retry_err:
         profile_err = retry_err
@@ -173,16 +174,22 @@ def callback():
       print(f"[IG OAuth] WARNING: short-lived token only expires_in={expires_in}", flush=True)
 
     token_ok, probe_err = probe_me(access_token)
-    if not token_ok or ig_username.startswith("ig_") or not profile.get("username"):
-      detail = explain_meta_api_error(profile_err or probe_err or token_err)
-      raise ValueError(
-        "اتصال کامل نشد — در صفحه Allow اینستاگرام هر ۳ دسترسی را روشن کن "
-        "(View profile and access media + comments + messages). "
-        f"{detail}"
-      )
+    if not token_ok and short_token != access_token:
+      token_ok, probe_err = probe_me(short_token)
+      if token_ok:
+        access_token = short_token
+        expires_in = min(expires_in, 3600)
+        print("[IG OAuth] using short-lived token after access_token probe failed", flush=True)
+
+    if not token_ok:
+      api_err = profile_err or probe_err or token_err
+      print(f"[IG OAuth] connect failed token_ok=False ig_id={ig_id} err={api_err}", flush=True)
+      detail = explain_meta_api_error(api_err)
+      raise ValueError(f"اتصال کامل نشد — Instagram API پاسخ نداد. {detail}")
 
   except ValueError as e:
     flash(str(e), "error")
+    login_user(user, remember=True)
     dest = url_for("auth.pages") if user_is_admin or _user_has_page(user_id) else url_for("auth.onboarding")
     return redirect(dest)
   except Exception as e:

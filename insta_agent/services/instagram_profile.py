@@ -74,24 +74,25 @@ def debug_user_token(access_token: str) -> dict:
 def probe_me(access_token: str) -> tuple[bool, str]:
   if not access_token:
     return False, "no token"
-  fields = {"fields": "user_id,username"}
-  attempts = (
-    ("bearer", {"Authorization": f"Bearer {access_token}"}, fields),
-    ("query", {}, {**fields, "access_token": access_token}),
-  )
+  min_fields = {"fields": "user_id,username"}
+  me_urls = [f"{GRAPH_API}/me", f"{GRAPH_BASE}/me"]
   last_err = ""
-  for _, headers, params in attempts:
-    try:
-      r = get_no_redirect(f"{GRAPH_API}/me", headers=headers, params=params)
-      raw = r.json()
-      if r.status_code == 200 and "error" not in raw:
-        data = _normalize_profile(_unwrap_payload(raw))
-        if data.get("user_id") or data.get("username"):
-          return True, ""
-      err = raw.get("error", {}) if isinstance(raw, dict) else {}
-      last_err = err.get("message", r.text) if isinstance(err, dict) else r.text
-    except Exception as e:
-      last_err = str(e)
+  for url in me_urls:
+    for headers, params in (
+      ({}, {**min_fields, "access_token": access_token}),
+      ({"Authorization": f"Bearer {access_token}"}, min_fields),
+    ):
+      try:
+        r = get_no_redirect(url, headers=headers, params=params)
+        raw = r.json()
+        if r.status_code == 200 and "error" not in raw:
+          data = _normalize_profile(_unwrap_payload(raw))
+          if data.get("user_id") or data.get("username"):
+            return True, ""
+        err = raw.get("error", {}) if isinstance(raw, dict) else {}
+        last_err = err.get("message", r.text) if isinstance(err, dict) else r.text
+      except Exception as e:
+        last_err = str(e)
   return False, last_err
 
 
@@ -204,9 +205,10 @@ def explain_meta_api_error(msg: str) -> str:
   low = (msg or "").lower()
   if "method type" in low:
     return (
-      "اینستاگرام دسترسی instagram_business_basic نداد (View profile در Allow خاموش/خاکستری بود). "
-      "تا اپ Meta را Live نکردی: اکانت را در Roles → Instagram Testers اضافه کن. "
-      "برای فروش به همه مشتری‌ها: App Review + Advanced Access لازم است."
+      "Instagram API: " + (msg or "Unsupported request - method type: get") + ". "
+      "معمولاً یعنی دسترسی instagram_business_basic هنوز Advanced نیست، "
+      "Business Verification کامل نشده، یا اپ Live نیست. "
+      "در Meta Dashboard: App Review → Advanced Access + Settings → Business verification."
     )
   if "expired" in low:
     return "توکن منقضی شده — دوباره اتصال پیج را بزن."

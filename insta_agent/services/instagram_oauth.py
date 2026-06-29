@@ -6,6 +6,7 @@ from insta_agent.services.instagram_http import GRAPH_API, api_message, get_no_r
 
 AUTH_URL = "https://www.instagram.com/oauth/authorize/third_party"
 TOKEN_URL = "https://api.instagram.com/oauth/access_token"
+GRAPH_TOKEN_URL = "https://graph.instagram.com/access_token"
 INSTAGRAM_LOGIN_URL = Config.INSTAGRAM_LOGIN_URL
 ALLOWED_ACCOUNT_TYPES = {"BUSINESS", "MEDIA_CREATOR", "CREATOR"}
 LONG_LIVED_MIN_EXPIRES = 86400  # > 1 day => long-lived exchange worked
@@ -68,7 +69,7 @@ def exchange_long_lived_token(short_token: str) -> dict:
     "client_secret": Config.META_APP_SECRET,
     "access_token": short_token,
   }
-  url = f"{GRAPH_API}/access_token"
+  url = GRAPH_TOKEN_URL
   errors: list[str] = []
 
   for label, fn in (
@@ -97,7 +98,7 @@ from insta_agent.services.instagram_profile import (
 
 
 def resolve_access_token(short_token: str) -> tuple[str, int, str]:
-  """Prefer 60-day token; short-lived only if exchange fails."""
+  """Prefer 60-day token; fall back to short-lived if long-lived probe fails."""
   long = exchange_long_lived_token(short_token)
   token = long.get("access_token", short_token)
   expires = int(long.get("expires_in", 0))
@@ -106,11 +107,13 @@ def resolve_access_token(short_token: str) -> tuple[str, int, str]:
   if expires >= LONG_LIVED_MIN_EXPIRES:
     ok, err = probe_me(token)
     print(f"[IG OAuth] long token probe ok={ok} expires_in={expires} err={err}", flush=True)
-    return token, expires, exchange_err
+    if ok:
+      return token, expires, exchange_err
+    print("[IG OAuth] long token probe failed — trying short-lived token", flush=True)
 
   ok, err = probe_me(short_token)
-  print(f"[IG OAuth] short token only ok={ok} err={err}", flush=True)
-  if short_token:
+  print(f"[IG OAuth] short token probe ok={ok} err={err}", flush=True)
+  if ok:
     return short_token, 3600, exchange_err or err
 
   dbg = debug_user_token(short_token)
