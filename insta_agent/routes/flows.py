@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 
 from insta_agent.extensions import db
-from insta_agent.models import Flow
+from insta_agent.models import Flow, FlowSession, ScheduledMessage
 from insta_agent.config import Config
 from insta_agent.services.flow_engine import parse_nodes
 from insta_agent.services.media_storage import cleanup_after_flow_save, cleanup_flow_media
@@ -282,6 +282,9 @@ def toggle_flow(flow_id):
 def delete_flow(flow_id):
   flow = Flow.query.filter_by(id=flow_id, user_id=current_user.id).first_or_404()
   old_nodes = parse_nodes(flow)
+  # پاکسازی وابستگی‌ها قبل از حذف فلو (جلوگیری از خطای FK و پیام‌های زمان‌بندی‌شده یتیم)
+  FlowSession.query.filter_by(user_id=current_user.id, flow_id=flow.id).delete(synchronize_session=False)
+  ScheduledMessage.query.filter_by(user_id=current_user.id, flow_id=flow.id).delete(synchronize_session=False)
   db.session.delete(flow)
   db.session.commit()
   cleanup_flow_media(current_user.id, old_nodes)
