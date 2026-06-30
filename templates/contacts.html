@@ -39,17 +39,27 @@
         <td style="direction:ltr;text-align:right;">{{ c.phone or '—' }}</td>
         <td>{{ c.email or '—' }}</td>
         <td>{{ c.source }}</td>
-        <td style="max-width:260px;">
+        <td style="max-width:300px;">
           {% set custom = c.custom_fields or {} %}
           {% if custom %}
-            <div class="chip-row">
-              {% for key, value in custom.items() %}
-                <span class="chip small">
-                  <span class="chip-label">{{ key }}</span>
-                  <span class="chip-value">{{ value }}</span>
-                </span>
-              {% endfor %}
-            </div>
+            <details>
+              <summary class="btn ghost small" style="display:inline-flex;cursor:pointer;">مشاهده جزئیات</summary>
+              <div style="margin-top:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);">
+                {% for key, value in custom.items() %}
+                  {% set label = key %}
+                  {% if key == 'answer' %}{% set label = 'پاسخ متن' %}{% endif %}
+                  {% if key == 'poll_answer' %}{% set label = 'پاسخ نظرسنجی' %}{% endif %}
+                  {% if key == 'quiz_score' %}{% set label = 'امتیاز آزمون' %}{% endif %}
+                  {% if key == 'phone' %}{% set label = 'شماره تماس' %}{% endif %}
+                  {% if key == 'full_name' %}{% set label = 'نام کامل' %}{% endif %}
+                  {% if key == 'email' %}{% set label = 'ایمیل' %}{% endif %}
+                  <div style="padding:4px 0;border-bottom:1px dashed var(--line);">
+                    <strong style="font-size:12px;">{{ label }}:</strong>
+                    <span style="font-size:12px;word-break:break-word;"> {{ value }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            </details>
           {% else %}
             <span style="color:var(--text-muted);">—</span>
           {% endif %}
