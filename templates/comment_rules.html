@@ -111,9 +111,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;
                     margin-top:auto;padding-top:10px;border-top:1px solid var(--border-soft);">
           <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-            {% if rule.fire_count %}
-            <span class="badge purple" style="font-size:9.5px;">{{ icon('zap', 11) }} {{ rule.fire_count }} بار</span>
-            {% endif %}
+            <span class="badge purple" style="font-size:9.5px;">{{ icon('zap', 11) }} {{ rule.fire_count or 0 }} بار</span>
             {% if rule.created_at %}
             <span style="font-size:10.5px;color:var(--text-faint);">{{ rule.created_at.strftime('%Y/%m/%d') }}</span>
             {% endif %}
