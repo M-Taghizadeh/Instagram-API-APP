@@ -4,7 +4,6 @@ export const NODE_TYPES = [
   { type: 'audio', icon: '🎵', label: 'صوت' },
   { type: 'carousel', icon: '🛍️', label: 'ویترین' },
   { type: 'buttons', icon: '🔘', label: 'دکمه‌ها' },
-  { type: 'quick_replies', icon: '⚡', label: 'پاسخ سریع' },
   { type: 'collect_text', icon: '✏️', label: 'دریافت متن' },
   { type: 'collect_phone', icon: '📱', label: 'دریافت شماره' },
   { type: 'poll', icon: '📊', label: 'نظرسنجی' },
@@ -25,10 +24,14 @@ export function previewText(nodeType, data) {
     case 'collect_phone':
       return data.prompt || '';
     case 'poll':
+      return `${data.question || ''} (${(data.options || []).length} گزینه)`;
     case 'quiz':
-      return data.question || '';
-    case 'delay':
-      return `${data.minutes || 0} دقیقه`;
+      return `${data.question || ''} (${(data.options || []).length} پاسخ)`;
+    case 'delay': {
+      const fp = data.followup_payload || {};
+      const msg = fp.text || (fp.type === 'image' ? 'تصویر' : fp.type === 'audio' ? 'صوت' : '');
+      return `${data.minutes || 0} دقیقه — ${msg || 'فالوآپ'}`;
+    }
     case 'save_contact':
       return 'ذخیره در مخاطبین';
     case 'image':
@@ -39,6 +42,8 @@ export function previewText(nodeType, data) {
       return data.url ? 'صوت' : 'بدون صوت';
     case 'carousel':
       return `${(data.elements || []).length} آیتم ویترین`;
+    case 'buttons':
+      return data.text || `${(data.buttons || []).length} دکمه`;
     default:
       return data.text || data.question || '';
   }

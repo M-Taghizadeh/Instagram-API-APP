@@ -64,7 +64,7 @@
 
 .fe-layout {
   display: grid;
-  grid-template-columns: 180px 1fr 260px;
+  grid-template-columns: 180px 1fr 300px;
   height: 560px;
   font-family: 'Vazirmatn', sans-serif;
 }
@@ -212,6 +212,170 @@
   color: var(--fe-text-faint);
   line-height: 1.6;
   margin-bottom: 12px;
+}
+
+.fe-info-box {
+  font-size: 11px;
+  color: var(--fe-text-dim);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--fe-border);
+  background: var(--fe-surface-2);
+}
+
+.fe-info-box strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--fe-text);
+}
+
+.fe-info-box ol {
+  margin: 0;
+  padding-right: 18px;
+}
+
+.fe-list-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fe-list-item {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--fe-border);
+  background: var(--fe-surface);
+}
+
+.fe-list-item-compact input {
+  width: 100%;
+  background: var(--fe-surface-2);
+  border: 1px solid var(--fe-border);
+  border-radius: 6px;
+  color: var(--fe-text);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.fe-list-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fe-text-faint);
+}
+
+.fe-inline-field {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.fe-inline-field:last-child {
+  margin-bottom: 0;
+}
+
+.fe-inline-field span {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fe-text-faint);
+  margin-bottom: 4px;
+}
+
+.fe-inline-field input,
+.fe-inline-field textarea,
+.fe-inline-field select {
+  width: 100%;
+  background: var(--fe-surface-2);
+  border: 1px solid var(--fe-border);
+  border-radius: 6px;
+  color: var(--fe-text);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.fe-subsection {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--fe-border);
+}
+
+.fe-subsection-title {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--fe-text-faint);
+  margin-bottom: 6px;
+}
+
+.fe-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fe-list-count {
+  font-size: 10px;
+  color: var(--fe-text-faint);
+}
+
+.fe-btn-add {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px dashed var(--fe-primary-solid);
+  background: transparent;
+  color: var(--fe-primary);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.fe-btn-add:hover {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.fe-btn-remove {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--fe-danger);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.fe-btn-remove:hover {
+  background: rgba(248, 113, 113, 0.22);
+}
+
+.fe-correct-radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fe-success);
+  cursor: pointer;
+}
+
+.fe-correct-radio input {
+  accent-color: var(--fe-success);
+}
+
+.fe-followup-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .fe-btn-danger {

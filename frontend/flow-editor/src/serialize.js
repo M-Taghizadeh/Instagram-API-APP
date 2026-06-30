@@ -10,8 +10,16 @@ export function defaultDataForType(type) {
     image: { url: '' },
     video: { url: '' },
     audio: { url: '' },
-    carousel: { elements: [] },
-    buttons: { text: 'انتخاب کنید:', buttons: [] },
+    carousel: {
+      elements: [{
+        title: 'محصول ۱',
+        subtitle: '',
+        image_url: '',
+        url: '',
+        buttons: [{ title: 'مشاهده', type: 'url', url: 'https://example.com' }],
+      }],
+    },
+    buttons: { text: 'انتخاب کنید:', buttons: [{ title: 'گزینه ۱', type: 'postback', payload: 'opt1' }] },
     quick_replies: { text: 'یک گزینه انتخاب کنید:', options: [] },
     collect_phone: { prompt: 'شماره تماس؟', field: 'phone' },
     collect_text: { prompt: 'پاسخ شما؟', field: 'answer' },
