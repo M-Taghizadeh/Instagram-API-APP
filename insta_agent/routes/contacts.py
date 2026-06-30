@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file
 from flask_login import login_required, current_user
+import json
 
 from insta_agent.extensions import db
 from insta_agent.models import Contact
@@ -25,6 +26,12 @@ def contact_list():
       Contact.custom_fields_json.ilike(f"%{q}%")
     )
   pagination = query.order_by(Contact.updated_at.desc()).paginate(page=page, per_page=PER_PAGE, error_out=False)
+  # Parse custom fields JSON once in backend so templates don't depend on fromjson filter
+  for c in pagination.items:
+    try:
+      c.custom_fields = json.loads(c.custom_fields_json or "{}")
+    except Exception:
+      c.custom_fields = {}
   total = Contact.query.filter_by(user_id=current_user.id).count()
   with_phone = Contact.query.filter_by(user_id=current_user.id).filter(Contact.phone != "").count()
   return render_template("contacts.html", pagination=pagination, q=q, total=total, with_phone=with_phone)

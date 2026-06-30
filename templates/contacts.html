@@ -40,7 +40,7 @@
         <td>{{ c.email or '—' }}</td>
         <td>{{ c.source }}</td>
         <td style="max-width:260px;">
-          {% set custom = c.custom_fields_json and c.custom_fields_json|fromjson or {} %}
+          {% set custom = c.custom_fields or {} %}
           {% if custom %}
             <div class="chip-row">
               {% for key, value in custom.items() %}
