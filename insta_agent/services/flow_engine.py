@@ -306,6 +306,7 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
       elif awaiting in ("text", "poll"):
         field = ctx.get("field") or ctx.get("poll_field", "answer")
         collected[field] = text
+        upsert_contact(owner_id, ig_user_id, username, **{field: text})
         ctx.pop("awaiting", None)
         ctx["collected"] = collected
         active.context_json = json.dumps(ctx, ensure_ascii=False)
@@ -322,7 +323,9 @@ def handle_incoming_dm(owner_id: int, ig_user_id: str, text: str, token: str) ->
           score += 1
         ctx["score"] = score
         ctx.pop("awaiting", None)
-        ctx.setdefault("collected", {})[ctx.get("quiz_field", "quiz_score")] = str(score)
+        quiz_field = ctx.get("quiz_field", "quiz_score")
+        ctx.setdefault("collected", {})[quiz_field] = str(score)
+        upsert_contact(owner_id, ig_user_id, username, **{quiz_field: str(score)})
         active.context_json = json.dumps(ctx, ensure_ascii=False)
         db.session.commit()
         flow = Flow.query.get(active.flow_id)
