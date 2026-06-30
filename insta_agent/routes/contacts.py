@@ -20,7 +20,9 @@ def contact_list():
     query = query.filter(
       Contact.ig_username.ilike(f"%{q}%") |
       Contact.phone.ilike(f"%{q}%") |
-      Contact.full_name.ilike(f"%{q}%")
+      Contact.full_name.ilike(f"%{q}%") |
+      Contact.email.ilike(f"%{q}%") |
+      Contact.custom_fields_json.ilike(f"%{q}%")
     )
   pagination = query.order_by(Contact.updated_at.desc()).paginate(page=page, per_page=PER_PAGE, error_out=False)
   total = Contact.query.filter_by(user_id=current_user.id).count()

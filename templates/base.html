@@ -62,6 +62,9 @@
 
       <div class="nav-section">
         <div class="nav-section-title">فروش و ارتباط</div>
+        <a href="{{ url_for('contacts.contact_list') }}" class="nav-item {% if request.path.startswith('/contacts') %}active{% endif %}">
+          <i data-lucide="users" class="nav-icon"></i> مخاطبین
+        </a>
         <a href="{{ url_for('sms.sms_panel') }}" class="nav-item {% if request.path.startswith('/sms') %}active{% endif %}">
           <i data-lucide="smartphone" class="nav-icon"></i> پیامک هوشمند
         </a>
