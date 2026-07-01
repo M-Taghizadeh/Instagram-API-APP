@@ -3,12 +3,6 @@
 {% block title %}پنل ادمین — محتوام{% endblock %}
 {% block topbar_icon %}{{ icon('shield', 18) }}{% endblock %}
 {% block topbar_title %}مدیریت سامانه{% endblock %}
-{% block topbar_right %}
-  <a href="{{ url_for('admin.accounting') }}" class="btn secondary small">{{ icon('bar-chart-3', 14) }} حسابداری</a>
-  <a href="{{ url_for('admin.plans') }}" class="btn secondary small">قیمت پلن‌ها</a>
-  <a href="{{ url_for('admin.integrations') }}" class="btn secondary small">{{ icon('plug', 14) }} یکپارچه‌سازی</a>
-  <a href="{{ url_for('admin.users') }}" class="btn secondary small">کاربران</a>
-{% endblock %}
 {% block content %}
 
 {% set active = 'dashboard' %}
