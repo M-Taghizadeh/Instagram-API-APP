@@ -1,9 +1,11 @@
+{% from "macros/ui.html" import favicon_links, brand_mark %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ورود — محتوام</title>
+{{ favicon_links() }}
 <script>(function(){var t=localStorage.getItem('mohtavam-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/vazirmatn/vazirmatn.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
@@ -17,7 +19,7 @@
 
 <div class="connect-card" style="text-align:right;">
   <div class="auth-brand" style="justify-content:center;margin-bottom:28px;">
-    <div class="auth-brand-mark"><i data-lucide="layers" style="width:20px;height:20px"></i></div>
+    <div class="auth-brand-mark">{{ brand_mark(40) }}</div>
     <div>
       <div class="auth-brand-name">محتوام</div>
       <div class="auth-brand-sub">ورود</div>

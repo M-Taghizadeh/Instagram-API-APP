@@ -223,12 +223,15 @@ a { color: inherit; text-decoration: none; }
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
+  overflow: hidden;
+  flex-shrink: 0;
   box-shadow: var(--shadow-sm);
+}
+.brand-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .sidebar-logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
 .sidebar-logo-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }

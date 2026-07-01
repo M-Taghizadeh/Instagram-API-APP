@@ -1,9 +1,11 @@
+{% from "macros/ui.html" import favicon_links, brand_mark %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>محتوام — اتومیشن هوشمند اینستاگرام</title>
+{{ favicon_links() }}
 <script>(function(){var t=localStorage.getItem('mohtavam-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/vazirmatn/vazirmatn.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
@@ -12,7 +14,7 @@
 
 <nav class="landing-nav">
   <div class="landing-nav-brand">
-    <div class="landing-nav-mark"><i data-lucide="layers" style="width:18px;height:18px"></i></div>
+    <div class="landing-nav-mark">{{ brand_mark(36) }}</div>
     <div>
       <div class="landing-nav-name">محتوام</div>
       <div class="landing-nav-sub">Mohtavam</div>
@@ -145,7 +147,7 @@
 
 <footer class="landing-footer">
   <div class="footer-brand">
-    <div class="landing-nav-mark" style="width:32px;height:32px;"><i data-lucide="layers" style="width:16px;height:16px;color:#fff"></i></div>
+    <div class="landing-nav-mark landing-nav-mark--sm">{{ brand_mark(32) }}</div>
     محتوام
   </div>
   <div class="footer-copy">ساخته شده برای کسب‌وکارهای ایرانی</div>
