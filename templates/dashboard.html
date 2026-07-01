@@ -3,11 +3,6 @@
 {% block title %}داشبورد — محتوام{% endblock %}
 {% block topbar_icon %}{{ icon('layout-dashboard', 18) }}{% endblock %}
 {% block topbar_title %}داشبورد{% endblock %}
-{% block topbar_right %}
-  <a href="{{ url_for('rules.new_dm_rule') }}" class="btn small">
-    <i data-lucide="plus" style="width:14px;height:14px"></i> قانون جدید
-  </a>
-{% endblock %}
 {% block content %}
 
 {% if sub_info %}

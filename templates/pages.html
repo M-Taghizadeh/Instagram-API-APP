@@ -6,7 +6,7 @@
 {% block topbar_right %}
   {% if accounts %}
   <form method="post" action="{{ url_for('oauth.refresh_profiles') }}" style="display:inline;">
-    <button type="submit" class="btn secondary small">{{ icon('refresh-cw', 14) }} به‌روزرسانی اطلاعات</button>
+    <button type="submit" class="btn secondary small">{{ icon('refresh-cw', 14) }}</button>
   </form>
   {% endif %}
   {% if oauth_ready and (not accounts or current_user.is_admin) %}

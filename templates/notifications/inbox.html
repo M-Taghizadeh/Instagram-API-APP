@@ -7,7 +7,7 @@
   {% if items %}
   <form method="post" action="{{ url_for('notifications.delete_all') }}" style="display:inline;"
         onsubmit="return confirm('همه اعلان‌ها پاک شوند؟')">
-    <button type="submit" class="btn ghost small">پاک کردن همه</button>
+        <button type="submit" class="btn danger small">{{ icon('trash-2', 14) }}</button>
   </form>
   {% endif %}
   {% if unread %}

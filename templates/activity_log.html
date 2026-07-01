@@ -7,7 +7,7 @@
   {% if pagination.total %}
   <form method="post" action="{{ url_for('activity.clear_activity') }}"
         onsubmit="return confirm('همه لاگ‌ها پاک شوند؟')">
-    <button type="submit" class="btn danger small">{{ icon('trash-2', 14) }} پاک کردن لاگ‌ها</button>
+    <button type="submit" class="btn danger small">{{ icon('trash-2', 14) }}</button>
   </form>
   {% endif %}
 {% endblock %}
