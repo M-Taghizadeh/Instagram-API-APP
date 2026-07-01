@@ -11,16 +11,21 @@
           {{ brand_mark(28) }}
           <span>پلتفرم <strong>محتوام</strong> — اتوماسیون اینستاگرام</span>
         </div>
-        <h1 class="hero-title">اتوماسیون حرفه‌ای اینستاگرام<br><em>برای فروش، پشتیبانی و لیدسازی</em></h1>
+        <h1 class="hero-title">پلتفرم جامع <em>تولید محتوای هوشمند</em></h1>
         <p class="hero-desc hero-desc--tight"><strong>محتوام</strong> دایرکت، کامنت، فلو، فالوآپ، CRM و پیامک را در یک پنل یکپارچه جمع می‌کند تا بدون ابزار پراکنده، سریع‌تر پاسخ بدهی و حرفه‌ای‌تر بفروشی.</p>
         <div class="hero-actions">
           <a href="{{ url_for('auth.register') }}"><button class="btn-landing primary">شروع رایگان با محتوام <i data-lucide="arrow-left" style="width:16px;height:16px"></i></button></a>
           <a href="#panel"><button class="btn-landing ghost">ببین پنل چی داره</button></a>
         </div>
-        <div class="hero-trust">
-          <div class="hero-trust-item"><span class="meta-wordmark">Meta</span> متصل به API رسمی متا</div>
-          <div class="hero-trust-item"><i data-lucide="clock" style="width:15px;height:15px"></i> پاسخ‌دهی ۲۴/۷</div>
-          <div class="hero-trust-item"><i data-lucide="flag" style="width:15px;height:15px"></i> ساخته‌شده برای کسب‌وکار ایرانی</div>
+        <div class="hero-trust hero-trust--stack">
+          <div class="hero-trust-item hero-trust-item--meta">
+            <img src="{{ url_for('static', filename='logo/meta-logo.png') }}" alt="Meta" class="meta-logo">
+            <span>اتصال به API رسمی متا</span>
+          </div>
+          <div class="hero-trust-row">
+            <div class="hero-trust-item"><i data-lucide="clock" style="width:15px;height:15px"></i> پاسخ‌دهی ۲۴/۷</div>
+            <div class="hero-trust-item"><i data-lucide="flag" style="width:15px;height:15px"></i> ساخته‌شده برای کسب‌وکار ایرانی</div>
+          </div>
         </div>
       </div>
       <div class="hero-visual">
@@ -63,7 +68,7 @@
               </div>
             </div>
             <div class="preview-api-note">
-              <span class="meta-wordmark meta-wordmark--sm">Meta</span>
+              <img src="{{ url_for('static', filename='logo/meta-logo.png') }}" alt="Meta" class="meta-logo meta-logo--sm">
               <span>اتصال امن از طریق API رسمی متا برای پیج‌های Business و Creator</span>
             </div>
           </div>
