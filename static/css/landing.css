@@ -225,41 +225,11 @@ section { position: relative; }
 }
 .hero-desc--tight { max-width: 540px; }
 .hero-desc strong { color: var(--text); font-weight: 600; }
-.hero-desc--stream {
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 15px;
-}
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
-.hero-shortcuts-wrap {
-  width: 100%;
-  max-width: 560px;
-  overflow-x: auto;
-}
-.hero-shortcuts {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-width: max-content;
-}
-.hero-shortcut-item {
-  display: inline-flex;
-  align-items: center;
+.hero-meta-pill {
   gap: 8px;
-  min-height: 42px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.hero-shortcut-item--meta {
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  cursor: default;
 }
 .meta-logo {
   display: block;
@@ -672,7 +642,6 @@ a.contact-method:hover { border-color: rgba(139, 92, 246, 0.3); background: var(
   .landing-nav-links { display: none; }
   .cta-box { padding: 40px 24px; }
   .cta-title { font-size: 24px; }
-  .hero-shortcuts-wrap { max-width: 100%; }
-  .hero-shortcut-item { font-size: 12px; min-height: 38px; padding: 0 12px; }
+  .hero-meta-pill { font-size: 12px; min-height: 38px; padding: 0 12px; }
   .preview-api-note { align-items: flex-start; }
 }
