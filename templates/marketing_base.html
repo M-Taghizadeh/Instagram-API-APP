@@ -24,9 +24,9 @@
   <div class="landing-nav-links">
     <a href="{{ url_for('main.home') }}#features">امکانات</a>
     <a href="{{ url_for('main.home') }}#panel">پنل</a>
-    <a href="{{ url_for('main.about') }}">درباره ما</a>
     <a href="{{ url_for('main.academy') }}">آموزش</a>
-    <a href="{{ url_for('main.contact') }}">تماس</a>
+    <a href="{{ url_for('main.about') }}">درباره ما</a>
+    <a href="{{ url_for('main.contact') }}">تماس با ما</a>
   </div>
   <div class="landing-nav-actions">
     <button type="button" class="icon-btn" onclick="toggleTheme()" aria-label="تغییر تم">
@@ -50,9 +50,10 @@
   </div>
   <div class="footer-links">
     <a href="{{ url_for('main.home') }}#features">امکانات</a>
-    <a href="{{ url_for('main.about') }}">درباره ما</a>
+    <a href="{{ url_for('main.home') }}#panel">پنل</a>
     <a href="{{ url_for('main.academy') }}">آموزش</a>
-    <a href="{{ url_for('main.contact') }}">تماس</a>
+    <a href="{{ url_for('main.about') }}">درباره ما</a>
+    <a href="{{ url_for('main.contact') }}">تماس با ما</a>
     <a href="{{ url_for('auth.login') }}">ورود</a>
   </div>
   <div class="footer-copy">محتوام — ساخته‌شده برای کسب‌وکارهای ایرانی</div>
