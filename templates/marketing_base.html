@@ -1,0 +1,65 @@
+{% from "macros/ui.html" import favicon_links, brand_mark %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}محتوام{% endblock %}</title>
+{{ favicon_links() }}
+<script>(function(){var t=localStorage.getItem('mohtavam-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/vazirmatn/vazirmatn.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<nav class="landing-nav">
+  <a href="{{ url_for('main.home') }}" class="landing-nav-brand">
+    <div class="landing-nav-mark">{{ brand_mark(36) }}</div>
+    <div>
+      <div class="landing-nav-name">محتوام</div>
+      <div class="landing-nav-sub">Mohtavam</div>
+    </div>
+  </a>
+  <div class="landing-nav-links">
+    <a href="{{ url_for('main.home') }}#features">امکانات</a>
+    <a href="{{ url_for('main.home') }}#panel">پنل</a>
+    <a href="{{ url_for('main.about') }}">درباره ما</a>
+    <a href="{{ url_for('main.academy') }}">آموزش</a>
+    <a href="{{ url_for('main.contact') }}">تماس</a>
+  </div>
+  <div class="landing-nav-actions">
+    <button type="button" class="icon-btn" onclick="toggleTheme()" aria-label="تغییر تم">
+      <i data-theme-icon="sun" data-lucide="sun" style="width:18px;height:18px;display:none"></i>
+      <i data-theme-icon="moon" data-lucide="moon" style="width:18px;height:18px"></i>
+    </button>
+    <a href="{{ url_for('auth.login') }}" class="btn-landing ghost">ورود</a>
+    <a href="{{ url_for('auth.register') }}"><button class="btn-landing primary">ثبت‌نام رایگان <i data-lucide="arrow-left" style="width:16px;height:16px"></i></button></a>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer class="landing-footer">
+  <div class="footer-brand">
+    <div class="landing-nav-mark landing-nav-mark--sm">{{ brand_mark(32) }}</div>
+    <div>
+      <div class="footer-brand-name">محتوام</div>
+      <div class="footer-brand-sub">پلتفرم اتوماسیون اینستاگرام</div>
+    </div>
+  </div>
+  <div class="footer-links">
+    <a href="{{ url_for('main.home') }}#features">امکانات</a>
+    <a href="{{ url_for('main.about') }}">درباره ما</a>
+    <a href="{{ url_for('main.academy') }}">آموزش</a>
+    <a href="{{ url_for('main.contact') }}">تماس</a>
+    <a href="{{ url_for('auth.login') }}">ورود</a>
+  </div>
+  <div class="footer-copy">محتوام — ساخته‌شده برای کسب‌وکارهای ایرانی</div>
+</footer>
+
+<script src="{{ url_for('static', filename='vendor/lucide/lucide.min.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
