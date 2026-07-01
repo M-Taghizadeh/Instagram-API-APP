@@ -4,8 +4,8 @@
 {% block topbar_icon %}{{ icon('users', 18) }}{% endblock %}
 {% block topbar_title %}مخاطبین{% endblock %}
 {% block topbar_right %}
-  <a href="{{ url_for('contacts.export_contacts') }}" class="btn secondary small">{{ icon('download', 14) }} Excel</a>
-  <a href="{{ url_for('contacts.export_phones') }}" class="btn secondary small">{{ icon('smartphone', 14) }} شماره‌ها</a>
+  <a href="{{ url_for('contacts.export_contacts') }}" class="btn secondary small">{{ icon('download', 14) }}</a>
+  <a href="{{ url_for('contacts.export_phones') }}" class="btn secondary small">{{ icon('smartphone', 14) }}</a>
 {% endblock %}
 {% block content %}
 
