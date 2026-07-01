@@ -230,38 +230,50 @@ section { position: relative; }
 .hero-trust--stack {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: 460px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
 }
 .hero-trust-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
+  gap: 10px;
 }
 .hero-trust-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: 600;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  text-align: center;
 }
 .hero-trust-item svg { color: var(--primary); }
 .hero-trust-item--meta {
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  justify-content: space-between;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
 }
 .meta-logo {
   display: block;
-  width: 68px;
-  height: auto;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
   flex-shrink: 0;
+  border-radius: 6px;
 }
-.meta-logo--sm { width: 56px; }
+.meta-logo--sm { width: 20px; height: 20px; }
 
 /* Hero preview */
 .hero-preview {
@@ -666,12 +678,12 @@ a.contact-method:hover { border-color: rgba(139, 92, 246, 0.3); background: var(
   .cta-title { font-size: 24px; }
   .hero-trust--stack { align-items: stretch; }
   .hero-trust-row {
-    justify-content: space-between;
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
-  .hero-trust-item { font-size: 11px; }
+  .hero-trust-item { font-size: 12px; }
   .hero-trust-item--meta {
-    justify-content: center;
+    justify-content: space-between;
     width: 100%;
   }
   .meta-logo { width: 58px; }
