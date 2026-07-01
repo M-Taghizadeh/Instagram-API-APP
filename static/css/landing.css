@@ -225,53 +225,49 @@ section { position: relative; }
 }
 .hero-desc--tight { max-width: 540px; }
 .hero-desc strong { color: var(--text); font-weight: 600; }
+.hero-desc--stream {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+}
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
-.hero-trust { display: flex; flex-wrap: wrap; gap: 16px; }
-.hero-trust--stack {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
+.hero-shortcuts-wrap {
   width: 100%;
-  max-width: 460px;
-  padding: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  max-width: 560px;
+  overflow-x: auto;
 }
-.hero-trust-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.hero-shortcuts {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
+  min-width: max-content;
 }
-.hero-trust-item {
-  display: flex;
+.hero-shortcut-item {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  font-size: 13px;
-  color: var(--text-muted);
-  font-weight: 600;
   min-height: 42px;
-  padding: 0 12px;
+  padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
-  text-align: center;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
 }
-.hero-trust-item svg { color: var(--primary); }
-.hero-trust-item--meta {
-  justify-content: space-between;
+.hero-shortcut-item--meta {
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
 }
 .meta-logo {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
   flex-shrink: 0;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 .meta-logo--sm { width: 20px; height: 20px; }
 
@@ -676,16 +672,7 @@ a.contact-method:hover { border-color: rgba(139, 92, 246, 0.3); background: var(
   .landing-nav-links { display: none; }
   .cta-box { padding: 40px 24px; }
   .cta-title { font-size: 24px; }
-  .hero-trust--stack { align-items: stretch; }
-  .hero-trust-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  .hero-trust-item { font-size: 12px; }
-  .hero-trust-item--meta {
-    justify-content: space-between;
-    width: 100%;
-  }
-  .meta-logo { width: 58px; }
+  .hero-shortcuts-wrap { max-width: 100%; }
+  .hero-shortcut-item { font-size: 12px; min-height: 38px; padding: 0 12px; }
   .preview-api-note { align-items: flex-start; }
 }

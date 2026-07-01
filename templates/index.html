@@ -1,6 +1,6 @@
 {% extends "marketing_base.html" %}
 {% from "macros/ui.html" import brand_mark %}
-{% block title %}محتوام — پلتفرم اتوماسیون هوشمند اینستاگرام{% endblock %}
+{% block title %}محتوام{% endblock %}
 {% block content %}
 <section class="hero">
   <div class="hero-glow" aria-hidden="true"></div>
@@ -11,20 +11,20 @@
           {{ brand_mark(28) }}
           <span>پلتفرم <strong>محتوام</strong> — اتوماسیون اینستاگرام</span>
         </div>
-        <h1 class="hero-title">پلتفرم جامع <em>تولید محتوای هوشمند</em></h1>
-        <p class="hero-desc hero-desc--tight"><strong>محتوام</strong> دایرکت، کامنت، فلو، فالوآپ، CRM و پیامک را در یک پنل یکپارچه جمع می‌کند تا بدون ابزار پراکنده، سریع‌تر پاسخ بدهی و حرفه‌ای‌تر بفروشی.</p>
+        <h1 class="hero-title">پلتفرم <em>تولید محتوای هوشمند</em></h1>
+        <p class="hero-desc hero-desc--stream">دایرکت • کامنت • فلو • فالوآپ • CRM • پیامک — همه‌چیز در یک پنل یکپارچه محتوام</p>
         <div class="hero-actions">
           <a href="{{ url_for('auth.register') }}"><button class="btn-landing primary">شروع رایگان با محتوام <i data-lucide="arrow-left" style="width:16px;height:16px"></i></button></a>
           <a href="#panel"><button class="btn-landing ghost">ببین پنل چی داره</button></a>
         </div>
-        <div class="hero-trust hero-trust--stack">
-          <div class="hero-trust-item hero-trust-item--meta">
-            <img src="{{ url_for('static', filename='logo/meta-symbol.png') }}" alt="Meta" class="meta-logo">
-            <span>اتصال به API رسمی متا</span>
-          </div>
-          <div class="hero-trust-row">
-            <div class="hero-trust-item"><i data-lucide="clock" style="width:15px;height:15px"></i> پاسخ‌دهی ۲۴/۷</div>
-            <div class="hero-trust-item"><i data-lucide="flag" style="width:15px;height:15px"></i> ساخته‌شده برای کسب‌وکار ایرانی</div>
+        <div class="hero-shortcuts-wrap">
+          <div class="hero-shortcuts">
+            <span class="hero-shortcut-item">شروع</span>
+            <span class="hero-shortcut-item">قابلیت‌ها</span>
+            <span class="hero-shortcut-item hero-shortcut-item--meta">
+              اتصال رسمی به متا
+              <img src="{{ url_for('static', filename='logo/meta-symbol.png') }}" alt="Meta" class="meta-logo">
+            </span>
           </div>
         </div>
       </div>
